@@ -80,7 +80,11 @@ public static class Program
         // Resolve runners and scorers
         var runners = new List<ICandidateRunner>
         {
-            new NoOpCandidateRunner()
+            new NoOpCandidateRunner(),
+            new OpenAiChatRunner(),
+            new HermesProfileRunner(),
+            new ServiceEndpointRunner(),
+            new ExternalCliRunner()
         };
 
         var scorers = new List<IScorer>

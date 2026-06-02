@@ -31,9 +31,13 @@ public sealed class CandidateConfig
     [JsonPropertyName("provider")]
     public string? Provider { get; init; }
 
-    /// <summary>API endpoint URL for service-endpoint kind.</summary>
+    /// <summary>API endpoint URL for service-endpoint kind or custom base URL for OpenAI-compatible endpoints.</summary>
     [JsonPropertyName("endpoint")]
     public string? Endpoint { get; init; }
+
+    /// <summary>Base URL for OpenAI-compatible API (e.g. "https://api.openai.com/v1"). Overrides endpoint for chat-model kinds.</summary>
+    [JsonPropertyName("base_url")]
+    public string? BaseUrl { get; init; }
 
     /// <summary>Hermes profile name for hermes-profile kind.</summary>
     [JsonPropertyName("profile")]
@@ -50,6 +54,28 @@ public sealed class CandidateConfig
     /// <summary>System prompt override for chat-model candidates.</summary>
     [JsonPropertyName("system_prompt")]
     public string? SystemPrompt { get; init; }
+
+    /// <summary>
+    /// Name of an environment variable holding the API key for this candidate.
+    /// Never serialised to run artifacts — only used at runtime.
+    /// </summary>
+    [JsonIgnore]
+    public string? ApiKeyEnv { get; init; }
+
+    /// <summary>
+    /// Resolved API key value at runtime. Never serialised.
+    /// Populated by runners from the environment variable named by <see cref="ApiKeyEnv"/>.
+    /// </summary>
+    [JsonIgnore]
+    public string? ApiKey { get; init; }
+
+    /// <summary>
+    /// Runtime metadata for distinguishing prompt identity, profile identity,
+    /// and execution environment from model identity.
+    /// Typical keys: "prompt_version", "profile_version", "runner_version", "host".
+    /// </summary>
+    [JsonPropertyName("runtime_metadata")]
+    public Dictionary<string, string> RuntimeMetadata { get; init; } = new();
 
     /// <summary>
     /// Extra configuration key-value pairs for runner-specific use.
