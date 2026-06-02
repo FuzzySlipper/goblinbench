@@ -1,0 +1,16 @@
+{
+  "id": "demo-noop",
+  "version": "1.0.0",
+  "name": "Demo No-Op Scenario",
+  "description": "A minimal smoke-test scenario that exercises the full harness pipeline: scenario discovery, candidate execution, scoring, and artifact output. Does not depend on any external services or models.",
+  "suite": "demo",
+  "input": {
+    "message": "Hello from GoblinBench demo scenario!",
+    "expected_behavior": "This scenario should always succeed with the noop runner."
+  },
+  "scoring": {
+    "scorers": ["noop"],
+    "parameters": {}
+  },
+  "timeout_seconds": 30
+}
