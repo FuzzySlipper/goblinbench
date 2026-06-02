@@ -82,4 +82,44 @@ public sealed class ScoringConfig
     /// <summary>Per-scorer parameter overrides.</summary>
     [JsonPropertyName("parameters")]
     public Dictionary<string, Dictionary<string, object?>> Parameters { get; init; } = new();
+
+    /// <summary>
+    /// Per-scorer pass/fail threshold. When a scorer produces a numeric score,
+    /// it is compared against this threshold. Default: 0.0 (any positive score passes).
+    /// </summary>
+    [JsonPropertyName("thresholds")]
+    public Dictionary<string, double> Thresholds { get; init; } = new();
+
+    /// <summary>
+    /// Configuration for LLM-judge scorers. Maps scorer ID to judge config
+    /// (model, prompt_version, temperature, etc.).
+    /// </summary>
+    [JsonPropertyName("judges")]
+    public Dictionary<string, JudgeConfig> Judges { get; init; } = new();
+}
+
+/// <summary>
+/// Configuration for an LLM judge scorer.
+/// </summary>
+public sealed class JudgeConfig
+{
+    /// <summary>Model to use as judge (e.g. "gpt-4o", "claude-sonnet-4").</summary>
+    [JsonPropertyName("model")]
+    public string? Model { get; init; }
+
+    /// <summary>Provider for the judge model.</summary>
+    [JsonPropertyName("provider")]
+    public string? Provider { get; init; }
+
+    /// <summary>Prompt template version identifier.</summary>
+    [JsonPropertyName("prompt_version")]
+    public string PromptVersion { get; init; } = "v1";
+
+    /// <summary>Temperature for judge calls (0.0 = deterministic).</summary>
+    [JsonPropertyName("temperature")]
+    public double Temperature { get; init; } = 0.0;
+
+    /// <summary>Max tokens for judge response.</summary>
+    [JsonPropertyName("max_tokens")]
+    public int MaxTokens { get; init; } = 1024;
 }

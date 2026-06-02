@@ -89,7 +89,13 @@ public static class Program
 
         var scorers = new List<IScorer>
         {
-            new NoOpScorer()
+            new NoOpScorer(),
+            new ExactDecisionScorer(),
+            new SchemaComplianceScorer(),
+            new LatencyScorer(),
+            new HeuristicTextScorer(),
+            new CommandScorer(),
+            new LlmJudgeScorer()
         };
 
         // Execute

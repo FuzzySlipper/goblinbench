@@ -160,6 +160,7 @@ public sealed class TraceEvent
 
 /// <summary>
 /// Score produced by a scorer for a candidate's result.
+/// Supports both deterministic and LLM-judge scoring with version tracking.
 /// </summary>
 public sealed class ScoreResult
 {
@@ -170,6 +171,13 @@ public sealed class ScoreResult
     /// <summary>Scorer display name.</summary>
     [JsonPropertyName("scorer_name")]
     public string ScorerName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Classification of the scoring method.
+    /// "deterministic", "heuristic", "command", "llm_judge", "human", "metadata".
+    /// </summary>
+    [JsonPropertyName("scoring_kind")]
+    public string ScoringKind { get; init; } = "deterministic";
 
     /// <summary>Whether the scorer completed successfully.</summary>
     [JsonPropertyName("success")]
@@ -190,6 +198,28 @@ public sealed class ScoreResult
     /// <summary>Human-readable explanation of the score.</summary>
     [JsonPropertyName("explanation")]
     public string? Explanation { get; init; }
+
+    /// <summary>
+    /// Concise one-line human summary suitable for run reports.
+    /// E.g. "PASS: decision matched expected 'retry_required' (1.0)".
+    /// </summary>
+    [JsonPropertyName("human_summary")]
+    public string? HumanSummary { get; init; }
+
+    /// <summary>
+    /// For LLM-judge scorers: the model used as judge (e.g. "gpt-4o").
+    /// Null for deterministic scorers.
+    /// </summary>
+    [JsonPropertyName("judge_model")]
+    public string? JudgeModel { get; init; }
+
+    /// <summary>
+    /// For LLM-judge scorers: the prompt version or template identifier
+    /// used for the judge evaluation. Enables reproducible scoring.
+    /// Null for deterministic scorers.
+    /// </summary>
+    [JsonPropertyName("judge_prompt_version")]
+    public string? JudgePromptVersion { get; init; }
 
     /// <summary>Arbitrary scorer-specific detail.</summary>
     [JsonPropertyName("detail")]
