@@ -24,7 +24,7 @@ public sealed class LlmJudgeScorer : IScorer
         RunContext context,
         CancellationToken ct = default)
     {
-        var judgeConfig = scenario.Scoring?.Judges.GetValueOrDefault(Id);
+        var judgeConfig = scenario.Scoring?.Judges.TryGetValue(Id, out var jc) == true ? jc : null;
         var parameters = GetParams(scenario);
 
         // For now, this is a placeholder that records judge identity.
@@ -78,5 +78,5 @@ public sealed class LlmJudgeScorer : IScorer
     }
 
     private Dictionary<string, object?> GetParams(Scenario scenario) =>
-        scenario.Scoring?.Parameters.GetValueOrDefault(Id) ?? new();
+        (scenario.Scoring?.Parameters.TryGetValue(Id, out var sp) == true ? sp : null) ?? new();
 }

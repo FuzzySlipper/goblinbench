@@ -132,10 +132,10 @@ public sealed class ExactDecisionScorer : IScorer
 
     private double GetThreshold(Scenario scenario, double defaultThreshold)
     {
-        var threshold = scenario.Scoring?.Thresholds.GetValueOrDefault(Id, defaultThreshold) ?? defaultThreshold;
+        var threshold = (scenario.Scoring?.Thresholds.TryGetValue(Id, out var th) == true ? th : defaultThreshold);
         return threshold;
     }
 
     private Dictionary<string, object?> GetParameters(Scenario scenario) =>
-        scenario.Scoring?.Parameters.GetValueOrDefault(Id, null) ?? new();
+        (scenario.Scoring?.Parameters.TryGetValue(Id, out var p) == true ? p : null) ?? new();
 }

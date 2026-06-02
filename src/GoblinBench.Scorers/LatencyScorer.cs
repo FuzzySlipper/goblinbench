@@ -81,8 +81,8 @@ public sealed class LatencyScorer : IScorer
     }
 
     private Dictionary<string, object?> GetParams(Scenario scenario) =>
-        scenario.Scoring?.Parameters.GetValueOrDefault(Id) ?? new();
+        (scenario.Scoring?.Parameters.TryGetValue(Id, out var sp) == true ? sp : null) ?? new();
 
     private double GetThreshold(Scenario scenario, double defaultThreshold) =>
-        scenario.Scoring?.Thresholds.GetValueOrDefault(Id, defaultThreshold) ?? defaultThreshold;
+        (scenario.Scoring?.Thresholds.TryGetValue(Id, out var th) == true ? th : defaultThreshold);
 }

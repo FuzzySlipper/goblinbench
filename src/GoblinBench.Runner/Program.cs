@@ -146,8 +146,13 @@ public static class Program
 
                     var candidateResult = await runner.RunAsync(scenario, candidate, context, ct);
 
-                    // Run scorers
-                    foreach (var scorer in scorers)
+                    // Run scorers — only those declared in the scenario's scoring config
+                    var declaredScorerIds = scenario.Scoring?.Scorers;
+                    var activeScorers = declaredScorerIds != null && declaredScorerIds.Count > 0
+                        ? scorers.Where(s => declaredScorerIds.Contains(s.Id, StringComparer.OrdinalIgnoreCase)).ToList()
+                        : scorers; // fallback: all scorers if none declared
+
+                    foreach (var scorer in activeScorers)
                     {
                         try
                         {
