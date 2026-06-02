@@ -36,8 +36,8 @@ public sealed class ExactDecisionScorer : IScorer
         }
 
         // Try to extract the decision from candidate output
-        object? actual = ExtractField(candidateResult,
-            parameters.TryGetValue("field", out var f) && f is string fieldName ? fieldName : "decision");
+        var fieldName = GetStringParam(parameters, "field") ?? "decision";
+        object? actual = ExtractField(candidateResult, fieldName);
 
         var expectedJson = JsonSerializer.Serialize(expected);
         var actualJson = actual != null ? JsonSerializer.Serialize(actual) : "null";
@@ -110,6 +110,17 @@ public sealed class ExactDecisionScorer : IScorer
         catch { /* not JSON-serializable, fall through */ }
 
         return source;
+    }
+
+    private static string? GetStringParam(Dictionary<string, object?> parameters, string key)
+    {
+        if (!parameters.TryGetValue(key, out var val) || val == null)
+            return null;
+        if (val is string s)
+            return s;
+        if (val is JsonElement je && je.ValueKind == JsonValueKind.String)
+            return je.GetString();
+        return val.ToString();
     }
 
     private static object? Normalise(object? value)
