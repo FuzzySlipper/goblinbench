@@ -30,17 +30,23 @@ public static class Program
         var runsRoot = Path.Combine(repoRoot, "runs");
         var candidatesFile = Path.Combine(repoRoot, "candidates.json");
 
-        // Parse basic filters
+        // Parse basic filters and overrides
         string? suiteFilter = null;
         string? scenarioFilter = null;
+        string? candidatesOverride = null;
         for (var i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--suite") suiteFilter = args[i + 1];
             if (args[i] == "--scenario") scenarioFilter = args[i + 1];
+            if (args[i] == "--candidates") candidatesOverride = args[i + 1];
         }
+        if (candidatesOverride != null)
+            candidatesFile = Path.IsPathRooted(candidatesOverride)
+                ? candidatesOverride
+                : Path.Combine(repoRoot, candidatesOverride);
 
-        // Generate run ID
-        var runId = $"run-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}"[..16];
+        // Generate a collision-safe run ID: timestamp + 8 hex chars from a GUID
+        var runId = $"run-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..8]}";
         var runDir = Path.Combine(runsRoot, runId);
 
         Console.WriteLine($"Run ID:   {runId}");
@@ -74,7 +80,7 @@ public static class Program
 
         // Load candidates
         var candidates = await LoadCandidatesAsync(candidatesFile);
-        Console.WriteLine($"Candidates: {candidates.Count}");
+        Console.WriteLine($"Candidates: {candidates.Count} (from {Path.GetFileName(candidatesFile)})");
         foreach (var c in candidates)
             Console.WriteLine($"  - {c.Id} ({c.Kind})");
 
@@ -208,6 +214,18 @@ public static class Program
                             JsonSerializer.Serialize(candidateResult.Scores, JsonOptions));
                     }
 
+                    // Write trace.jsonl — flushed centrally so all runners get it
+                    if (candidateResult.Trace.Count > 0)
+                    {
+                        var tracePath = context.GetCandidateTracePath(candidate.Id);
+                        var traceDir = Path.GetDirectoryName(tracePath);
+                        if (traceDir != null) Directory.CreateDirectory(traceDir);
+                        var traceLines = candidateResult.Trace
+                            .Select(t => JsonSerializer.Serialize(t, JsonOptions));
+                        await File.AppendAllTextAsync(tracePath,
+                            string.Join(Environment.NewLine, traceLines) + Environment.NewLine);
+                    }
+
                     scenarioResult.CandidateResults.Add(candidateResult);
                     Console.WriteLine(candidateResult.Success ? "OK" : "FAIL");
                 }
@@ -275,7 +293,9 @@ public static class Program
     {
         if (!File.Exists(path))
         {
-            // Return a default no-op candidate for demo purposes
+            Console.WriteLine($"Warning: {path} not found — using built-in no-op demo candidate.");
+            Console.WriteLine("  Create candidates.json at the repo root, or pass --candidates <path>.");
+            Console.WriteLine("  See docs/vision-suite-guide.md for candidate config examples.");
             return new List<CandidateConfig>
             {
                 new()

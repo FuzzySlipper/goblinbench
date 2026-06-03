@@ -50,7 +50,7 @@ public class SecretRedactionTests
     [Fact]
     public void RedactSecrets_NullInput_ReturnsNull()
     {
-        var result = OpenAiChatRunner.RedactSecrets(null!);
+        var result = OpenAiChatRunner.RedactSecrets(null);
         Assert.Null(result);
     }
 

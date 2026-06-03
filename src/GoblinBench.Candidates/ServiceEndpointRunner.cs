@@ -202,7 +202,7 @@ public sealed class ServiceEndpointRunner : ICandidateRunner
 
         var outputPath = context.GetCandidateOutputPath(candidate.Id);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        await File.WriteAllTextAsync(outputPath, rawResponse, ct);
+        await File.WriteAllTextAsync(outputPath, OpenAiChatRunner.RedactSecrets(rawResponse) ?? string.Empty, ct);
 
         if (parsedResponse != null)
         {
@@ -213,7 +213,8 @@ public sealed class ServiceEndpointRunner : ICandidateRunner
 
         if (!string.IsNullOrEmpty(error))
         {
-            await File.WriteAllTextAsync(Path.Combine(artifactDir, "error.txt"), error, ct);
+            await File.WriteAllTextAsync(Path.Combine(artifactDir, "error.txt"),
+                OpenAiChatRunner.RedactSecrets(error) ?? string.Empty, ct);
         }
     }
 }

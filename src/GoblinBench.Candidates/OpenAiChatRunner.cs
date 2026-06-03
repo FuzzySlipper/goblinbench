@@ -93,7 +93,7 @@ public sealed class OpenAiChatRunner : ICandidateRunner
             stopwatch.Stop();
 
             // Redact secrets from raw response before storing
-            rawResponse = RedactSecrets(rawResponse);
+            rawResponse = RedactSecrets(rawResponse) ?? string.Empty;
 
             trace.Add(new()
             {
@@ -300,7 +300,7 @@ public sealed class OpenAiChatRunner : ICandidateRunner
     /// <summary>
     /// Redact known secret patterns from a string before writing to artifacts.
     /// </summary>
-    public static string RedactSecrets(string text)
+    public static string? RedactSecrets(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return text;
