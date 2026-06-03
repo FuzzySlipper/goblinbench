@@ -21,6 +21,11 @@ public static class Program
     public static async Task<int> Main(string[] args)
     {
         Console.ResetColor();
+
+        // Dispatch to report subcommand if requested
+        if (args.Length > 0 && args[0].Equals("report", StringComparison.OrdinalIgnoreCase))
+            return await RunReportAsync(args[1..]);
+
         Console.WriteLine("=== GoblinBench Runner ===");
         Console.WriteLine();
 
@@ -272,6 +277,223 @@ public static class Program
         }
 
         return 0;
+    }
+
+    private static async Task<int> RunReportAsync(string[] args)
+    {
+        Console.WriteLine("=== GoblinBench Report ===");
+        Console.WriteLine();
+
+        // Parse: report <run...> [--suite <suite>] [--output <path>] [--den] [--den-project <id>]
+        var runArgs = new List<string>();
+        string? suiteFilter = null;
+        string? outputPath = null;
+        bool postToDen = false;
+        string denProject = "goblinbench";
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--suite" && i + 1 < args.Length) suiteFilter = args[++i];
+            else if (args[i] == "--output" && i + 1 < args.Length) outputPath = args[++i];
+            else if (args[i] == "--den") postToDen = true;
+            else if (args[i] == "--den-project" && i + 1 < args.Length) denProject = args[++i];
+            else if (!args[i].StartsWith("--")) runArgs.Add(args[i]);
+        }
+
+        if (runArgs.Count == 0)
+        {
+            // Default: use the most recent run in runs/
+            var repoRoot = ResolveRepoRoot();
+            var runsRoot = Path.Combine(repoRoot, "runs");
+            if (Directory.Exists(runsRoot))
+            {
+                var latest = Directory.EnumerateDirectories(runsRoot)
+                    .Where(d => File.Exists(Path.Combine(d, "run.json")))
+                    .OrderByDescending(d => d)
+                    .FirstOrDefault();
+                if (latest != null) runArgs.Add(latest);
+            }
+        }
+
+        if (runArgs.Count == 0)
+        {
+            Console.Error.WriteLine("Usage: goblinbench report <run-id-or-path> [...]" +
+                " [--suite <suite>] [--output <path>] [--den]");
+            return 1;
+        }
+
+        Console.WriteLine($"Loading {runArgs.Count} run(s)...");
+        var data = await ReportGenerator.LoadRunsAsync(runArgs, suiteFilter);
+
+        if (data.Candidates.Count == 0)
+        {
+            Console.Error.WriteLine("No candidate results found in the specified runs.");
+            return 1;
+        }
+
+        Console.WriteLine($"  {data.Scenarios.Count} scenario(s), {data.Candidates.Count} candidate(s)");
+        Console.WriteLine();
+
+        var markdown = ReportGenerator.RenderMarkdown(data);
+        var jsonReport = ReportGenerator.RenderJson(data);
+
+        // Write report files
+        var repoRootForOutput = ResolveRepoRoot();
+        var defaultDir = data.RunIds.Count == 1
+            ? Path.Combine(repoRootForOutput, "runs", data.RunIds[0])
+            : Path.Combine(repoRootForOutput, "runs");
+
+        var mdPath = outputPath != null
+            ? Path.ChangeExtension(outputPath, ".md")
+            : Path.Combine(defaultDir, "report.md");
+        var jsonPath = outputPath != null
+            ? Path.ChangeExtension(outputPath, ".json")
+            : Path.Combine(defaultDir, "report.json");
+
+        await File.WriteAllTextAsync(mdPath, markdown);
+        await File.WriteAllTextAsync(jsonPath, jsonReport);
+
+        Console.WriteLine($"Report written:");
+        Console.WriteLine($"  Markdown: {mdPath}");
+        Console.WriteLine($"  JSON:     {jsonPath}");
+        Console.WriteLine();
+        Console.Write(markdown);
+
+        // Den integration
+        if (postToDen)
+        {
+            Console.WriteLine();
+            Console.WriteLine("--- Posting to Den ---");
+            var posted = await PostReportToDenAsync(data, markdown, jsonReport, denProject);
+            if (posted) Console.WriteLine("Posted to Den.");
+            else Console.WriteLine("Den posting failed or skipped — report saved locally.");
+        }
+        else
+        {
+            Console.WriteLine();
+            Console.WriteLine("Tip: pass --den to store this report as a Den document.");
+        }
+
+        return 0;
+    }
+
+    private static async Task<bool> PostReportToDenAsync(
+        ReportData data, string markdown, string jsonReport, string denProject)
+    {
+        // Call the planner MCP server to store the report as a Den document.
+        // Uses the stateful HTTP transport: initialize → tools/call store_document.
+        const string plannerUrl = "http://192.168.1.10:5199/mcp?tool_profile=planner";
+
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+            // Initialize session
+            var initBody = JsonSerializer.Serialize(new
+            {
+                jsonrpc = "2.0", id = 1, method = "initialize",
+                @params = new
+                {
+                    protocolVersion = "2024-11-05",
+                    capabilities = new { },
+                    clientInfo = new { name = "goblinbench-reporter", version = "1.0" }
+                }
+            });
+
+            var initReq = new System.Net.Http.HttpRequestMessage(
+                System.Net.Http.HttpMethod.Post, plannerUrl)
+            {
+                Content = new System.Net.Http.StringContent(
+                    initBody, System.Text.Encoding.UTF8, "application/json")
+            };
+            initReq.Headers.TryAddWithoutValidation("Accept", "text/event-stream, application/json");
+
+            using var initResp = await http.SendAsync(initReq);
+            var sessionId = initResp.Headers.TryGetValues("Mcp-Session-Id", out var vals)
+                ? vals.First() : null;
+            if (sessionId == null)
+            {
+                Console.Error.WriteLine($"Den: init failed — no session ID in response ({(int)initResp.StatusCode})");
+                return false;
+            }
+
+            // Build slug and title
+            var suite = data.SuiteFilter ?? string.Join("-", data.RunIds.Take(2));
+            var slug = $"bench-report-{suite}-{DateTime.UtcNow:yyyyMMdd-HHmm}";
+            var title = data.SuiteFilter != null
+                ? $"Benchmark Report — {data.SuiteFilter} suite — {DateTime.UtcNow:yyyy-MM-dd}"
+                : $"Benchmark Report — {string.Join(", ", data.RunIds)} — {DateTime.UtcNow:yyyy-MM-dd}";
+
+            // Build summary section for the document (markdown is the full content)
+            var toolBody = JsonSerializer.Serialize(new
+            {
+                jsonrpc = "2.0", id = 2, method = "tools/call",
+                @params = new
+                {
+                    name = "store_document",
+                    arguments = new
+                    {
+                        project_id = denProject,
+                        slug,
+                        title,
+                        content = markdown,
+                        doc_type = "note",
+                        tags = new[] { "benchmark", "report", data.SuiteFilter ?? "multi-suite" }
+                            .Where(t => t != null).ToArray()
+                    }
+                }
+            });
+
+            var toolReq = new System.Net.Http.HttpRequestMessage(
+                System.Net.Http.HttpMethod.Post, plannerUrl)
+            {
+                Content = new System.Net.Http.StringContent(
+                    toolBody, System.Text.Encoding.UTF8, "application/json")
+            };
+            toolReq.Headers.TryAddWithoutValidation("Mcp-Session-Id", sessionId);
+            toolReq.Headers.TryAddWithoutValidation("Accept", "text/event-stream, application/json");
+
+            using var toolResp = await http.SendAsync(toolReq);
+            var toolRespBody = await toolResp.Content.ReadAsStringAsync();
+            var parsedJson = SseContent(toolRespBody);
+
+            using var doc = JsonDocument.Parse(parsedJson);
+            if (doc.RootElement.TryGetProperty("error", out var errProp))
+            {
+                Console.Error.WriteLine($"Den: tool call error — {errProp.GetRawText()[..Math.Min(120, errProp.GetRawText().Length)]}");
+                return false;
+            }
+            if (doc.RootElement.TryGetProperty("result", out var result))
+            {
+                if (result.TryGetProperty("isError", out var isErr) && isErr.GetBoolean())
+                {
+                    Console.Error.WriteLine("Den: store_document returned isError=true");
+                    return false;
+                }
+                Console.WriteLine($"  Stored as '{slug}' in project '{denProject}'");
+                Console.WriteLine($"  Title: {title}");
+                return true;
+            }
+            Console.Error.WriteLine($"Den: unexpected response shape — {parsedJson[..Math.Min(200, parsedJson.Length)]}");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Den posting error: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static string SseContent(string rawResponse)
+    {
+        // SSE responses start with "event: message\ndata: ..." — extract the data JSON
+        foreach (var line in rawResponse.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("data:"))
+                return trimmed["data:".Length..].Trim();
+        }
+        return rawResponse;
     }
 
     private static string ResolveRepoRoot()
