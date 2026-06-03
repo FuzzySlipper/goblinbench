@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\src\GoblinBench.Core\GoblinBench.Core.csproj" />
     <ProjectReference Include="..\..\src\GoblinBench.Candidates\GoblinBench.Candidates.csproj" />
     <ProjectReference Include="..\..\src\GoblinBench.Scorers\GoblinBench.Scorers.csproj" />
+    <ProjectReference Include="..\..\src\GoblinBench.Runner\GoblinBench.Runner.csproj" />
   </ItemGroup>
 
 </Project>
