@@ -22,5 +22,29 @@
       "temperature": 0.2,
       "max_tokens": 2048
     }
+  },
+  {
+    "id": "qwen3-35b-local",
+    "name": "Qwen3.6-35B-A3B (local)",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.6-35B-A3B-GGUF",
+    "provider": "local",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "gemma4-26b-local",
+    "name": "Gemma 4-26B-A4B-it (local)",
+    "kind": "OpenAiModel",
+    "model": "gemma-4-26B-A4B-it-GGUF",
+    "provider": "local",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 4096
+    }
   }
 ]

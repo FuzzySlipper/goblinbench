@@ -103,17 +103,38 @@ public sealed class OpenAiChatRunner : ICandidateRunner
             });
 
             object? parsedResponse = null;
+            string? modelText = null;
             string? error = null;
 
             if (response.IsSuccessStatusCode)
             {
-                try
+                // Extract the model's text from choices[0].message.content so scorers
+                // see the model output directly rather than the API envelope.
+                modelText = ExtractModelText(rawResponse);
+                if (modelText != null)
                 {
-                    parsedResponse = JsonSerializer.Deserialize<object>(rawResponse);
+                    // Strip markdown fences and extract the first JSON object/array.
+                    // Models like Gemma wrap output in ```json fences; others return bare JSON.
+                    var t = modelText.Trim();
+                    if (t.StartsWith("```"))
+                    {
+                        var fenceEnd = t.IndexOf('\n');
+                        var closeFence = t.LastIndexOf("```");
+                        if (fenceEnd >= 0 && closeFence > fenceEnd)
+                            t = t[(fenceEnd + 1)..closeFence].Trim();
+                    }
+                    var jsonStart = t.IndexOf('{');
+                    var jsonEnd = t.LastIndexOf('}');
+                    if (jsonStart >= 0 && jsonEnd > jsonStart)
+                    {
+                        try { parsedResponse = JsonSerializer.Deserialize<object>(t[jsonStart..(jsonEnd + 1)]); }
+                        catch { /* not JSON */ }
+                    }
                 }
-                catch
+                else
                 {
-                    // Raw response is stored; parsed may be null for non-JSON responses
+                    try { parsedResponse = JsonSerializer.Deserialize<object>(rawResponse); }
+                    catch { }
                 }
             }
             else
@@ -142,7 +163,7 @@ public sealed class OpenAiChatRunner : ICandidateRunner
                 Success = response.IsSuccessStatusCode,
                 Error = error,
                 DurationMs = stopwatch.ElapsedMilliseconds,
-                RawResponse = rawResponse,
+                RawResponse = modelText ?? rawResponse,
                 ParsedResponse = parsedResponse,
                 Output = new { model, status = response.IsSuccessStatusCode ? "ok" : "error" },
                 Trace = trace,
@@ -200,6 +221,26 @@ public sealed class OpenAiChatRunner : ICandidateRunner
         // Fallback: common env vars
         return Environment.GetEnvironmentVariable("OPENAI_API_KEY")
             ?? Environment.GetEnvironmentVariable("GOBLINBENCH_OPENAI_API_KEY");
+    }
+
+    private static string? ExtractModelText(string rawApiResponse)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(rawApiResponse);
+            if (doc.RootElement.TryGetProperty("choices", out var choices)
+                && choices.ValueKind == JsonValueKind.Array
+                && choices.GetArrayLength() > 0)
+            {
+                var first = choices[0];
+                if (first.TryGetProperty("message", out var msg)
+                    && msg.TryGetProperty("content", out var content)
+                    && content.ValueKind == JsonValueKind.String)
+                    return content.GetString();
+            }
+        }
+        catch { }
+        return null;
     }
 
     private static List<object> BuildMessages(Scenario scenario, CandidateConfig candidate)
