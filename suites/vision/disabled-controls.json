@@ -1,0 +1,46 @@
+{
+  "id": "vision.disabled-controls",
+  "version": "1.0.0",
+  "name": "Identify Enabled vs Disabled Controls",
+  "description": "Given a screenshot showing a form or control panel, identify which controls or regions appear enabled (interactive) versus disabled (grayed out or non-interactive).",
+  "suite": "vision",
+  "input": {
+    "prompt": "Analyze this screenshot. Identify any UI controls visible. Which controls appear enabled and interactive? Which appear disabled or grayed out? Describe the visual distinction you observe.",
+    "image_paths": ["fixtures/vision/disabled-controls.png"],
+    "scripted_response": {
+      "elements_found": ["control_panel", "enabled_controls", "disabled_controls", "left_panel", "right_panel"],
+      "answer": "The screenshot shows two distinct regions. The left half contains controls that appear enabled and interactive — they are rendered with normal brightness and full contrast. The right half contains controls that appear disabled or inactive — they are visibly dimmed or grayed out compared to the left side, indicating they are not currently interactive.",
+      "confidence": 0.85,
+      "hallucination_risk": "low",
+      "suggested_action": "interact with the enabled controls on the left side",
+      "actionability": 0.7
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "disabled",
+        "expected_elements": ["disabled_controls"],
+        "max_hallucination_risk": "medium"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}
