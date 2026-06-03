@@ -113,7 +113,7 @@ public sealed class VisionCandidateRunner : ICandidateRunner
             using var response = await _httpClient.SendAsync(
                 request, HttpCompletionOption.ResponseHeadersRead, ct);
             var rawResponse = OpenAiChatRunner.RedactSecrets(
-                await response.Content.ReadAsStringAsync(ct));
+                await response.Content.ReadAsStringAsync(ct)) ?? string.Empty;
             stopwatch.Stop();
 
             trace.Add(new()
@@ -170,7 +170,7 @@ public sealed class VisionCandidateRunner : ICandidateRunner
         {
             stopwatch.Stop();
             return Failure(candidate, model, baseUrl,
-                OpenAiChatRunner.RedactSecrets(ex.Message),
+                OpenAiChatRunner.RedactSecrets(ex.Message) ?? ex.Message,
                 stopwatch.ElapsedMilliseconds, trace);
         }
     }
