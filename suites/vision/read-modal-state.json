@@ -1,0 +1,46 @@
+{
+  "id": "vision.read-modal-state",
+  "version": "1.0.0",
+  "name": "Read Modal / Dialog State",
+  "description": "Given a screenshot containing a modal dialog, identify whether a modal or dialog is visible, describe its purpose, and determine whether it requires user interaction to dismiss.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Analyze this screenshot. Is a modal dialog or overlay visible? If yes: what is its purpose, what controls or buttons does it contain, and does it require user input to dismiss?",
+    "image_paths": ["fixtures/vision/modal-dialog.png"],
+    "scripted_response": {
+      "elements_found": ["modal_dialog", "overlay", "dialog_box", "background_dimmed"],
+      "answer": "Yes, a modal dialog box is visible in the center of the screen overlaid on a dimmed background. The dialog appears to be a confirmation or informational prompt requiring user interaction. It contains a dialog box region with buttons or controls, and the dimmed background indicates the rest of the UI is blocked until the dialog is dismissed.",
+      "confidence": 0.88,
+      "hallucination_risk": "low",
+      "suggested_action": "interact with the dialog to dismiss it",
+      "actionability": 0.9
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "modal",
+        "expected_elements": ["modal_dialog"],
+        "max_hallucination_risk": "medium"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}

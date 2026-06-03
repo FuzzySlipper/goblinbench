@@ -1,0 +1,45 @@
+{
+  "id": "vision.compare-ui-states",
+  "version": "1.0.0",
+  "name": "Compare Expected vs Actual UI State",
+  "description": "Given a screenshot showing two side-by-side UI panels, identify differences between the expected state (left) and actual state (right). Tests the model's ability to detect visual discrepancies in UI rendering.",
+  "suite": "vision",
+  "input": {
+    "prompt": "This screenshot shows two side-by-side panels: the left panel represents the expected UI state and the right panel represents the actual UI state. Describe any visible differences between the two sides. Are they identical or do they differ? If they differ, what is different?",
+    "image_paths": ["fixtures/vision/expected-ui.png"],
+    "scripted_response": {
+      "elements_found": ["left_panel", "right_panel", "green_region"],
+      "answer": "The screenshot shows a single uniform panel with a consistent green-tinted color across the entire surface. Both sides appear visually identical — there are no visible discrepancies, layout differences, or color mismatches between the left and right halves. The UI state appears to match the expected state.",
+      "confidence": 0.87,
+      "hallucination_risk": "low",
+      "suggested_action": null,
+      "actionability": 0.1
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "identical",
+        "max_hallucination_risk": "medium"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}

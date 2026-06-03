@@ -1,0 +1,46 @@
+{
+  "id": "vision.suggest-next-action",
+  "version": "1.0.0",
+  "name": "Suggest Next Click / Action from Screenshot",
+  "description": "Given a screenshot of an application, suggest the most likely next user interaction or action based on what is visible. Tests actionability of vision analysis output.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Analyze this screenshot. Based on what you can see, what is the most likely next action a user should take? Is there a highlighted button, navigation element, or call-to-action that suggests the natural next step?",
+    "image_paths": ["fixtures/vision/action-suggestion.png"],
+    "scripted_response": {
+      "elements_found": ["header_bar", "blue_banner", "action_area", "navigation_element"],
+      "answer": "The screenshot shows a prominent blue header or banner at the top of the screen, which typically indicates a navigation bar, primary action area, or call-to-action. The most likely next action is to interact with the blue banner/header area, as it is the most visually prominent element and appears to be the primary interactive region of the interface.",
+      "confidence": 0.82,
+      "hallucination_risk": "low",
+      "suggested_action": "click or tap the blue header/action area at the top",
+      "actionability": 0.85
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "blue",
+        "expected_elements": ["action_area"],
+        "max_hallucination_risk": "medium"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "suggested_action", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}

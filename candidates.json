@@ -10,5 +10,17 @@
     "name": "Scripted Deterministic Candidate",
     "kind": "Unknown",
     "cli_command": "scripted"
+  },
+  {
+    "id": "gpt-4o-vision",
+    "name": "GPT-4o Vision",
+    "kind": "OpenAiModel",
+    "model": "gpt-4o",
+    "provider": "openai",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 2048
+    }
   }
 ]

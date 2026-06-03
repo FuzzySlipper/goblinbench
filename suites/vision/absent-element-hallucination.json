@@ -1,0 +1,46 @@
+{
+  "id": "vision.absent-element-hallucination",
+  "version": "1.0.0",
+  "name": "Detect Hallucination About Absent Elements",
+  "description": "Given a clean, featureless screenshot with no error banners, dialogs, or special UI elements, verify the model does NOT fabricate elements that aren't there. Passing requires the model to correctly report the absence.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Analyze this screenshot carefully. Is there an error banner, warning notification, modal dialog, or any alert visible? Look closely at the top of the screen, the center, and corners. Describe exactly what you see.",
+    "image_paths": ["fixtures/vision/absent-element.png"],
+    "scripted_response": {
+      "elements_found": ["plain_background", "empty_ui"],
+      "answer": "No error banner, warning notification, modal dialog, or alert is visible in this screenshot. The screen shows a plain, clean light-gray background with no UI elements, banners, dialogs, or special indicators of any kind.",
+      "confidence": 0.95,
+      "hallucination_risk": "low",
+      "suggested_action": null,
+      "actionability": 0.0
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "no",
+        "forbidden_elements": ["error_banner", "modal", "dialog", "warning", "alert"],
+        "max_hallucination_risk": "low"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}

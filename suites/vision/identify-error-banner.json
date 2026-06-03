@@ -1,0 +1,46 @@
+{
+  "id": "vision.identify-error-banner",
+  "version": "1.0.0",
+  "name": "Identify Visible Error Banner",
+  "description": "Given a screenshot, determine whether a visible error or alert banner is present and describe its content. Tests the model's ability to detect error state indicators without hallucinating on clean UIs.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Analyze this screenshot. Is there a visible error banner, alert, or notification at the top of the screen? If yes, describe what it says and where it appears. If no, say so explicitly.",
+    "image_paths": ["fixtures/vision/error-banner.png"],
+    "scripted_response": {
+      "elements_found": ["error_banner", "red_banner", "notification_bar"],
+      "answer": "Yes, there is a visible red error banner at the top of the screen. It spans the full width and is displayed prominently in the header area, indicating an error or alert state.",
+      "confidence": 0.92,
+      "hallucination_risk": "low",
+      "suggested_action": null,
+      "actionability": 0.3
+    }
+  },
+  "scoring": {
+    "scorers": ["vision-correctness", "schema-compliance", "latency"],
+    "parameters": {
+      "vision-correctness": {
+        "expected_answer_contains": "error",
+        "expected_elements": ["error_banner"],
+        "max_hallucination_risk": "medium"
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["elements_found", "answer", "confidence", "hallucination_risk", "actionability"],
+          "properties": {
+            "elements_found": { "type": "array" },
+            "answer": { "type": "string" },
+            "confidence": { "type": "number" },
+            "hallucination_risk": { "type": "string" },
+            "actionability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-correctness": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 90
+}

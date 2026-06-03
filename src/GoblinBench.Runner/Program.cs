@@ -100,6 +100,7 @@ public static class Program
         var runners = new List<ICandidateRunner>
         {
             new ScriptedCandidateRunner(),
+            new VisionCandidateRunner(),
             new NoOpCandidateRunner(),
             new OpenAiChatRunner(),
             new HermesProfileRunner(),
@@ -116,7 +117,8 @@ public static class Program
             new HeuristicTextScorer(),
             new CommandScorer(),
             new LlmJudgeScorer(),
-            new OrchestratorDecisionScorer()
+            new OrchestratorDecisionScorer(),
+            new VisionCorrectnessScorer()
         };
 
         // Execute
