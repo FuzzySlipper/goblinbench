@@ -9,8 +9,21 @@
     "expected_behavior": "This scenario should always succeed with the noop runner."
   },
   "scoring": {
-    "scorers": ["noop"],
-    "parameters": {}
+    "scorers": ["noop", "heuristic-text", "latency", "exact-decision"],
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": ["TODO", "FIXME", "HACK"],
+        "required": []
+      },
+      "exact-decision": {
+        "field": "status",
+        "expected": "noop_ok"
+      }
+    },
+    "thresholds": {
+      "heuristic-text": 0.8,
+      "exact-decision": 0.5
+    }
   },
   "timeout_seconds": 30
 }

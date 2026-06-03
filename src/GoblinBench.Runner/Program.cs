@@ -30,6 +30,15 @@ public static class Program
         var runsRoot = Path.Combine(repoRoot, "runs");
         var candidatesFile = Path.Combine(repoRoot, "candidates.json");
 
+        // Parse basic filters
+        string? suiteFilter = null;
+        string? scenarioFilter = null;
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "--suite") suiteFilter = args[i + 1];
+            if (args[i] == "--scenario") scenarioFilter = args[i + 1];
+        }
+
         // Generate run ID
         var runId = $"run-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}"[..16];
         var runDir = Path.Combine(runsRoot, runId);
@@ -37,12 +46,20 @@ public static class Program
         Console.WriteLine($"Run ID:   {runId}");
         Console.WriteLine($"Suites:   {suitesRoot}");
         Console.WriteLine($"Runs:     {runsRoot}");
+        if (suiteFilter != null) Console.WriteLine($"Filter:   --suite {suiteFilter}");
+        if (scenarioFilter != null) Console.WriteLine($"Filter:   --scenario {scenarioFilter}");
         Console.WriteLine();
 
         // Discover scenarios
         Console.Write("Discovering scenarios... ");
-        var scenarios = await ScenarioDiscovery.DiscoverAsync(suitesRoot);
-        Console.WriteLine($"{scenarios.Count} found");
+        var allScenarios = await ScenarioDiscovery.DiscoverAsync(suitesRoot);
+        var scenarios = allScenarios
+            .Where(s => suiteFilter == null ||
+                        s.Suite.Equals(suiteFilter, StringComparison.OrdinalIgnoreCase))
+            .Where(s => scenarioFilter == null ||
+                        s.Id.Equals(scenarioFilter, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        Console.WriteLine($"{scenarios.Count} found (of {allScenarios.Count} total)");
 
         if (scenarios.Count == 0)
         {
@@ -78,14 +95,28 @@ public static class Program
         Directory.CreateDirectory(Path.Combine(runDir, "candidates"));
 
         // Resolve runners and scorers
+        // ScriptedCandidateRunner must come before NoOpCandidateRunner: NoOp matches
+        // any Kind=Unknown candidate, which would otherwise shadow the scripted runner.
         var runners = new List<ICandidateRunner>
         {
-            new NoOpCandidateRunner()
+            new ScriptedCandidateRunner(),
+            new NoOpCandidateRunner(),
+            new OpenAiChatRunner(),
+            new HermesProfileRunner(),
+            new ServiceEndpointRunner(),
+            new ExternalCliRunner()
         };
 
         var scorers = new List<IScorer>
         {
-            new NoOpScorer()
+            new NoOpScorer(),
+            new ExactDecisionScorer(),
+            new SchemaComplianceScorer(),
+            new LatencyScorer(),
+            new HeuristicTextScorer(),
+            new CommandScorer(),
+            new LlmJudgeScorer(),
+            new OrchestratorDecisionScorer()
         };
 
         // Execute
@@ -136,8 +167,13 @@ public static class Program
 
                     var candidateResult = await runner.RunAsync(scenario, candidate, context, ct);
 
-                    // Run scorers
-                    foreach (var scorer in scorers)
+                    // Run scorers — only those declared in the scenario's scoring config
+                    var declaredScorerIds = scenario.Scoring?.Scorers;
+                    var activeScorers = declaredScorerIds != null && declaredScorerIds.Count > 0
+                        ? scorers.Where(s => declaredScorerIds.Contains(s.Id, StringComparer.OrdinalIgnoreCase)).ToList()
+                        : scorers; // fallback: all scorers if none declared
+
+                    foreach (var scorer in activeScorers)
                     {
                         try
                         {

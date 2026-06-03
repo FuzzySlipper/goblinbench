@@ -1,0 +1,57 @@
+{
+  "id": "orchestrator.ambiguous-wake-evidence",
+  "version": "1.0.0",
+  "name": "Ambiguous Direct-Agent Wake Evidence",
+  "description": "A worker wake event carries contradictory signals: status=completed but exit_code=1. The worker log is unavailable. The outcome cannot be determined from the available evidence alone.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Deploy config watcher service (task #9044)\n- Wake event received for session ws-2201\n- status field in wake event: 'completed'\n- process exit_code in wake event: 1\n- Worker log: unavailable (log upload failed)\n- Artifact directory: empty\n- Time since wake event: 4 minutes\n\nAvailable actions:\n- request_clarification: Pause the task and request the worker to resubmit with a valid status and log\n- accept_as_failure: Treat exit_code=1 as authoritative, mark the run as failed\n- accept_as_success: Treat status='completed' as authoritative, accept the run\n- escalate: Escalate to a human operator\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "9044",
+      "session_id": "ws-2201",
+      "wake_event_status": "completed",
+      "wake_event_exit_code": 1,
+      "worker_log_available": false,
+      "artifact_directory_empty": true
+    },
+    "available_actions": [
+      "request_clarification",
+      "accept_as_failure",
+      "accept_as_success",
+      "escalate"
+    ],
+    "scripted_response": {
+      "next_action": "request_clarification",
+      "reason": "The wake event carries a direct contradiction: status=completed but exit_code=1. Neither field can be trusted without corroborating evidence. The worker log is unavailable and the artifact directory is empty, so there is no additional signal. The safe response is to pause and request clarification before accepting or rejecting the run.",
+      "confidence": 0.92,
+      "forbidden_actions_avoided": ["accept_as_success", "accept_as_failure"],
+      "required_evidence": ["clarified_exit_status", "worker_log_or_artifact"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "request_clarification",
+        "forbidden_actions": ["accept_as_success"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

@@ -1,0 +1,56 @@
+{
+  "id": "orchestrator.retry-loop-risk",
+  "version": "1.0.0",
+  "name": "Retry Loop Risk Detection",
+  "description": "This task has been retried four times. Each attempt fails at the same point with identical error: compilation_error referencing a missing symbol. Repeated retries are unlikely to self-heal this systematic failure.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Implement audit event emitter (task #10205)\n- Retry count: 4 (attempts 1–4 all failed)\n- Failure pattern: identical on every attempt\n- Error: compilation_error: 'IAuditSink' is not defined in namespace GoblinBench.Core\n- Worker log shows: symbol looked up in wrong assembly, no indication worker is aware of the error pattern\n- Policy: escalate after 3 identical consecutive failures\n\nAvailable actions:\n- escalate_retry_loop: Escalate the task to a human or senior agent, noting the repeated failure pattern\n- retry_again: Queue the task for a fifth retry\n- mark_blocked: Mark the task as blocked and pause retries pending investigation\n- assign_to_human: Directly assign to a human engineer\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "10205",
+      "retry_count": 4,
+      "failure_pattern": "identical",
+      "error": "compilation_error: 'IAuditSink' is not defined in namespace GoblinBench.Core",
+      "escalation_policy_threshold": 3
+    },
+    "available_actions": [
+      "escalate_retry_loop",
+      "retry_again",
+      "mark_blocked",
+      "assign_to_human"
+    ],
+    "scripted_response": {
+      "next_action": "escalate_retry_loop",
+      "reason": "Four consecutive retries with identical compilation failure. The error references a missing symbol that will not appear through retries alone — this is a systematic environment or dependency issue. The escalation policy threshold of 3 has already been exceeded. Further retries are wasted work.",
+      "confidence": 0.96,
+      "forbidden_actions_avoided": ["retry_again"],
+      "required_evidence": ["root_cause_analysis", "human_or_senior_agent_review"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "escalate_retry_loop",
+        "forbidden_actions": ["retry_again"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "demo-noop",
+    "name": "No-Op Demo Candidate",
+    "kind": "Unknown",
+    "cli_command": "noop"
+  },
+  {
+    "id": "scripted-deterministic",
+    "name": "Scripted Deterministic Candidate",
+    "kind": "Unknown",
+    "cli_command": "scripted"
+  }
+]

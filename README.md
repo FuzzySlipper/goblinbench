@@ -41,13 +41,51 @@ A **Runner** prepares fixtures, invokes the candidate, collects output/traces/ar
 ### Scorer
 
 A **Scorer** evaluates candidate output against expected behavior. Scorers are pluggable and can include:
-- Exact/structured decision matching
-- Test/build result validation (`dotnet test`, Playwright)
-- Static heuristics (TODO/FIXME/HACK markers)
-- Rubric/LLM judge evaluation
-- Latency/cost/schema compliance
-- Visual analysis
-- Human override
+
+| Scorer | ID | Kind | Description |
+|---|---|---|---|
+| Exact Decision | `exact-decision` | deterministic | Matches candidate output fields against expected values |
+| Schema Compliance | `schema-compliance` | deterministic | Validates output against a JSON schema (required fields, types) |
+| Heuristic Text | `heuristic-text` | heuristic | Checks for forbidden markers (TODO, FIXME, HACK) and required patterns |
+| Command / Test | `command` | command | Shells out to deterministic commands, checks exit codes and stdout |
+| Latency / Cost | `latency` | metadata | Records duration and estimates cost from pricing config |
+| LLM / Rubric Judge | `llm-judge` | llm_judge | Placeholder for LLM-based evaluation with judge model/prompt version tracking |
+
+#### Deterministic vs LLM-judge scoring
+
+- **Deterministic scorers** (`exact-decision`, `schema-compliance`, `command`, `heuristic-text`, `latency`) produce reproducible results without external API calls. Use these for CI-aligned, fast, cost-free evaluation.
+- **LLM-judge scorers** (`llm-judge`) use an external model to evaluate qualitative aspects. Always record the judge model and prompt version in the score result for reproducibility.
+
+#### Tracking judge model and prompt version
+
+When using an LLM judge, configure it in the scenario's scoring config:
+
+```json
+{
+  "scoring": {
+    "scorers": ["llm-judge"],
+    "judges": {
+      "llm-judge": {
+        "model": "gpt-4o",
+        "provider": "openai",
+        "prompt_version": "v2",
+        "temperature": 0.0
+      }
+    }
+  }
+}
+```
+
+The score result records `judge_model` and `judge_prompt_version` so every evaluation is traceable.
+
+#### Score result fields
+
+Every score includes:
+- `scoring_kind` — classification: `deterministic`, `heuristic`, `command`, `llm_judge`, `human`, `metadata`
+- `score` — numeric score (higher is better)
+- `passed` — whether the score meets the configured threshold
+- `human_summary` — concise one-line summary for reports
+- `judge_model` / `judge_prompt_version` — for LLM judges only
 
 ## Project layout
 

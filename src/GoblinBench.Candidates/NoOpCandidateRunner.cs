@@ -66,8 +66,15 @@ public sealed class NoOpCandidateRunner : ICandidateRunner
             CandidateId = candidate.Id,
             CandidateName = candidate.Name,
             CandidateKind = candidate.Kind,
+            ModelIdentity = new ModelIdentity
+            {
+                Model = "noop",
+                Provider = "goblinbench",
+                DisplayName = "No-Op Runner"
+            },
             Success = true,
             DurationMs = durationMs,
+            RawResponse = JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true }),
             Output = output,
             Trace = new List<TraceEvent>
             {
