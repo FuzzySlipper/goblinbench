@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello GoblinBench</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #f5f5f5; }
+    h1 { font-size: 1.2rem; color: #333; margin: 0 0 16px; }
+    .form { display: flex; gap: 8px; margin-bottom: 16px; }
+    input[type="text"] {
+      flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px;
+      font-size: 1rem;
+    }
+    button {
+      padding: 8px 16px; background: #0066cc; color: #fff;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;
+    }
+    button:hover { background: #0055bb; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #echo-output {
+      padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px;
+      min-height: 40px; color: #333; font-size: 1rem;
+    }
+    #echo-output:empty::before { content: "Echo will appear here…"; color: #999; }
+    .status { font-size: 0.8rem; color: #888; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Hello GoblinBench</h1>
+  <div class="form">
+    <input
+      type="text"
+      id="input-field"
+      data-testid="input-field"
+      aria-label="Message input"
+      role="textbox"
+      placeholder="Type a message…"
+    />
+    <button
+      id="submit-button"
+      data-testid="submit-button"
+      aria-label="Submit message"
+    >Submit</button>
+  </div>
+  <div
+    id="echo-output"
+    data-testid="echo-output"
+    role="status"
+    aria-live="polite"
+    aria-label="Echo output"
+  ></div>
+  <div class="status" id="status-line" data-testid="status-line" aria-label="Status"></div>
+
+  <script>
+    const input = document.getElementById('input-field');
+    const button = document.getElementById('submit-button');
+    const echoOutput = document.getElementById('echo-output');
+    const statusLine = document.getElementById('status-line');
+
+    function setStatus(msg) { statusLine.textContent = msg; }
+
+    button.addEventListener('click', () => {
+      const text = input.value.trim();
+      if (!text) return;
+      echoOutput.textContent = text;
+      input.value = '';
+      setStatus('Echo displayed at ' + new Date().toLocaleTimeString());
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') button.click();
+    });
+
+    // Harness integration
+    if (window.harness) {
+      window.harness.ready(() => setStatus('Harness ready'));
+      window.harness.onReset((seed) => {
+        echoOutput.textContent = '';
+        input.value = '';
+        setStatus('State reset' + (seed?.note ? ': ' + seed.note : ''));
+      });
+    }
+  </script>
+</body>
+</html>

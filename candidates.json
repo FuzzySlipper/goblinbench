@@ -24,6 +24,12 @@
     }
   },
   {
+    "id": "electron-scripted",
+    "name": "Scripted Electron Runner (deterministic)",
+    "kind": "Unknown",
+    "cli_command": "playwright-electron"
+  },
+  {
     "id": "coding-scripted",
     "name": "Scripted Coding Candidate (correct_patch.json)",
     "kind": "Unknown",

@@ -113,6 +113,7 @@ public static class Program
         {
             new ScriptedCandidateRunner(),
             new CodingCandidateRunner(),
+            new ElectronCandidateRunner(),
             new VisionCandidateRunner(),
             new NoOpCandidateRunner(),
             new OpenAiChatRunner(),
@@ -132,7 +133,8 @@ public static class Program
             new LlmJudgeScorer(),
             new OrchestratorDecisionScorer(),
             new VisionCorrectnessScorer(),
-            new CodingTestScorer()
+            new CodingTestScorer(),
+            new ElectronFlowScorer()
         };
 
         // Execute

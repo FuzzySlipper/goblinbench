@@ -1,0 +1,79 @@
+{
+  "id": "electron.native-dialog-save",
+  "version": "1.0.0",
+  "name": "Native Save Dialog — FlaUI Verification",
+  "description": "Tests that the app's File > Save As… action opens a native OS save dialog and completes successfully. Requires FlaUI/UIA (Windows VM only). On Linux, all FlaUI steps are skipped — run this on gui-lab.",
+  "suite": "electron",
+  "input": {
+    "fixture": "hello-electron",
+    "layers": ["playwright", "flaui"],
+    "seed_state": { "document": { "content": "test document content" } },
+    "flow": [
+      {
+        "step": "launch",
+        "profile": "clean",
+        "window": { "width": 1280, "height": 800 }
+      },
+      {
+        "step": "wait_ready",
+        "selector": "[data-testid='menu-file']",
+        "timeout_ms": 5000
+      },
+      {
+        "step": "ipc_send",
+        "channel": "harness:load-document",
+        "data": { "content": "test document content" }
+      },
+      {
+        "step": "click",
+        "selector": "[data-testid='menu-file']"
+      },
+      {
+        "step": "click",
+        "selector": "[data-testid='menu-save-as']"
+      },
+      {
+        "step": "native_dialog",
+        "layer": "flaui",
+        "type": "save_file",
+        "filename": "goblinbench-test-output.txt",
+        "timeout_ms": 10000
+      },
+      {
+        "step": "screenshot",
+        "label": "after_save"
+      },
+      {
+        "step": "vision_assert",
+        "screenshot": "after_save",
+        "prompt": "Is there a success confirmation or the document title updated to indicate it was saved?",
+        "expected_answer_contains": "save"
+      }
+    ],
+    "scripted_response": {
+      "steps_completed": 8,
+      "steps_skipped": 1,
+      "skipped_steps": [{ "step": "native_dialog", "reason": "flaui not available on this host" }],
+      "screenshots": ["after_save.png"],
+      "final_state": "saved"
+    }
+  },
+  "scoring": {
+    "scorers": ["electron-flow", "vision-correctness", "latency"],
+    "parameters": {
+      "electron-flow": {
+        "expected_final_state": "saved",
+        "required_steps": ["launch", "ipc_send", "screenshot"],
+        "optional_layers": ["flaui"]
+      },
+      "vision-correctness": {
+        "expected_answer_contains": "save"
+      }
+    },
+    "thresholds": {
+      "electron-flow": 0.8,
+      "vision-correctness": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}
