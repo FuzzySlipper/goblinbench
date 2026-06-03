@@ -24,6 +24,12 @@
     }
   },
   {
+    "id": "coding-scripted",
+    "name": "Scripted Coding Candidate (correct_patch.json)",
+    "kind": "Unknown",
+    "cli_command": "coding-scripted"
+  },
+  {
     "id": "qwen3-35b-local",
     "name": "Qwen3.6-35B-A3B (local)",
     "kind": "OpenAiModel",

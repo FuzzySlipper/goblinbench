@@ -93,6 +93,7 @@ public static class Program
             StartedAt = DateTime.UtcNow,
             RunDirectory = runDir,
             RunsRoot = runsRoot,
+            RepoRoot = repoRoot,
             Label = $"CLI run {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
         };
 
@@ -106,6 +107,7 @@ public static class Program
         var runners = new List<ICandidateRunner>
         {
             new ScriptedCandidateRunner(),
+            new CodingCandidateRunner(),
             new VisionCandidateRunner(),
             new NoOpCandidateRunner(),
             new OpenAiChatRunner(),
@@ -124,7 +126,8 @@ public static class Program
             new CommandScorer(),
             new LlmJudgeScorer(),
             new OrchestratorDecisionScorer(),
-            new VisionCorrectnessScorer()
+            new VisionCorrectnessScorer(),
+            new CodingTestScorer()
         };
 
         // Execute
