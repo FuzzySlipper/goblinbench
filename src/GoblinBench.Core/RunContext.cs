@@ -24,6 +24,13 @@ public sealed class RunContext
     [JsonPropertyName("runs_root")]
     public string RunsRoot { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Absolute path to the repository root. Set by the runner CLI; used by
+    /// runners that need to locate fixtures relative to the repo (e.g. CodingCandidateRunner).
+    /// </summary>
+    [JsonPropertyName("repo_root")]
+    public string? RepoRoot { get; init; }
+
     /// <summary>User-supplied run label for identification.</summary>
     [JsonPropertyName("label")]
     public string? Label { get; init; }
