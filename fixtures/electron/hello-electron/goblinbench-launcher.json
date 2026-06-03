@@ -1,0 +1,17 @@
+{
+  "electron_path": "node_modules/.bin/electron",
+  "app_entry": ".",
+  "test_mode_args": ["--test-mode", "--no-sandbox"],
+  "window_size": { "width": 800, "height": 600 },
+  "ready_signal": { "type": "ipc", "channel": "harness:ready" },
+  "stable_selectors": {
+    "input": "[data-testid='input-field']",
+    "submit": "[data-testid='submit-button']",
+    "echo": "[data-testid='echo-output']",
+    "status": "[data-testid='status-line']"
+  },
+  "platform_notes": {
+    "linux": "Playwright Electron only. No native dialogs.",
+    "windows": "Full stack: Playwright + FlaUI/UIA + Windows-MCP."
+  }
+}

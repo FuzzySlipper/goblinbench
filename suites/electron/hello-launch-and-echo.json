@@ -1,0 +1,70 @@
+{
+  "id": "electron.hello-launch-and-echo",
+  "version": "1.0.0",
+  "name": "Hello Electron — Launch, Type, and Echo",
+  "description": "Smoke test for the Electron Agent-Testability Contract: launch the hello-electron fixture in test mode, type a message into the input, submit it, and verify the echo appears. Exercises the Playwright layer only (no FlaUI/Windows-MCP required). Suitable for Linux CI.",
+  "suite": "electron",
+  "input": {
+    "fixture": "hello-electron",
+    "layers": ["playwright"],
+    "seed_state": {},
+    "flow": [
+      {
+        "step": "launch",
+        "profile": "clean",
+        "window": { "width": 800, "height": 600 }
+      },
+      {
+        "step": "wait_ready",
+        "selector": "[data-testid='input-field']",
+        "timeout_ms": 5000
+      },
+      {
+        "step": "screenshot",
+        "label": "initial_state"
+      },
+      {
+        "step": "click",
+        "selector": "[data-testid='input-field']"
+      },
+      {
+        "step": "type",
+        "selector": "[data-testid='input-field']",
+        "text": "goblinbench test message"
+      },
+      {
+        "step": "click",
+        "selector": "[data-testid='submit-button']"
+      },
+      {
+        "step": "wait_selector",
+        "selector": "[data-testid='echo-output']",
+        "timeout_ms": 3000
+      },
+      {
+        "step": "screenshot",
+        "label": "after_echo"
+      }
+    ],
+    "scripted_response": {
+      "steps_completed": 8,
+      "steps_skipped": 0,
+      "screenshots": ["initial_state.png", "after_echo.png"],
+      "final_state": "echo_displayed",
+      "echo_text": "goblinbench test message"
+    }
+  },
+  "scoring": {
+    "scorers": ["electron-flow", "latency"],
+    "parameters": {
+      "electron-flow": {
+        "expected_final_state": "echo_displayed",
+        "required_steps": ["launch", "type", "screenshot"]
+      }
+    },
+    "thresholds": {
+      "electron-flow": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

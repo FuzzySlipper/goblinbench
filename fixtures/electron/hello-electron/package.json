@@ -1,0 +1,14 @@
+{
+  "name": "goblinbench-hello-electron",
+  "version": "1.0.0",
+  "description": "Minimal GoblinBench-testable Electron fixture honouring the Agent-Testability Contract.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test-mode": "electron . --test-mode",
+    "install-electron": "npm install --save-dev electron@latest"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0"
+  }
+}
