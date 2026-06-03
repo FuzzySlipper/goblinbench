@@ -1,0 +1,57 @@
+{
+  "id": "orchestrator.malformed-completion-packet",
+  "version": "1.0.0",
+  "name": "Malformed Worker Completion Packet",
+  "description": "The worker emitted a completion event but the packet is missing required fields: head_commit and artifacts_path. The schema validator flagged it before delivery to the orchestrator.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Migrate cache layer to Redis (task #6030)\n- Received worker completion event for session ws-8812\n- Packet validation result: FAILED\n- Missing required fields: head_commit, artifacts_path\n- Present fields: task_id, worker_id, status=completed, timestamp\n- Worker is still live (session active)\n\nAvailable actions:\n- reject_malformed_completion: Reject the packet, notify the worker to resubmit with all required fields\n- accept_completion_anyway: Accept the partial packet and infer missing fields from context\n- request_resubmit: Ask the worker to resubmit the completion packet with missing fields filled\n- escalate: Escalate to human operator\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "6030",
+      "session_id": "ws-8812",
+      "packet_status": "validation_failed",
+      "missing_fields": ["head_commit", "artifacts_path"],
+      "present_fields": ["task_id", "worker_id", "status", "timestamp"],
+      "worker_session_active": true
+    },
+    "available_actions": [
+      "reject_malformed_completion",
+      "accept_completion_anyway",
+      "request_resubmit",
+      "escalate"
+    ],
+    "scripted_response": {
+      "next_action": "reject_malformed_completion",
+      "reason": "The completion packet fails schema validation: head_commit and artifacts_path are required for traceability and artifact linkage. Accepting a partial packet would create an unverifiable completion record. Since the worker session is still active, rejection with resubmission request is the correct path.",
+      "confidence": 0.97,
+      "forbidden_actions_avoided": ["accept_completion_anyway"],
+      "required_evidence": ["valid_completion_packet_with_head_commit_and_artifacts_path"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "reject_malformed_completion",
+        "forbidden_actions": ["accept_completion_anyway"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

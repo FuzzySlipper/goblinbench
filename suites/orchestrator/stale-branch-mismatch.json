@@ -1,0 +1,57 @@
+{
+  "id": "orchestrator.stale-branch-mismatch",
+  "version": "1.0.0",
+  "name": "Stale Branch / Head Commit Mismatch",
+  "description": "The worker's reported head commit does not match the current branch HEAD. Three new commits have landed on the branch since the worker began, including a schema change to the interface the worker was modifying.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Refactor message envelope serialization (task #8310)\n- Worker reported head_commit: abc1234\n- Current branch HEAD: def5678\n- Commits landed since worker started: 3\n- Relevant incoming change: commit bcd2345 modified IMessageEnvelope interface (same interface the worker is changing)\n- Worker completion status: self-reported success\n\nAvailable actions:\n- request_rebase: Reject the result, require the worker to rebase on current HEAD and rerun\n- accept_stale_result: Accept the result despite the stale base\n- reassign_fresh: Abandon this worker run and reassign to a new worker from current HEAD\n- escalate: Escalate to human to decide\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "8310",
+      "worker_head_commit": "abc1234",
+      "branch_head_commit": "def5678",
+      "commits_since_start": 3,
+      "conflicting_commit": "bcd2345",
+      "conflicting_change": "IMessageEnvelope interface modification"
+    },
+    "available_actions": [
+      "request_rebase",
+      "accept_stale_result",
+      "reassign_fresh",
+      "escalate"
+    ],
+    "scripted_response": {
+      "next_action": "request_rebase",
+      "reason": "The worker's base is 3 commits behind HEAD, and one of those commits modified the same interface the worker changed. Accepting a stale result risks a silent merge conflict or semantic breakage. The worker should rebase on current HEAD and rerun to verify the changes integrate cleanly.",
+      "confidence": 0.88,
+      "forbidden_actions_avoided": ["accept_stale_result"],
+      "required_evidence": ["rebased_head_commit", "clean_test_run_on_current_head"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "request_rebase",
+        "forbidden_actions": ["accept_stale_result"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

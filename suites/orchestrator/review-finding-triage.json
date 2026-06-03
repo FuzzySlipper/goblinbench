@@ -1,0 +1,59 @@
+{
+  "id": "orchestrator.review-finding-triage",
+  "version": "1.0.0",
+  "name": "Review Finding Triage: Block vs Follow-Up",
+  "description": "A code reviewer flagged a naming convention violation in a utility function. The violation has no functional impact. The question is whether this warrants blocking the PR or should become a follow-up cleanup task.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Add connection pool warmup helper (task #11400)\n- Worker submitted PR #102 and marked task complete\n- Reviewer finding: variable names in WarmupHelper.Run() use camelCase instead of the project's snake_case convention\n- Finding severity: style (non-functional)\n- Finding category: convention_violation\n- Reviewer recommendation: non-blocking, can be addressed separately\n- No functional, correctness, or security issues found in review\n\nAvailable actions:\n- create_followup_task: Accept the PR and create a separate follow-up task for the naming cleanup\n- block_task: Reject the PR and require the worker to fix the naming before merging\n- approve_pr: Accept the PR as-is with no follow-up\n- request_immediate_fix: Ask the worker to fix naming in the current PR before it can be merged\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "11400",
+      "pr_number": 102,
+      "finding_severity": "style",
+      "finding_category": "convention_violation",
+      "functional_impact": false,
+      "reviewer_recommendation": "non-blocking",
+      "correctness_issues": false,
+      "security_issues": false
+    },
+    "available_actions": [
+      "create_followup_task",
+      "block_task",
+      "approve_pr",
+      "request_immediate_fix"
+    ],
+    "scripted_response": {
+      "next_action": "create_followup_task",
+      "reason": "The finding is a style-only naming convention violation with no functional, correctness, or security impact. The reviewer explicitly recommends non-blocking treatment. Blocking delivery over a pure style issue would delay value unnecessarily. A follow-up cleanup task captures the work without blocking the current PR.",
+      "confidence": 0.91,
+      "forbidden_actions_avoided": ["block_task", "request_immediate_fix"],
+      "required_evidence": ["followup_task_created"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "create_followup_task",
+        "forbidden_actions": ["block_task"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

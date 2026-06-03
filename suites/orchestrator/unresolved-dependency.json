@@ -1,0 +1,57 @@
+{
+  "id": "orchestrator.unresolved-dependency",
+  "version": "1.0.0",
+  "name": "Unresolved Dependency Under Queue Pressure",
+  "description": "Task B has a declared dependency on Task A which is still in_progress. The task queue has significant backlog. The question is whether queue pressure justifies bypassing the dependency.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task B: Integrate notification dispatch (task #7201) — ready to assign\n- Task A: Implement notification event schema (task #7198) — status=in_progress, assigned to worker w-44\n- Declared dependency: task #7201 blockedBy task #7198\n- Task A estimated completion: 2 hours remaining\n- Queue backlog: 14 hours\n- Risk if bypassed: Task B worker may implement against an unstable schema that changes when Task A completes\n\nAvailable actions:\n- hold_for_dependency: Keep Task B in the queue until Task A completes\n- bypass_dependency: Assign Task B now despite the unresolved dependency\n- escalate_dependency: Escalate to a human to decide whether to bypass\n- assign_anyway: Assign Task B and notify the worker of the dependency risk\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "7201",
+      "blocked_by_task_id": "7198",
+      "blocking_task_status": "in_progress",
+      "blocking_task_eta_hours": 2,
+      "queue_backlog_hours": 14,
+      "bypass_risk": "schema_instability"
+    },
+    "available_actions": [
+      "hold_for_dependency",
+      "bypass_dependency",
+      "escalate_dependency",
+      "assign_anyway"
+    ],
+    "scripted_response": {
+      "next_action": "hold_for_dependency",
+      "reason": "Task A is 2 hours from completion. Bypassing the dependency risks the downstream worker building against an unstable schema, causing rework that would exceed the 2-hour wait. Queue backlog of 14 hours does not justify the rework risk of a schema mismatch.",
+      "confidence": 0.88,
+      "forbidden_actions_avoided": ["bypass_dependency", "assign_anyway"],
+      "required_evidence": ["task_7198_completion"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "hold_for_dependency",
+        "forbidden_actions": ["bypass_dependency"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}

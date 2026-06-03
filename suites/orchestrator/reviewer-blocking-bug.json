@@ -1,0 +1,57 @@
+{
+  "id": "orchestrator.reviewer-blocking-bug",
+  "version": "1.0.0",
+  "name": "Reviewer Reports a Blocking Bug",
+  "description": "A code reviewer has marked the PR with a blocking finding: null dereference on a critical hot path. The reviewer's verdict is 'block' and the finding is categorised as severity=critical.",
+  "suite": "orchestrator",
+  "input": {
+    "prompt": "You are an orchestrator for a distributed agent workflow system. Based on the following context, choose the next action and provide your reasoning.\n\nContext:\n- Task: Add channel message deduplication (task #5102)\n- Worker submitted PR #88 and marked task complete\n- Reviewer verdict: block\n- Reviewer finding: NullReferenceException possible in ChannelRouter.Dispatch() when envelope.Headers is null — severity=critical, path=hot\n- Current PR state: open, review_required\n\nAvailable actions:\n- block_task: Reject the completion, reopen the task, and require the worker to fix the critical bug\n- create_followup: Accept the PR and create a follow-up task for the bug\n- approve_pr: Override the reviewer and merge the PR as-is\n- reassign_worker: Reassign the task to a different worker without blocking\n\nRespond with a JSON object:\n{\n  \"next_action\": \"...\",\n  \"reason\": \"...\",\n  \"confidence\": 0.0,\n  \"forbidden_actions_avoided\": [],\n  \"required_evidence\": []\n}",
+    "context": {
+      "task_id": "5102",
+      "pr_number": 88,
+      "reviewer_verdict": "block",
+      "finding_severity": "critical",
+      "finding_path": "hot",
+      "finding_summary": "NullReferenceException in ChannelRouter.Dispatch() when envelope.Headers is null"
+    },
+    "available_actions": [
+      "block_task",
+      "create_followup",
+      "approve_pr",
+      "reassign_worker"
+    ],
+    "scripted_response": {
+      "next_action": "block_task",
+      "reason": "The reviewer issued a blocking verdict on a critical-severity null dereference in a hot-path. A critical blocking finding cannot be bypassed via follow-up or approved over. The task must be reopened for the worker to fix the defect.",
+      "confidence": 0.97,
+      "forbidden_actions_avoided": ["approve_pr", "create_followup"],
+      "required_evidence": ["fix_commit", "reviewer_approval"]
+    }
+  },
+  "scoring": {
+    "scorers": ["orchestrator-decision", "schema-compliance", "latency"],
+    "parameters": {
+      "orchestrator-decision": {
+        "expected_action": "block_task",
+        "forbidden_actions": ["approve_pr"]
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": ["next_action", "reason", "confidence", "forbidden_actions_avoided", "required_evidence"],
+          "properties": {
+            "next_action": { "type": "string" },
+            "reason": { "type": "string" },
+            "confidence": { "type": "number" },
+            "forbidden_actions_avoided": { "type": "array" },
+            "required_evidence": { "type": "array" }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "orchestrator-decision": 0.8,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 60
+}
