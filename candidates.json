@@ -36,6 +36,45 @@
     "cli_command": "coding-scripted"
   },
   {
+    "id": "pi-coding-gpt4o",
+    "name": "Pi Coding Agent — GPT-4o (sandboxed)",
+    "kind": "CodingAgent",
+    "model": "gpt-4o",
+    "provider": "openai",
+    "cli_args": [
+      "--print",
+      "--no-session",
+      "--provider", "openai",
+      "--model", "gpt-4o",
+      "--mode", "text"
+    ],
+    "config": {
+      "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "sandbox_root": "/home/dev/goblinbench/.sandbox-runtime",
+      "node_resolved": "/usr/bin/node",
+      "api_key_env": "OPENAI_API_KEY"
+    }
+  },
+  {
+    "id": "pi-coding-qwen-local",
+    "name": "Pi Coding Agent — Qwen3.6-35B local (sandboxed)",
+    "kind": "CodingAgent",
+    "model": "Qwen3.6-35B-A3B-GGUF",
+    "provider": "lemonade-lan",
+    "cli_args": [
+      "--print",
+      "--no-session",
+      "--provider", "lemonade-lan",
+      "--model", "Qwen3.6-35B-A3B-GGUF",
+      "--mode", "text"
+    ],
+    "config": {
+      "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "sandbox_root": "/home/dev/goblinbench/.sandbox-runtime",
+      "node_resolved": "/usr/bin/node"
+    }
+  },
+  {
     "id": "qwen3-35b-local",
     "name": "Qwen3.6-35B-A3B (local)",
     "kind": "OpenAiModel",

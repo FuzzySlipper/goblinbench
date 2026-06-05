@@ -1,0 +1,21 @@
+[
+  {
+    "id": "pi-coding-mock-test",
+    "name": "Pi Coding Agent — Mock Lemonade (e2e)",
+    "kind": "CodingAgent",
+    "model": "mock-lemonade-edit",
+    "provider": "mock-lemonade",
+    "cli_args": [
+      "--print",
+      "--no-session",
+      "--provider", "mock-lemonade",
+      "--model", "mock-lemonade-edit"
+    ],
+    "config": {
+      "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "sandbox_root": "/home/dev/goblinbench/.sandbox-runtime",
+      "node_resolved": "/usr/bin/node",
+      "agent_dir": "/home/dev/goblinbench/.sandbox-runtime/agent"
+    }
+  }
+]

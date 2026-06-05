@@ -113,6 +113,7 @@ public static class Program
         {
             new ScriptedCandidateRunner(),
             new CodingCandidateRunner(),
+            new CodingAgentRunner(),
             new ElectronCandidateRunner(),
             new VisionCandidateRunner(),
             new NoOpCandidateRunner(),

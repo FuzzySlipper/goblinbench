@@ -32,3 +32,7 @@ Thumbs.db
 TestResults/
 *.trx
 *.coverage
+
+## Sandbox runtime — locally-installed coding agents (pi, etc.) used by CodingAgentRunner
+.sandbox-runtime/
+

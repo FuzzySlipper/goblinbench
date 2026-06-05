@@ -106,5 +106,11 @@ public enum CandidateKind
     ExternalCli,
 
     /// <summary>A local model endpoint (vLLM, llama.cpp, etc.).</summary>
-    LocalModel
+    LocalModel,
+
+    /// <summary>
+    /// A coding agent CLI (pi, codex, claude, etc.) launched inside a
+    /// bubblewrap sandbox. See <c>CodingAgentRunner</c> for the full contract.
+    /// </summary>
+    CodingAgent,
 }
