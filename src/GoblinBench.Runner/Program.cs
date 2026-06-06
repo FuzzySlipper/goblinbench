@@ -39,11 +39,13 @@ public static class Program
         string? suiteFilter = null;
         string? scenarioFilter = null;
         string? candidatesOverride = null;
+        var candidateFilters = new List<string>();
         for (var i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--suite") suiteFilter = args[i + 1];
             if (args[i] == "--scenario") scenarioFilter = args[i + 1];
             if (args[i] == "--candidates") candidatesOverride = args[i + 1];
+            if (args[i] == "--candidate") candidateFilters.Add(args[i + 1]);
         }
         if (candidatesOverride != null)
             candidatesFile = Path.IsPathRooted(candidatesOverride)
@@ -59,6 +61,7 @@ public static class Program
         Console.WriteLine($"Runs:     {runsRoot}");
         if (suiteFilter != null) Console.WriteLine($"Filter:   --suite {suiteFilter}");
         if (scenarioFilter != null) Console.WriteLine($"Filter:   --scenario {scenarioFilter}");
+        if (candidateFilters.Count > 0) Console.WriteLine($"Filter:   --candidate {string.Join(",", ExpandCandidateFilters(candidateFilters))}");
         Console.WriteLine();
 
         // Discover scenarios
@@ -84,7 +87,12 @@ public static class Program
         Console.WriteLine();
 
         // Load candidates
-        var candidates = await LoadCandidatesAsync(candidatesFile);
+        var candidates = FilterCandidatesById(await LoadCandidatesAsync(candidatesFile), candidateFilters);
+        if (candidates.Count == 0)
+        {
+            Console.Error.WriteLine("Error: no candidates matched --candidate filter.");
+            return 1;
+        }
         Console.WriteLine($"Candidates: {candidates.Count} (from {Path.GetFileName(candidatesFile)})");
         foreach (var c in candidates)
             Console.WriteLine($"  - {c.Id} ({c.Kind})");
@@ -112,6 +120,7 @@ public static class Program
         var runners = new List<ICandidateRunner>
         {
             new ScriptedCandidateRunner(),
+            new FakeMcpCandidateRunner(),
             new CodingCandidateRunner(),
             new CodingAgentRunner(),
             new ElectronCandidateRunner(),
@@ -133,6 +142,7 @@ public static class Program
             new CommandScorer(),
             new LlmJudgeScorer(),
             new OrchestratorDecisionScorer(),
+            new McpToolUseScorer(),
             new VisionCorrectnessScorer(),
             new CodingTestScorer(),
             new ElectronFlowScorer()
@@ -157,6 +167,8 @@ public static class Program
             };
 
             runResult.Scenarios.Add(scenario.Id);
+
+            var scenarioContext = CreateScenarioContext(context, scenario.Id);
 
             foreach (var candidate in candidates)
             {
@@ -184,7 +196,7 @@ public static class Program
                             ? scenario.TimeoutSeconds
                             : 300)).Token;
 
-                    var candidateResult = await runner.RunAsync(scenario, candidate, context, ct);
+                    var candidateResult = await runner.RunAsync(scenario, candidate, scenarioContext, ct);
 
                     // Run scorers — only those declared in the scenario's scoring config
                     var declaredScorerIds = scenario.Scoring?.Scorers;
@@ -197,7 +209,7 @@ public static class Program
                         try
                         {
                             var score = await scorer.ScoreAsync(
-                                scenario, candidate, candidateResult, context, ct);
+                                scenario, candidate, candidateResult, scenarioContext, ct);
                             candidateResult.Scores.Add(score);
                         }
                         catch (Exception ex)
@@ -213,22 +225,22 @@ public static class Program
                     }
 
                     // Write scores artifact
-                    if (!string.IsNullOrEmpty(context.GetCandidateScoresPath(candidate.Id)))
+                    if (!string.IsNullOrEmpty(scenarioContext.GetCandidateScoresPath(candidate.Id)))
                     {
                         var scoresDir = Path.GetDirectoryName(
-                            context.GetCandidateScoresPath(candidate.Id));
+                            scenarioContext.GetCandidateScoresPath(candidate.Id));
                         if (scoresDir != null)
                             Directory.CreateDirectory(scoresDir);
 
                         await File.WriteAllTextAsync(
-                            context.GetCandidateScoresPath(candidate.Id),
+                            scenarioContext.GetCandidateScoresPath(candidate.Id),
                             JsonSerializer.Serialize(candidateResult.Scores, JsonOptions));
                     }
 
                     // Write trace.jsonl — flushed centrally so all runners get it
                     if (candidateResult.Trace.Count > 0)
                     {
-                        var tracePath = context.GetCandidateTracePath(candidate.Id);
+                        var tracePath = scenarioContext.GetCandidateTracePath(candidate.Id);
                         var traceDir = Path.GetDirectoryName(tracePath);
                         if (traceDir != null) Directory.CreateDirectory(traceDir);
                         var traceLines = candidateResult.Trace
@@ -272,7 +284,8 @@ public static class Program
         {
             foreach (var cr in scenarioResult.CandidateResults)
             {
-                var candidateDir = context.GetCandidateDirectory(cr.CandidateId);
+                var candidateDir = CreateScenarioContext(context, scenarioResult.ScenarioId)
+                    .GetCandidateDirectory(cr.CandidateId);
                 Console.WriteLine($"  {scenarioResult.ScenarioId}/{cr.CandidateId}: " +
                     $"{(cr.Success ? "OK" : "FAIL")} ({cr.DurationMs}ms) " +
                     $"{candidateDir}");
@@ -281,6 +294,18 @@ public static class Program
 
         return 0;
     }
+
+    private static RunContext CreateScenarioContext(RunContext context, string scenarioId) => new()
+    {
+        RunId = context.RunId,
+        StartedAt = context.StartedAt,
+        RunDirectory = context.RunDirectory,
+        RunsRoot = context.RunsRoot,
+        RepoRoot = context.RepoRoot,
+        ScenarioId = scenarioId,
+        Label = context.Label,
+        Metadata = context.Metadata
+    };
 
     private static async Task<int> RunReportAsync(string[] args)
     {
@@ -516,6 +541,20 @@ public static class Program
 
         return Environment.CurrentDirectory;
     }
+
+    public static List<CandidateConfig> FilterCandidatesById(
+        IReadOnlyList<CandidateConfig> candidates,
+        IReadOnlyList<string> candidateFilters)
+    {
+        var wanted = ExpandCandidateFilters(candidateFilters).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (wanted.Count == 0) return candidates.ToList();
+        return candidates.Where(c => wanted.Contains(c.Id)).ToList();
+    }
+
+    private static IEnumerable<string> ExpandCandidateFilters(IReadOnlyList<string> candidateFilters) =>
+        candidateFilters
+            .SelectMany(f => f.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(f => !string.IsNullOrWhiteSpace(f));
 
     private static async Task<List<CandidateConfig>> LoadCandidatesAsync(string path)
     {

@@ -101,7 +101,14 @@ public sealed record BwrapProfile
         foreach (var scratch in TmpfsScratchDirs)
             argv.AddRange(new[] { "--tmpfs", scratch });
 
-        // Writable workspace — must come after read-only binds and tmpfs
+        // Provide a fresh /dev so common subprocess plumbing works inside the
+        // user namespace. With only --ro-bind / /, device nodes such as
+        // /dev/null are visible but cannot be opened, which breaks shell
+        // redirects and Node's spawn(..., { stdio: "ignore" }). Coding agents
+        // frequently spawn test/build commands that rely on /dev/null.
+        argv.AddRange(new[] { "--dev", "/dev" });
+
+        // Writable workspace — must come after read-only binds, tmpfs, and /dev
         // overlays so the bind shadows whatever's under WorkDir in the
         // read-only root.
         argv.AddRange(new[] { "--bind", WorkDirSource, WorkDir });

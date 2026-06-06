@@ -1,0 +1,32 @@
+{
+  "id": "coding.cache-key",
+  "version": "1.0.0",
+  "name": "Cache Key Stability \u2014 agent-lab port",
+  "description": "Original agent-lab coding maintenance task ported into the GoblinBench coding-agent harness.",
+  "suite": "coding",
+  "input": {
+    "task": "# Cache Key Stability Ticket\n\nEquivalent filter requests are missing cache hits because the cache key builder is not stable enough.\n\nPlease fix key generation so that semantically equivalent filters generate the same key while still preserving meaningful differences like page number and archive mode.\n\nTry to keep the change local to the key builder unless you genuinely need to touch the request model.\n\nTarget files:\n\n- `EvalLab.Core/Cases/CacheKeys/FilterCacheKeyBuilder.cs`\n- `EvalLab.Core/Cases/CacheKeys/FilterRequest.cs`",
+    "fixture_case": "cache-key",
+    "agent_lab_source": "https://github.com/FuzzySlipper/agent-lab/blob/main/EvalCases/cache-key.md",
+    "agent_lab_fixture_source": "https://github.com/FuzzySlipper/agent-lab/tree/main/EvalLab.Core/Cases/CacheKeys"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "latency"
+    ],
+    "parameters": {
+      "coding-tests": {
+        "test_project": "CacheKeyTests.csproj",
+        "visible_filter": "FullyQualifiedName~EvalLab.Tests.Visible",
+        "strict_filter": "FullyQualifiedName~EvalLab.Tests.Strict",
+        "scan_dir": "EvalLab.Core/Cases/CacheKeys",
+        "timeout_seconds": 120
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 300
+}

@@ -34,6 +34,22 @@ public class RunContextTests
     }
 
     [Fact]
+    public void GetCandidateDirectory_WhenScenarioIdIsSet_IsolatesArtifactsByScenario()
+    {
+        var ctx = new RunContext
+        {
+            RunId = "test-run",
+            RunDirectory = "/tmp/goblinbench/runs/test-run",
+            RunsRoot = "/tmp/goblinbench/runs",
+            ScenarioId = "coding.cache-key"
+        };
+
+        var dir = ctx.GetCandidateDirectory("coding-scripted");
+
+        Assert.Equal("/tmp/goblinbench/runs/test-run/scenarios/coding.cache-key/candidates/coding-scripted", dir);
+    }
+
+    [Fact]
     public void GetCandidateOutputPath_ReturnsExpectedFile()
     {
         var ctx = new RunContext

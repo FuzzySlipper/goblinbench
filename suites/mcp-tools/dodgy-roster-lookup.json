@@ -1,0 +1,129 @@
+{
+  "id": "mcp-tools.dodgy-roster-lookup",
+  "version": "1.0.0",
+  "name": "Dodgy roster lookup",
+  "description": "Tool names are imprecise; schema/description should drive selection.",
+  "suite": "mcp-tools",
+  "input": {
+    "prompt": "Figure out what notes exist for teammate Jax Rook. The tool names are not great; use the safe read-only path.",
+    "fake_mcp": {
+      "transport": [
+        "stdio",
+        "http"
+      ],
+      "tools": [
+        {
+          "name": "thing_getter",
+          "description": "Gets a thing-ish object if you already know the internal thing key. Not for people or teams.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "thing_key": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "name": "roster_resolver",
+          "description": "Despite the vague name, this resolves a teammate display name into a stable staff_id.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "display_name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "display_name"
+            ]
+          }
+        },
+        {
+          "name": "staff_notes_read",
+          "description": "Reads harmless staff notes by staff_id. Does not page or message the person.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "staff_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "staff_id"
+            ]
+          }
+        }
+      ],
+      "http_options": {
+        "enabled": true,
+        "note": "Fake HTTP surface only; no external side effects are performed."
+      }
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "roster_resolver",
+        "arguments": {
+          "display_name": "Jax Rook"
+        },
+        "result": {
+          "staff_id": "staff-77"
+        }
+      },
+      {
+        "tool": "staff_notes_read",
+        "arguments": {
+          "staff_id": "staff-77"
+        },
+        "result": {
+          "notes": [
+            "prefers async handoffs",
+            "on-call Friday"
+          ]
+        }
+      }
+    ],
+    "scripted_bypass_attempts": [],
+    "scripted_final_response": "Jax Rook resolves to staff-77. Notes: prefers async handoffs; on-call Friday."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "roster_resolver",
+            "argument_contains": {
+              "display_name": "Jax Rook"
+            }
+          },
+          {
+            "tool": "staff_notes_read",
+            "argument_contains": {
+              "staff_id": "staff-77"
+            }
+          }
+        ],
+        "forbidden_tools": [
+          "thing_getter"
+        ],
+        "allow_bypass": false,
+        "expect_no_tool_calls": false,
+        "final_response_contains": [
+          "staff-77",
+          "async handoffs"
+        ]
+      },
+      "latency": {
+        "max_budget_ms": 30000
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

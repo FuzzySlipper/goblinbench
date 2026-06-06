@@ -12,6 +12,12 @@
     "cli_command": "scripted"
   },
   {
+    "id": "fake-mcp-scripted",
+    "name": "Fake MCP Scripted Tool User",
+    "kind": "Unknown",
+    "cli_command": "fake-mcp-scripted"
+  },
+  {
     "id": "gpt-4o-vision",
     "name": "GPT-4o Vision",
     "kind": "OpenAiModel",
@@ -57,16 +63,18 @@
   },
   {
     "id": "pi-coding-qwen-local",
-    "name": "Pi Coding Agent — Qwen3.6-35B local (sandboxed)",
+    "name": "Pi Coding Agent — Qwen3.6-35B local via Lemonade (sandboxed)",
     "kind": "CodingAgent",
     "model": "Qwen3.6-35B-A3B-GGUF",
-    "provider": "lemonade-lan",
+    "provider": "lemonade",
     "cli_args": [
       "--print",
       "--no-session",
-      "--provider", "lemonade-lan",
+      "--no-extensions",
+      "--extension", "/home/dev/goblinbench/scripts/lemonade-pi-extension.js",
+      "--provider", "lemonade",
       "--model", "Qwen3.6-35B-A3B-GGUF",
-      "--mode", "text"
+      "--mode", "json"
     ],
     "config": {
       "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",

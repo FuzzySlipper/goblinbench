@@ -3,7 +3,7 @@
   "name": "Pi Coding Agent — Mock Lemonade e2e",
   "version": "1.0.0",
   "description": "Add a sub(a, b) function below add(a, b) in src/main.py. Uses a local OpenAI-compat mock server so the run is fully deterministic and offline.",
-  "suite": "coding",
+  "suite": "coding-smoke",
   "input": {
     "task": "Add a `sub(a, b)` function below the existing `add` function in `src/main.py`. Do not modify any other files. When you are done, exit.",
     "fixture_case": "e2e-pi-mock"

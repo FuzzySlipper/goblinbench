@@ -43,8 +43,20 @@ public sealed class CodingAgentRunner : ICandidateRunner
 {
     public string Name => "coding-agent";
 
+    private const int MaxInlineRawResponseChars = 32_768;
+
     private static readonly HashSet<string> SkipDirs =
-        new(StringComparer.OrdinalIgnoreCase) { "obj", "bin", ".git", ".vs" };
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "obj", "bin", ".git", ".vs",
+            // Runner-owned scratch directories created inside the writable
+            // workspace by the sandbox environment. pi's jiti extension loader
+            // writes transpiled modules to cwd/.tmp/jiti; dotnet/node caches can
+            // similarly appear under the HOME/XDG paths we intentionally point
+            // at the workspace. These are execution artifacts, not candidate
+            // edits, so keep them out of agent.patch/files_changed.
+            ".tmp", ".cache", ".home", ".dotnet-home", ".local"
+        };
 
     public bool CanHandle(CandidateConfig candidate) =>
         candidate.Kind == CandidateKind.CodingAgent;
@@ -96,6 +108,7 @@ public sealed class CodingAgentRunner : ICandidateRunner
             var fixtureDest = Path.Combine(
                 context.GetCandidateDirectory(candidate.Id), "fixture");
             CopyDirectory(fixtureSource, fixtureDest);
+            EnsureSandboxScratchDirs(fixtureDest);
 
             trace.Add(new TraceEvent
             {
@@ -140,8 +153,8 @@ public sealed class CodingAgentRunner : ICandidateRunner
             using var process = new Process { StartInfo = psi };
             process.Start();
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-            var stderrTask = process.StandardError.ReadToEndAsync(ct);
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
 
             using var timeoutCts = new CancellationTokenSource(
                 TimeSpan.FromSeconds(scenario.TimeoutSeconds > 0 ? scenario.TimeoutSeconds : 300));
@@ -218,13 +231,16 @@ public sealed class CodingAgentRunner : ICandidateRunner
                 Success = success && producedChanges,
                 Error = error,
                 DurationMs = stopwatch.ElapsedMilliseconds,
-                RawResponse = stdout,
+                RawResponse = TruncateForInline(stdout),
                 Output = new Dictionary<string, object?>
                 {
                     ["fixture_dir"] = fixtureDest,
                     ["fixture_case"] = fixtureCase,
                     ["patch"] = diff.UnifiedDiffText,
                     ["files_changed"] = filesChanged,
+                    ["stdout_length"] = stdout.Length,
+                    ["stderr_length"] = stderr.Length,
+                    ["raw_response_truncated"] = stdout.Length > MaxInlineRawResponseChars,
                     ["bwrap_argv"] = bwrapArgv,
                     ["bwrap_command_line"] = bwrapCommandLine,
                     ["agent_command"] = cfg.CliArgs,
@@ -432,7 +448,13 @@ public sealed class CodingAgentRunner : ICandidateRunner
             ["DOTNET_CLI_HOME"] = "/tmp/agent-workspace/.dotnet-home",
             ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
             ["DOTNET_NOLOGO"] = "1",
+            ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
         };
+
+        var hostNuGetPackages = Path.Combine(
+            Environment.GetEnvironmentVariable("HOME") ?? "/root", ".nuget", "packages");
+        if (Directory.Exists(hostNuGetPackages))
+            env["NUGET_PACKAGES"] = hostNuGetPackages;
 
         // Agent config dir: pi looks for <PI_CODING_AGENT_DIR>/models.json
         // when discovering custom providers. Default to <sandbox_root>/agent
@@ -569,7 +591,13 @@ public sealed class CodingAgentRunner : ICandidateRunner
         CancellationToken ct)
     {
         var outputPath = context.GetCandidateOutputPath(candidate.Id);
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        var outputDir = Path.GetDirectoryName(outputPath)!;
+        Directory.CreateDirectory(outputDir);
+
+        var stdoutPath = Path.Combine(outputDir, "stdout.log");
+        var stderrPath = Path.Combine(outputDir, "stderr.log");
+        await File.WriteAllTextAsync(stdoutPath, stdout, ct);
+        await File.WriteAllTextAsync(stderrPath, stderr, ct);
 
         var output = new
         {
@@ -577,18 +605,31 @@ public sealed class CodingAgentRunner : ICandidateRunner
             patch = diff.UnifiedDiffText,
             files_changed = diff.FilesChanged,
             bwrap_command_line = bwrapCommandLine,
-            stdout,
-            stderr,
+            stdout_path = Path.GetFileName(stdoutPath),
+            stdout_length = stdout.Length,
+            stdout_tail = TruncateForInline(stdout),
+            stderr_path = Path.GetFileName(stderrPath),
+            stderr_length = stderr.Length,
+            stderr_tail = TruncateForInline(stderr),
         };
         await File.WriteAllTextAsync(outputPath,
             JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true }),
             ct);
 
-        var patchPath = Path.Combine(Path.GetDirectoryName(outputPath)!, "agent.patch");
+        var patchPath = Path.Combine(outputDir, "agent.patch");
         await File.WriteAllTextAsync(patchPath, diff.UnifiedDiffText, ct);
     }
 
     // ── Misc helpers ──────────────────────────────────────────────────────
+
+    private static string TruncateForInline(string text)
+    {
+        if (text.Length <= MaxInlineRawResponseChars)
+            return text;
+        var omitted = text.Length - MaxInlineRawResponseChars;
+        return $"[truncated {omitted} chars; see stdout.log/stderr.log artifact for full stream]\n" +
+               text[^MaxInlineRawResponseChars..];
+    }
 
     private static void CopyDirectory(string source, string destination)
     {
@@ -602,6 +643,12 @@ public sealed class CodingAgentRunner : ICandidateRunner
             Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
             File.Copy(file, destFile, overwrite: true);
         }
+    }
+
+    private static void EnsureSandboxScratchDirs(string fixtureDest)
+    {
+        foreach (var relative in new[] { ".tmp", ".cache", ".home", ".dotnet-home" })
+            Directory.CreateDirectory(Path.Combine(fixtureDest, relative));
     }
 
     private static void TryKill(Process p)

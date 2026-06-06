@@ -182,6 +182,72 @@ echo ""fake agent completed""
     }
 
     [Fact]
+    public async Task CodingAgent_IgnoresSandboxScratchFilesInDiff()
+    {
+        if (!BwrapAvailable) return;
+
+        var (sandboxRoot, runsRoot) = SetupFakeSandbox();
+        try
+        {
+            // pi extensions are loaded via jiti, and jiti writes transpiled
+            // modules under cwd/.tmp/jiti. That scratch state lives inside the
+            // writable workspace but should not count as an agent patch.
+            var agentPath = Path.Combine(sandboxRoot, "agent", "fake-agent.sh");
+            File.WriteAllText(agentPath, @"#!/bin/sh
+set -e
+mkdir -p /tmp/agent-workspace/src
+cat > /tmp/agent-workspace/src/FakeFix.cs <<'EOF'
+namespace FakeFix;
+public class Fix { public static string Do() => ""patched""; }
+EOF
+mkdir -p /tmp/agent-workspace/.tmp/jiti
+cat > /tmp/agent-workspace/.tmp/jiti/extension-cache.mjs <<'EOF'
+export default {}
+EOF
+mkdir -p /tmp/agent-workspace/.local/share/NuGet/Migrations
+touch /tmp/agent-workspace/.local/share/NuGet/Migrations/1
+echo ""fake agent completed""
+");
+            File.SetUnixFileMode(agentPath,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+
+            var runDir = Path.Combine(runsRoot, "r1");
+            var context = new RunContext
+            {
+                RunId = "r1", RunsRoot = runsRoot, RunDirectory = runDir, RepoRoot = RepoRoot
+            };
+            var candidate = MakeCandidate(sandboxRoot);
+            var runner = new CodingAgentRunner();
+
+            var result = await runner.RunAsync(MakeScenario(), candidate, context);
+
+            Assert.True(result.Success, $"Runner failed: {result.Error}");
+            Assert.NotNull(result.Output);
+            var json = JsonSerializer.Serialize(result.Output);
+            using var doc = JsonDocument.Parse(json);
+            var patch = doc.RootElement.GetProperty("patch").GetString() ?? string.Empty;
+            Assert.Contains("FakeFix.cs", patch);
+            Assert.DoesNotContain(".tmp/jiti", patch);
+            Assert.DoesNotContain(".local/share/NuGet", patch);
+
+            var filesChanged = doc.RootElement.GetProperty("files_changed")
+                .EnumerateArray()
+                .Select(e => e.GetString())
+                .ToArray();
+            Assert.Contains("src/FakeFix.cs", filesChanged);
+            Assert.DoesNotContain(".tmp/jiti/extension-cache.mjs", filesChanged);
+            Assert.DoesNotContain(".local/share/NuGet/Migrations/1", filesChanged);
+        }
+        finally
+        {
+            TryDelete(sandboxRoot);
+            TryDelete(runsRoot);
+        }
+    }
+
+    [Fact]
     public async Task CodingAgent_SandboxedAgent_CannotEscapeWorkDir()
     {
         if (!BwrapAvailable) return;

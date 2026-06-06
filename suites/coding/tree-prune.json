@@ -1,0 +1,32 @@
+{
+  "id": "coding.tree-prune",
+  "version": "1.0.0",
+  "name": "Tree Prune \u2014 agent-lab port",
+  "description": "Original agent-lab coding maintenance task ported into the GoblinBench coding-agent harness.",
+  "suite": "coding",
+  "input": {
+    "task": "# Tree Prune Ticket\n\n`Pruner.Prune(List<Node>, Func<int, bool>)` at `EvalLab.Core/Cases/TreePrune/Pruner.cs` currently drops entire subtrees when a node is removed. For example, input `[1(2(5,6), -3(7,8), 4)]` with \"remove if negative\" returns `[1(2(5,6), 4)]`, losing nodes `7` and `8` entirely. Extend it to **promote** surviving descendants into their grandparent's position when a node is removed.\n\n## Function\n\n`List<Node> Prune(List<Node> forest, Func<int, bool> shouldRemove)`\n\n`Node` is defined in the same file: `int Value`, `List<Node> Children`.\n\n## Required semantics\n\n1. **Visit every node.**\n2. **If `shouldRemove(node.Value)` is true**, the node is removed.\n3. **Promotion** \u2014 when a node is removed, its surviving descendants (after their own pruning is applied) are spliced into the parent's `Children` list at the position the removed node occupied, preserving original sibling order. If the root of a top-level tree is removed, its surviving descendants become independent roots in the result forest, at that tree's position.\n4. **Order preservation is required.** Children `[A, B, C]` where `B` is removed and `B` had surviving descendants `[X, Y]` must produce `[A, X, Y, C]` \u2014 not `[A, C, X, Y]`, not `[X, Y, A, C]`.\n5. **Cascading removal.** If a removed node's children are themselves removed, the promotion bubbles up to the nearest surviving ancestor.\n6. **Empty input** \u2192 empty output. **All nodes removed** \u2192 empty output. **No nodes removed** \u2192 structurally equivalent forest returned.\n7. **Input must not be mutated.** Tests snapshot the input forest before the call; modifying any input node's `Children` list or `Value` fails the mutation test. Build a new forest.\n\nYou can update tests if needed, but keep the public surface area small.\n\nStyle preference: prefer clear, structured code with explicit handling of the promotion case over clever recursion.\n\nTarget file:\n\n- `EvalLab.Core/Cases/TreePrune/Pruner.cs`",
+    "fixture_case": "tree-prune",
+    "agent_lab_source": "https://github.com/FuzzySlipper/agent-lab/blob/main/EvalCases/tree-prune.md",
+    "agent_lab_fixture_source": "https://github.com/FuzzySlipper/agent-lab/tree/main/EvalLab.Core/Cases/TreePrune"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "latency"
+    ],
+    "parameters": {
+      "coding-tests": {
+        "test_project": "TreePruneTests.csproj",
+        "visible_filter": "FullyQualifiedName~EvalLab.Tests.Visible",
+        "strict_filter": "FullyQualifiedName~EvalLab.Tests.Strict",
+        "scan_dir": "EvalLab.Core/Cases/TreePrune",
+        "timeout_seconds": 120
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 300
+}

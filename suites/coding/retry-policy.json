@@ -10,7 +10,10 @@
     "agent_lab_source": "https://github.com/FuzzySlipper/agent-lab/blob/main/EvalCases/retry-policy.md"
   },
   "scoring": {
-    "scorers": ["coding-tests", "latency"],
+    "scorers": [
+      "coding-tests",
+      "latency"
+    ],
     "parameters": {
       "coding-tests": {
         "test_project": "RetryPolicyTests.csproj",
@@ -21,7 +24,7 @@
       }
     },
     "thresholds": {
-      "coding-tests": 0.8
+      "coding-tests": 1.0
     }
   },
   "timeout_seconds": 300

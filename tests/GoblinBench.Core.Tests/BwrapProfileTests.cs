@@ -79,6 +79,18 @@ public class BwrapProfileTests
     }
 
     [Fact]
+    public void ToArgv_ProvidesFreshDevBeforeWorkspaceBind()
+    {
+        var argv = Sample().ToArgv("bwrap");
+        var devIdx = IndexOf(argv, "--dev");
+        var workBind = IndexOf(argv, "--bind");
+
+        Assert.True(devIdx >= 0, "Expected --dev /dev so /dev/null works in the sandbox");
+        Assert.Equal("/dev", argv[devIdx + 1]);
+        Assert.True(devIdx < workBind, "Fresh /dev should be installed before the workspace bind");
+    }
+
+    [Fact]
     public void ToArgv_WorkDirIsTheOnlyWritableBind()
     {
         var argv = Sample().ToArgv("bwrap");

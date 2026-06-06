@@ -96,6 +96,47 @@ public static class ReportGenerator
             sb.AppendLine();
         }
 
+        var codingRows = GetCodingTestRows(data).ToList();
+        if (codingRows.Count > 0)
+        {
+            sb.AppendLine("## Coding Test Summary");
+            sb.AppendLine();
+            sb.AppendLine("| Scenario | Candidate | Runner | Tests | Score | Visible | Strict | Markers | Duration |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|---|");
+            foreach (var row in codingRows)
+            {
+                var runner = row.RunnerSuccess ? "OK" : "FAIL";
+                var tests = row.Passed == true ? "PASS" : row.Passed == false ? "FAIL" : "—";
+                var score = row.Score.HasValue ? row.Score.Value.ToString("F2") : "—";
+                var duration = row.DurationMs < 1000 ? $"{row.DurationMs}ms" : $"{row.DurationMs / 1000.0:F1}s";
+                sb.AppendLine($"| {EscapeCell(ShortScenario(row.ScenarioId))} | {EscapeCell(row.CandidateId)} | {runner} | {tests} | {score} | {row.Visible} | {row.Strict} | {row.Markers} | {duration} |");
+            }
+            sb.AppendLine();
+        }
+
+        var mcpRows = GetMcpToolUseRows(data).ToList();
+        if (mcpRows.Count > 0)
+        {
+            sb.AppendLine("## MCP Tool-Use Summary");
+            sb.AppendLine();
+            sb.AppendLine("| Scenario | Candidate | Score | Calls | Actual | Bypass | Trace Artifacts |");
+            sb.AppendLine("|---|---|---|---|---|---|---|");
+            foreach (var row in mcpRows)
+            {
+                var score = row.Score.HasValue ? row.Score.Value.ToString("F2") : "—";
+                var calls = row.ExpectedCalls.HasValue && row.MatchedCalls.HasValue
+                    ? $"{row.MatchedCalls}/{row.ExpectedCalls}"
+                    : "—";
+                var actual = row.ActualCalls?.ToString() ?? "—";
+                var bypass = row.BypassAttempts?.ToString() ?? "—";
+                var artifacts = string.IsNullOrWhiteSpace(row.ArtifactDirectory)
+                    ? "—"
+                    : $"`{Path.Combine(row.ArtifactDirectory, "tool_calls.json")}`";
+                sb.AppendLine($"| {EscapeCell(ShortScenario(row.ScenarioId))} | {EscapeCell(row.CandidateId)} | {score} | {calls} | {actual} | {bypass} | {artifacts} |");
+            }
+            sb.AppendLine();
+        }
+
         // ── Scorer key ──────────────────────────────────────────────────────
         if (data.ScorerIds.Count > 0)
         {
@@ -304,6 +345,7 @@ public static class ReportGenerator
                     Score = primary?.Score,
                     Passed = primary?.Passed ?? (cr.Success ? (bool?)null : false),
                     PrimaryScorerId = primary?.ScorerId,
+                    ArtifactDirectory = cr.ArtifactDirectory,
                     ScorerDetails = cr.Scores.Select(s => new ScorerEntry
                     {
                         ScorerId = s.ScorerId,
@@ -312,7 +354,8 @@ public static class ReportGenerator
                         HumanSummary = s.HumanSummary,
                         Error = s.Error,
                         JudgeModel = s.JudgeModel,
-                        JudgePromptVersion = s.JudgePromptVersion
+                        JudgePromptVersion = s.JudgePromptVersion,
+                        Detail = s.Detail
                     }).ToList()
                 };
             }
@@ -352,6 +395,82 @@ public static class ReportGenerator
         var dot = id.IndexOf('.');
         return dot >= 0 ? id[(dot + 1)..] : id;
     }
+
+    private static IEnumerable<CodingTestReportRow> GetCodingTestRows(ReportData data)
+    {
+        foreach (var scenario in data.Scenarios)
+        {
+            foreach (var (candidateId, score) in scenario.CandidateScores)
+            {
+                var coding = score.ScorerDetails.FirstOrDefault(s =>
+                    s.ScorerId.Equals("coding-tests", StringComparison.OrdinalIgnoreCase));
+                if (coding == null) continue;
+
+                yield return new CodingTestReportRow(
+                    scenario.ScenarioId,
+                    candidateId,
+                    score.Success,
+                    coding.Passed,
+                    coding.Score,
+                    FormatTestCount(coding, "visible_pass", "visible_total"),
+                    FormatTestCount(coding, "strict_pass", "strict_total"),
+                    FormatMarkerCount(coding),
+                    score.DurationMs);
+            }
+        }
+    }
+
+    private static IEnumerable<McpToolUseReportRow> GetMcpToolUseRows(ReportData data)
+    {
+        foreach (var scenario in data.Scenarios)
+        {
+            foreach (var (candidateId, score) in scenario.CandidateScores)
+            {
+                var mcp = score.ScorerDetails.FirstOrDefault(s =>
+                    s.ScorerId.Equals("mcp-tool-use", StringComparison.OrdinalIgnoreCase));
+                if (mcp == null) continue;
+
+                yield return new McpToolUseReportRow(
+                    scenario.ScenarioId,
+                    candidateId,
+                    mcp.Score,
+                    GetDetailInt(mcp, "matched_call_count"),
+                    GetDetailInt(mcp, "expected_call_count"),
+                    GetDetailInt(mcp, "actual_call_count"),
+                    GetDetailInt(mcp, "bypass_attempt_count"),
+                    score.ArtifactDirectory);
+            }
+        }
+    }
+
+    private static string FormatTestCount(ScorerEntry scorer, string passKey, string totalKey)
+    {
+        var passed = GetDetailInt(scorer, passKey);
+        var total = GetDetailInt(scorer, totalKey);
+        return passed.HasValue && total.HasValue ? $"{passed}/{total}" : "—";
+    }
+
+    private static string FormatMarkerCount(ScorerEntry scorer) =>
+        GetDetailInt(scorer, "marker_count")?.ToString() ?? "—";
+
+    private static int? GetDetailInt(ScorerEntry scorer, string key)
+    {
+        if (!scorer.Detail.TryGetValue(key, out var value) || value == null) return null;
+
+        return value switch
+        {
+            int i => i,
+            long l when l <= int.MaxValue && l >= int.MinValue => (int)l,
+            double d when d % 1 == 0 && d <= int.MaxValue && d >= int.MinValue => (int)d,
+            decimal d when d % 1 == 0 && d <= int.MaxValue && d >= int.MinValue => (int)d,
+            string s when int.TryParse(s, out var i) => i,
+            JsonElement { ValueKind: JsonValueKind.Number } e when e.TryGetInt32(out var i) => i,
+            JsonElement { ValueKind: JsonValueKind.String } e when int.TryParse(e.GetString(), out var i) => i,
+            _ => null
+        };
+    }
+
+    private static string EscapeCell(string value) => value.Replace("|", "\\|");
 
     private static string FindRunsRoot(string runId)
     {
@@ -449,6 +568,9 @@ public sealed class CandidateScoreEntry
     [JsonPropertyName("primary_scorer_id")]
     public string? PrimaryScorerId { get; init; }
 
+    [JsonPropertyName("artifact_directory")]
+    public string? ArtifactDirectory { get; init; }
+
     [JsonPropertyName("scorer_details")]
     public List<ScorerEntry> ScorerDetails { get; init; } = new();
 }
@@ -475,4 +597,28 @@ public sealed class ScorerEntry
 
     [JsonPropertyName("judge_prompt_version")]
     public string? JudgePromptVersion { get; init; }
+
+    [JsonPropertyName("detail")]
+    public Dictionary<string, object?> Detail { get; init; } = new();
 }
+
+internal sealed record CodingTestReportRow(
+    string ScenarioId,
+    string CandidateId,
+    bool RunnerSuccess,
+    bool? Passed,
+    double? Score,
+    string Visible,
+    string Strict,
+    string Markers,
+    long DurationMs);
+
+internal sealed record McpToolUseReportRow(
+    string ScenarioId,
+    string CandidateId,
+    double? Score,
+    int? MatchedCalls,
+    int? ExpectedCalls,
+    int? ActualCalls,
+    int? BypassAttempts,
+    string? ArtifactDirectory);

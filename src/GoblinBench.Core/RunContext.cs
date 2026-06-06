@@ -31,6 +31,14 @@ public sealed class RunContext
     [JsonPropertyName("repo_root")]
     public string? RepoRoot { get; init; }
 
+    /// <summary>
+    /// Optional scenario id for scenario-scoped artifact paths. When set, candidate
+    /// outputs live under runs/&lt;run-id&gt;/scenarios/&lt;scenario-id&gt;/candidates/&lt;candidate-id&gt;/
+    /// so suite runs do not overwrite one candidate directory across multiple scenarios.
+    /// </summary>
+    [JsonPropertyName("scenario_id")]
+    public string? ScenarioId { get; init; }
+
     /// <summary>User-supplied run label for identification.</summary>
     [JsonPropertyName("label")]
     public string? Label { get; init; }
@@ -40,8 +48,13 @@ public sealed class RunContext
     public Dictionary<string, object?> Metadata { get; init; } = new();
 
     /// <summary>Get the per-candidate artifact directory for a candidate.</summary>
-    public string GetCandidateDirectory(string candidateId) =>
-        Path.Combine(RunDirectory, "candidates", SanitizeFileName(candidateId));
+    public string GetCandidateDirectory(string candidateId)
+    {
+        var baseDir = string.IsNullOrWhiteSpace(ScenarioId)
+            ? RunDirectory
+            : Path.Combine(RunDirectory, "scenarios", SanitizeFileName(ScenarioId));
+        return Path.Combine(baseDir, "candidates", SanitizeFileName(candidateId));
+    }
 
     /// <summary>Get the path to a candidate's output file.</summary>
     public string GetCandidateOutputPath(string candidateId) =>
