@@ -397,6 +397,126 @@ public class ReportGeneratorTests
         Assert.Contains("tool_calls.json", md);
     }
 
+    [Fact]
+    public void RenderJson_McpToolUseDiagnostics_ClassifiesToolThrashAndGroundingFailures()
+    {
+        var run = MakeMcpDiagnosticRun(
+            actualCalls: 178,
+            matchedCalls: 1,
+            expectedCalls: 4,
+            argumentMatches: 0,
+            finalMatches: 0,
+            finalExpected: 3,
+            passed: false,
+            score: 0.3625);
+        var data = BuildDataFromRun(run, suiteFilter: "mcp-tools-hard");
+
+        var json = ReportGenerator.RenderJson(data);
+        using var doc = JsonDocument.Parse(json);
+
+        var categories = doc.RootElement
+            .GetProperty("scenarios")[0]
+            .GetProperty("candidate_scores")
+            .GetProperty("qwen-small")
+            .GetProperty("failure_categories")
+            .EnumerateArray()
+            .Select(e => e.GetString())
+            .ToList();
+
+        Assert.Contains("tool_thrashing", categories);
+        Assert.Contains("argument_grounding_failure", categories);
+        Assert.Contains("final_response_missing", categories);
+    }
+
+    [Fact]
+    public void RenderHtml_ProducesStaticExplorerWithFiltersTagsAndArtifactLinks()
+    {
+        var run = MakeMcpDiagnosticRun(
+            actualCalls: 178,
+            matchedCalls: 1,
+            expectedCalls: 4,
+            argumentMatches: 0,
+            finalMatches: 0,
+            finalExpected: 3,
+            passed: false,
+            score: 0.3625);
+        var data = BuildDataFromRun(run, suiteFilter: "mcp-tools-hard");
+
+        var html = ReportGenerator.RenderHtml(data);
+
+        Assert.Contains("<!doctype html>", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("GoblinBench Report Explorer", html);
+        Assert.Contains("id=\"suiteFilter\"", html);
+        Assert.Contains("data-sort-key=\"score\"", html);
+        Assert.Contains("tool_thrashing", html);
+        Assert.Contains("tool-forest", html);
+        Assert.Contains("tool_calls.json", html);
+    }
+
+    private static RunResult MakeMcpDiagnosticRun(
+        int actualCalls,
+        int matchedCalls,
+        int expectedCalls,
+        int argumentMatches,
+        int finalMatches,
+        int finalExpected,
+        bool passed,
+        double score)
+    {
+        return new RunResult
+        {
+            RunId = "run-mcp-diagnostics",
+            StartedAt = DateTime.UtcNow.AddMinutes(-1),
+            CompletedAt = DateTime.UtcNow,
+            Scenarios = new() { "mcp-tools-hard.invoice-payment-forest" },
+            Results = new()
+            {
+                new PerScenarioResult
+                {
+                    ScenarioId = "mcp-tools-hard.invoice-payment-forest",
+                    ScenarioVersion = "1.0.0",
+                    CandidateResults = new()
+                    {
+                        new CandidateResult
+                        {
+                            CandidateId = "qwen-small",
+                            CandidateName = "Qwen small",
+                            CandidateKind = CandidateKind.OpenAiModel,
+                            Success = true,
+                            DurationMs = 90000,
+                            ArtifactDirectory = "/tmp/run/scenarios/mcp-tools-hard.invoice-payment-forest/candidates/qwen-small/artifacts",
+                            Scores = new()
+                            {
+                                new ScoreResult
+                                {
+                                    ScorerId = "mcp-tool-use",
+                                    ScorerName = "MCP Tool Use",
+                                    Success = true,
+                                    Score = score,
+                                    Passed = passed,
+                                    HumanSummary = $"FAIL: mcp-tool-use: matched {matchedCalls}/{expectedCalls} expected calls ({score:F2})",
+                                    Detail = new Dictionary<string, object?>
+                                    {
+                                        ["matched_call_count"] = matchedCalls,
+                                        ["expected_call_count"] = expectedCalls,
+                                        ["argument_match_count"] = argumentMatches,
+                                        ["actual_call_count"] = actualCalls,
+                                        ["bypass_attempt_count"] = 0,
+                                        ["final_response_match_count"] = finalMatches,
+                                        ["final_response_expected_count"] = finalExpected,
+                                        ["forbidden_tool_used"] = false,
+                                        ["bypass_violated"] = false,
+                                        ["no_calls_violated"] = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
     private static ReportData BuildDataFromRun(RunResult run, string? suiteFilter = null)
     {
         var field = typeof(ReportGenerator).GetMethod(

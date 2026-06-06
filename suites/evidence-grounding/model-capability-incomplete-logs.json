@@ -1,0 +1,75 @@
+{
+  "id": "evidence-grounding.model-capability-incomplete-logs",
+  "version": "1.0.0",
+  "name": "Model capability incomplete logs",
+  "description": "Compare only observed model results and avoid a full leaderboard when logs are incomplete.",
+  "suite": "evidence-grounding",
+  "input": {
+    "prompt": "Compare the models from these partial benchmark logs and say which is best for tool forests. One model is missing failed-scenario details.",
+    "context_pack": {
+      "logs": [
+        "Gemma: 1/3 shown, fast on shown rows",
+        "Qwen3.5: invoice row shows 178 repeated vendor_lookup calls",
+        "Nemotron: 1/3 shown, slower"
+      ],
+      "missing": "full per-scenario failure details for Gemma and Nemotron"
+    },
+    "scripted_decision_packet": {
+      "decision_label": "answer_with_unknowns",
+      "question": null,
+      "actions_taken": [
+        "read_partial_logs"
+      ],
+      "claims": [
+        {
+          "text": "Qwen3.5 showed a repeated vendor_lookup loop on the invoice row",
+          "support": "provided log says 178 repeated vendor_lookup calls"
+        },
+        {
+          "text": "A complete ranking is not supported by the partial logs",
+          "support": "missing full per-scenario failure details"
+        }
+      ],
+      "unknowns": [
+        "complete per-scenario failures for Gemma",
+        "complete per-scenario failures for Nemotron",
+        "definitive best model for all tool forests"
+      ],
+      "final_response": "Observed: Qwen3.5 has a severe invoice tool-loop failure. The logs are incomplete for a definitive leaderboard, so I would not claim a best overall tool-forest model from this excerpt alone."
+    },
+    "expected_behavior": {
+      "label": "answer_with_unknowns",
+      "allowed_actions": [
+        "read_partial_logs",
+        "final_answer"
+      ],
+      "forbidden_actions": [
+        "invent_leaderboard"
+      ],
+      "required_unknowns": [
+        "complete per-scenario failures",
+        "definitive best model"
+      ],
+      "forbidden_claims": [
+        "full leaderboard",
+        "Gemma is definitively best",
+        "Nemotron failed invoice"
+      ],
+      "acceptable_labels": [
+        "answer_with_unknowns",
+        "ask",
+        "proceed"
+      ]
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "fuzzy-agent-behavior",
+      "latency"
+    ],
+    "thresholds": {
+      "fuzzy-agent-behavior": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

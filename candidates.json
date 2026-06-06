@@ -110,6 +110,21 @@
     }
   },
   {
+    "id": "qwen3-35b-local-mcp-session",
+    "name": "Qwen3.6-35B-A3B local — durable fake MCP session",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.6-35B-A3B-GGUF",
+    "provider": "local",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "mcp-openai-session",
+    "config": {
+      "runner": "mcp-openai-session",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
     "id": "gemma4-26b-local",
     "name": "Gemma 4-26B-A4B-it (local)",
     "kind": "OpenAiModel",
@@ -118,6 +133,26 @@
     "base_url": "http://192.168.1.23:13305/v1",
     "config": {
       "temperature": 0.2,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "fuzzy-scripted",
+    "name": "Fuzzy Behavior Scripted Candidate",
+    "kind": "Unknown",
+    "cli_command": "fuzzy-scripted"
+  },
+  {
+    "id": "qwen3-35b-local-fuzzy",
+    "name": "Qwen3.6-35B-A3B local — fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.6-35B-A3B-GGUF",
+    "provider": "local",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "temperature": 0.1,
       "max_tokens": 4096
     }
   }

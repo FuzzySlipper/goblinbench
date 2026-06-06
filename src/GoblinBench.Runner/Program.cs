@@ -121,7 +121,10 @@ public static class Program
         {
             new ScriptedCandidateRunner(),
             new FakeMcpCandidateRunner(),
+            new FakeFuzzyCandidateRunner(),
             new OpenAiMcpToolUseRunner(),
+            new OpenAiFuzzyAgentRunner(),
+            new OpenAiMcpSessionRunner(),
             new CodingCandidateRunner(),
             new CodingAgentRunner(),
             new ElectronCandidateRunner(),
@@ -144,6 +147,8 @@ public static class Program
             new LlmJudgeScorer(),
             new OrchestratorDecisionScorer(),
             new McpToolUseScorer(),
+            new FuzzyAgentBehaviorScorer(),
+            new McpSessionTrajectoryScorer(),
             new VisionCorrectnessScorer(),
             new CodingTestScorer(),
             new ElectronFlowScorer()
@@ -365,6 +370,7 @@ public static class Program
 
         var markdown = ReportGenerator.RenderMarkdown(data);
         var jsonReport = ReportGenerator.RenderJson(data);
+        var htmlReport = ReportGenerator.RenderHtml(data);
 
         // Write report files
         var repoRootForOutput = ResolveRepoRoot();
@@ -378,13 +384,18 @@ public static class Program
         var jsonPath = outputPath != null
             ? Path.ChangeExtension(outputPath, ".json")
             : Path.Combine(defaultDir, "report.json");
+        var htmlPath = outputPath != null
+            ? Path.ChangeExtension(outputPath, ".html")
+            : Path.Combine(defaultDir, "report.html");
 
         await File.WriteAllTextAsync(mdPath, markdown);
         await File.WriteAllTextAsync(jsonPath, jsonReport);
+        await File.WriteAllTextAsync(htmlPath, htmlReport);
 
         Console.WriteLine($"Report written:");
         Console.WriteLine($"  Markdown: {mdPath}");
         Console.WriteLine($"  JSON:     {jsonPath}");
+        Console.WriteLine($"  HTML:     {htmlPath}");
         Console.WriteLine();
         Console.Write(markdown);
 
