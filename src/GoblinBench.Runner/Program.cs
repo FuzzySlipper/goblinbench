@@ -121,6 +121,7 @@ public static class Program
         {
             new ScriptedCandidateRunner(),
             new FakeMcpCandidateRunner(),
+            new OpenAiMcpToolUseRunner(),
             new CodingCandidateRunner(),
             new CodingAgentRunner(),
             new ElectronCandidateRunner(),

@@ -95,6 +95,21 @@
     }
   },
   {
+    "id": "qwen3-35b-local-mcp-tools",
+    "name": "Qwen3.6-35B-A3B local — fake MCP tools",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.6-35B-A3B-GGUF",
+    "provider": "local",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
     "id": "gemma4-26b-local",
     "name": "Gemma 4-26B-A4B-it (local)",
     "kind": "OpenAiModel",

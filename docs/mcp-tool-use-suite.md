@@ -79,6 +79,14 @@ runs/<run>/scenarios/<scenario>/candidates/fake-mcp-scripted/artifacts/final_res
 
 This is the deterministic baseline: it proves scenario/scorer/report wiring before spending real model time.
 
+### OpenAI-compatible real-model tool runner
+
+Candidate `qwen3-35b-local-mcp-tools` uses `OpenAiMcpToolUseRunner` via `cli_command: "mcp-openai-tool-use"` / `config.runner: "mcp-openai-tool-use"`.
+
+This runner maps `input.fake_mcp.tools` directly into OpenAI-compatible `chat/completions` tool definitions, executes model-requested tool calls against the scenario's canned fake results, appends `role: "tool"` messages, and stops when the model emits a final answer. It writes the same scorer artifacts as the deterministic runner plus request/response round dumps and `chat_transcript.json`.
+
+Current limitation: this is an MCP-tool-shape runner, not a spawned-Hermes or generic agent harness. It exposes only OpenAI-compatible tool calling, so shell/HTTP bypass attempts cannot occur unless modeled as fake tools such as `http_raw_fetch`. A later agent-mode runner can test real bypass temptation by giving an agent both MCP and shell/http tools.
+
 ### Scorer
 
 `McpToolUseScorer` (`mcp-tool-use`) checks:
@@ -100,6 +108,12 @@ dotnet test --no-restore --filter 'McpToolUseSuiteTests'
 dotnet run --project src/GoblinBench.Runner --no-build -- \
   --suite mcp-tools \
   --candidate fake-mcp-scripted
+
+# Real local OpenAI-compatible model tool-calling smoke
+dotnet run --project src/GoblinBench.Runner --no-build -- \
+  --suite mcp-tools \
+  --scenario mcp-tools.customer-case-summary \
+  --candidate qwen3-35b-local-mcp-tools
 
 dotnet run --project src/GoblinBench.Runner --no-build -- \
   report --suite mcp-tools
@@ -158,12 +172,12 @@ To test whether tool descriptions/names improve behavior:
 
 This lets GoblinBench evaluate not only model behavior but also tool-surface design.
 
-## Future real-agent runner
+## Future agent-mode runner
 
-The deterministic runner is intentionally not a real LLM tool loop. The next layer should add a candidate runner that:
+`OpenAiMcpToolUseRunner` now covers real OpenAI-compatible model tool calling. The remaining harder layer is a generic agent-mode runner that:
 
 1. Starts `fake-mcp-server.py` in stdio or HTTP mode.
-2. Launches a real agent/model session with only those tools plus explicitly allowed baseline tools.
+2. Launches a real agent session with MCP tools plus explicitly allowed baseline tools.
 3. Feeds observed tool calls into the same output shape consumed by `McpToolUseScorer`.
 4. Runs in two modes:
    - **MCP-only**: no shell/http bypass tools.
