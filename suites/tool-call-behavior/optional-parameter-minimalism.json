@@ -1,0 +1,103 @@
+{
+  "id": "tool-call-behavior.optional-parameter-minimalism",
+  "version": "1.0.0",
+  "name": "Optional parameter minimalism",
+  "description": "Checks whether a model omits optional tool parameters rather than stuffing nulls/empty arrays.",
+  "suite": "tool-call-behavior",
+  "input": {
+    "prompt": "Find a meeting slot for Mira on Friday. The user did not specify timezone, tags, declined events, or a result limit. Use the calendar tool and answer concisely.",
+    "fake_mcp": {
+      "tools": [
+        {
+          "name": "calendar_find_slots",
+          "description": "Find available meeting slots. Required: attendee and window. Optional filters should be omitted unless the user explicitly supplies them.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "attendee": {
+                "type": "string"
+              },
+              "window": {
+                "type": "string"
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "include_declined": {
+                "type": "boolean"
+              },
+              "max_results": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "attendee",
+              "window"
+            ]
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "calendar_find_slots",
+        "arguments": {
+          "attendee": "Mira",
+          "window": "Friday"
+        },
+        "result": {
+          "ok": true,
+          "slots": [
+            "Friday 10:00"
+          ]
+        }
+      }
+    ],
+    "scripted_final_response": "Mira has Friday 10:00 available."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "calendar_find_slots",
+            "argument_contains": {
+              "attendee": "Mira",
+              "window": "Friday"
+            }
+          }
+        ],
+        "optional_parameter_rules": [
+          {
+            "tool": "calendar_find_slots",
+            "optional_arguments": [
+              "timezone",
+              "tags",
+              "include_declined",
+              "max_results"
+            ]
+          }
+        ],
+        "final_response_contains": [
+          "Mira",
+          "Friday 10:00"
+        ],
+        "allow_bypass": false
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 180
+}

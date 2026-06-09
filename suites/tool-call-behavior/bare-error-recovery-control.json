@@ -1,0 +1,101 @@
+{
+  "id": "tool-call-behavior.bare-error-recovery-control",
+  "version": "1.0.0",
+  "name": "Bare tool error recovery control",
+  "description": "Same recovery shape as guided-error but the first validation error is bare; useful as a control for measuring whether suggestions help.",
+  "suite": "tool-call-behavior",
+  "input": {
+    "prompt": "Create an issue titled \"Cache key expires\". The user says it is urgent, but the fake tool priority enum is low, normal, high. Use the tool and recover if it rejects your call.",
+    "fake_mcp": {
+      "tools": [
+        {
+          "name": "issue_create",
+          "description": "Create a fake issue. Priority must be one of low, normal, high.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high"
+                ]
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "priority"
+            ]
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "issue_create",
+        "arguments": {
+          "title": "Cache key expires",
+          "priority": "urgent",
+          "labels": []
+        },
+        "result": {
+          "ok": false,
+          "error": "validation failed"
+        }
+      },
+      {
+        "tool": "issue_create",
+        "arguments": {
+          "title": "Cache key expires",
+          "priority": "high"
+        },
+        "result": {
+          "ok": true,
+          "issue_id": "ISSUE-42"
+        }
+      }
+    ],
+    "scripted_final_response": "Created ISSUE-42 with high priority."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "issue_create",
+            "argument_contains": {
+              "title": "Cache key expires",
+              "priority": "high"
+            }
+          }
+        ],
+        "expected_error_recovery": {
+          "tool": "issue_create",
+          "guided_error_expected": false
+        },
+        "final_response_contains": [
+          "ISSUE-42"
+        ],
+        "allow_bypass": false
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 180
+}

@@ -43,16 +43,19 @@
   },
   {
     "id": "pi-coding-gpt4o",
-    "name": "Pi Coding Agent — GPT-4o (sandboxed)",
+    "name": "Pi Coding Agent \u2014 GPT-4o (sandboxed)",
     "kind": "CodingAgent",
     "model": "gpt-4o",
     "provider": "openai",
     "cli_args": [
       "--print",
       "--no-session",
-      "--provider", "openai",
-      "--model", "gpt-4o",
-      "--mode", "text"
+      "--provider",
+      "openai",
+      "--model",
+      "gpt-4o",
+      "--mode",
+      "text"
     ],
     "config": {
       "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
@@ -63,7 +66,7 @@
   },
   {
     "id": "pi-coding-qwen-local",
-    "name": "Pi Coding Agent — Qwen3.6-35B local via Lemonade (sandboxed)",
+    "name": "Pi Coding Agent \u2014 Qwen3.6-35B local via Lemonade (sandboxed)",
     "kind": "CodingAgent",
     "model": "Qwen3.6-35B-A3B-GGUF",
     "provider": "lemonade",
@@ -71,10 +74,14 @@
       "--print",
       "--no-session",
       "--no-extensions",
-      "--extension", "/home/dev/goblinbench/scripts/lemonade-pi-extension.js",
-      "--provider", "lemonade",
-      "--model", "Qwen3.6-35B-A3B-GGUF",
-      "--mode", "json"
+      "--extension",
+      "/home/dev/goblinbench/scripts/lemonade-pi-extension.js",
+      "--provider",
+      "lemonade",
+      "--model",
+      "Qwen3.6-35B-A3B-GGUF",
+      "--mode",
+      "json"
     ],
     "config": {
       "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
@@ -96,7 +103,7 @@
   },
   {
     "id": "qwen3-35b-local-mcp-tools",
-    "name": "Qwen3.6-35B-A3B local — fake MCP tools",
+    "name": "Qwen3.6-35B-A3B local \u2014 fake MCP tools",
     "kind": "OpenAiModel",
     "model": "Qwen3.6-35B-A3B-GGUF",
     "provider": "local",
@@ -111,7 +118,7 @@
   },
   {
     "id": "qwen3-35b-local-mcp-session",
-    "name": "Qwen3.6-35B-A3B local — durable fake MCP session",
+    "name": "Qwen3.6-35B-A3B local \u2014 durable fake MCP session",
     "kind": "OpenAiModel",
     "model": "Qwen3.6-35B-A3B-GGUF",
     "provider": "local",
@@ -144,7 +151,7 @@
   },
   {
     "id": "qwen3-35b-local-fuzzy",
-    "name": "Qwen3.6-35B-A3B local — fuzzy autonomy/grounding",
+    "name": "Qwen3.6-35B-A3B local \u2014 fuzzy autonomy/grounding",
     "kind": "OpenAiModel",
     "model": "Qwen3.6-35B-A3B-GGUF",
     "provider": "local",
@@ -154,6 +161,231 @@
       "runner": "fuzzy-openai",
       "temperature": 0.1,
       "max_tokens": 4096
+    }
+  },
+  {
+    "id": "den-router-deepseek-tool-behavior",
+    "name": "Den Router DeepSeek \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "deepseek",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-deepseek-flash-tool-behavior",
+    "name": "Den Router DeepSeek Flash \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "deepseek-flash",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-kimi-tool-behavior",
+    "name": "Den Router Kimi k2.6 \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "kimi",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 1.0,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-mimo-tool-behavior",
+    "name": "Den Router Mimo v2.5 \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "mimo",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-minimax-tool-behavior",
+    "name": "Den Router MiniMax M3 \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "minimax",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-deepseek-pro-tool-behavior",
+    "name": "Den Router DeepSeek Pro \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "deepseek-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-mimo-pro-tool-behavior",
+    "name": "Den Router Mimo v2.5 Pro \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "mimo-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-glm-tool-behavior",
+    "name": "Den Router GLM 5.1 \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "glm",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-nemotron-tool-behavior",
+    "name": "Den Router Nemotron \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "nemotron",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-stepfun-tool-behavior",
+    "name": "Den Router StepFun Step 3.7 Flash \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "stepfun",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-hy3-tool-behavior",
+    "name": "Den Router Tencent HY3 Preview \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "hy3",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-gpt-tool-behavior",
+    "name": "Den Router GPT (via OpenRouter) \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "gpt",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-grok-tool-behavior",
+    "name": "Den Router Grok \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "grok",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-nex-n2-pro-tool-behavior",
+    "name": "Den Router Nex N2 Pro \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "nex-n2-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 8192,
+      "max_tool_rounds": 6
+    }
+  },
+  {
+    "id": "den-router-opus-tool-behavior",
+    "name": "Den Router Claude Opus 4.8 \u2014 tool behavior suite",
+    "kind": "OpenAiModel",
+    "model": "opus",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "temperature": 0.2,
+      "max_tokens": 4096,
+      "max_tool_rounds": 6
     }
   }
 ]

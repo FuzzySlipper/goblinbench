@@ -628,6 +628,7 @@ public static class ReportGenerator
             if (forbiddenUsed) categories.Add("forbidden_tool_used");
             if (bypassAttempts > 0 || bypassViolated) categories.Add("bypass_attempt");
             if (noCallsViolated) categories.Add("unexpected_tool_call");
+            categories.AddRange(GetDetailStringArray(primary, "failure_categories"));
         }
         else if (primary.ScorerId.Equals("coding-tests", StringComparison.OrdinalIgnoreCase) && primary.Passed == false)
         {
@@ -671,6 +672,15 @@ public static class ReportGenerator
             tags.AddRange(new[] { "ask-vs-proceed", "autonomy-calibration", "source-authority" });
         else if (suite == "evidence-grounding")
             tags.AddRange(new[] { "missing-evidence", "groundedness", "non-coding-groundedness" });
+        else if (suite == "tool-call-behavior")
+            tags.AddRange(new[] { "tool-use", "schema-discipline", "optional-parameter-minimalism", "error-recovery" });
+        else if (suite == "fake-den-mcp")
+            tags.AddRange(new[] { "tool-use", "den-mcp", "tool-forest", "safe-fake-side-effects" });
+        else if (suite == "den-mcp-ambiguity" || suite == "den-mcp-ambiguity-hinted")
+        {
+            tags.AddRange(new[] { "tool-use", "den-mcp", "ambiguity", "project-routing", "ask-vs-proceed", "safe-fake-side-effects" });
+            if (suite == "den-mcp-ambiguity-hinted") tags.Add("tool-description-hints");
+        }
 
         if (id.Contains("archive")) tags.AddRange(new[] { "refusal-boundary", "safety-boundary" });
         if (id.Contains("invoice") || id.Contains("payment")) tags.AddRange(new[] { "safe-write-boundary", "schema-grounding" });
@@ -682,6 +692,9 @@ public static class ReportGenerator
         if (id.Contains("smoke")) tags.Add("routine-verification");
         if (id.Contains("model-capability")) tags.Add("model-routing");
         if (id.Contains("partial-thread")) tags.Add("partial-context");
+        if (id.Contains("optional") || id.Contains("null-optional")) tags.Add("optional-parameter-discipline");
+        if (id.Contains("guided-error")) tags.Add("guided-error");
+        if (id.Contains("bare-error")) tags.Add("bare-error-control");
 
         return tags.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(t => t).ToList();
     }

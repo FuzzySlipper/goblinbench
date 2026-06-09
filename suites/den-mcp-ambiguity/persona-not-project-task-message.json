@@ -1,0 +1,694 @@
+{
+  "id": "den-mcp-ambiguity.persona-not-project-task-message",
+  "version": "1.0.0",
+  "name": "Planner persona is not a project id",
+  "description": "A planner/runner/persona phrase should not override the explicit den-mcp project/task routing.",
+  "suite": "den-mcp-ambiguity",
+  "input": {
+    "prompt": "Tell planner that den-mcp task 2086 still needs a reviewer look. Use the task thread; don't create a new project or document.",
+    "fake_mcp": {
+      "name": "fake-den-mcp-ambiguity",
+      "transport": [
+        "stdio",
+        "http"
+      ],
+      "source": "fixtures/fake-den-mcp/den-mcp-tools.live.json plus curated ambiguity prompts",
+      "safety": "Fake fixture only; tool handlers return canned results and must not contact real Den.",
+      "tool_description_variant": "baseline",
+      "tools": [
+        {
+          "name": "mcp_den_store_document",
+          "description": "Create or update a document. If a document with the same project_id + slug exists, it is overwritten.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. Use '_global' for cross-project docs.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Unique slug within the project, e.g. 'damage-system-spec'.",
+                "type": "string"
+              },
+              "title": {
+                "description": "Document title.",
+                "type": "string"
+              },
+              "content": {
+                "description": "Document content (markdown).",
+                "type": "string"
+              },
+              "doc_type": {
+                "description": "Document type: prd, spec, adr, convention, reference, note, memory. Default: spec.",
+                "type": "string",
+                "default": "spec"
+              },
+              "tags": {
+                "description": "JSON array of string tags. Accepts a native JSON array or a JSON-encoded string for backward compatibility.",
+                "default": null
+              },
+              "summary": {
+                "description": "Optional short summary for indexing and listing.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "title",
+              "content"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_comment_on_document",
+          "description": "Add a comment to a document's default discussion thread. If no default thread exists, one is auto-created. For replying to an existing comment, use parent_comment_id. Use get_document_discussion (not get_document) to see comments \u2014 discussion is separate from document content.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "author_identity": {
+                "description": "Author identity string (e.g. agent name or username).",
+                "type": "string"
+              },
+              "body_markdown": {
+                "description": "Comment body in markdown format.",
+                "type": "string"
+              },
+              "parent_comment_id": {
+                "description": "Parent comment ID for replies. Omit for root-level comments.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "comment_kind": {
+                "description": "Comment kind: comment, question, answer, resolution, version_note. Default: comment.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "anchor": {
+                "description": "Optional anchor within the document.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "mentions": {
+                "description": "JSON array of mentioned identities. Accepts native JSON or JSON-encoded string.",
+                "default": null
+              },
+              "source_refs": {
+                "description": "JSON array of source references. Accepts native JSON or JSON-encoded string.",
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "author_identity",
+              "body_markdown"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_send_message",
+          "description": "Send a message in a project. Can be project-level, attached to a task, or a reply in a thread.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project ID.",
+                "type": "string"
+              },
+              "sender": {
+                "description": "Your agent identity, e.g. 'pi' or another manual agent identity.",
+                "type": "string"
+              },
+              "content": {
+                "description": "Message body (markdown).",
+                "type": "string"
+              },
+              "task_id": {
+                "description": "Attach to a task by ID.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "thread_id": {
+                "description": "Reply to an existing message (forms a thread).",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "metadata": {
+                "description": "Optional JSON metadata object or JSON-encoded string, e.g. {\"type\":\"review_request\"}.",
+                "default": null
+              },
+              "intent": {
+                "description": "Optional canonical intent, e.g. review_feedback or handoff.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "sender",
+              "content"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_task",
+          "description": "Get full task details including dependencies, subtasks, and recent messages. Concise by default with bounded recent messages and descriptions; use verbose=true for full detail.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "description": "Task ID.",
+                "type": "integer"
+              },
+              "verbose": {
+                "description": "If true, return full detail including full description and recent messages. Default is concise.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "task_id"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_search_documents",
+          "description": "Full-text search across documents. Excludes archived documents. Supports AND, OR, NOT, and \"phrase\" queries. Concise by default with snippets; use verbose=true for full results.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "description": "FTS5 search query.",
+                "type": "string"
+              },
+              "project_id": {
+                "description": "Scope search to one project or space.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records. Default is concise with deep_read_hint.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_document",
+          "description": "Get a document's full content by project or space ID and slug. Returns documents regardless of visibility (normal, hidden, archived). Concise by default with content preview; use verbose=true for full content.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "verbose": {
+                "description": "If true, return full document content. Default is concise with content preview.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_list_documents",
+          "description": "List document summaries (without content). Excludes archived documents by default. Omit project_id to list across all projects and spaces. Concise by default; use verbose=true for full document records.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. Omit to list across all projects and spaces.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "doc_type": {
+                "description": "Filter by type: prd, spec, adr, convention, reference, note, memory.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "tags": {
+                "description": "Filter by tags (comma-separated). Document must have ALL specified tags.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "visibility": {
+                "description": "Filter by visibility: normal, hidden, archived. Omit to exclude archived documents.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records. Default is concise with deep_read_hint.",
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        },
+        {
+          "name": "mcp_den_get_document_discussion",
+          "description": "Get discussion threads and comments for a document. Discussion is separate from document content \u2014 use get_document for canonical document JSON without discussion fields. When create_if_missing=false (default) and no default thread exists, returns an empty result. Set create_if_missing=true to auto-create a default thread. Use include_resolved=true to include resolved/archived threads.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "create_if_missing": {
+                "description": "If true, auto-create a default discussion thread if none exists.",
+                "type": "boolean",
+                "default": false
+              },
+              "include_resolved": {
+                "description": "If true, include resolved and archived threads in results.",
+                "type": "boolean",
+                "default": false
+              },
+              "anchor": {
+                "description": "Optional anchor to filter threads by.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_update_document_visibility",
+          "description": "Update a document's visibility to normal, hidden, or archived. Archiving is a status flip \u2014 not data movement. Use archive_document_preflight first to check for active references.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "visibility": {
+                "description": "New visibility: normal, hidden, archived.",
+                "type": "string"
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "visibility"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_update_task",
+          "description": "Update a task's fields. Records changes in audit history. When setting status to 'blocked', blocker_summary and blocker_reason are required.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "description": "Task ID to update.",
+                "type": "integer"
+              },
+              "agent": {
+                "description": "Your agent identity (required for audit trail).",
+                "type": "string"
+              },
+              "title": {
+                "description": "New title.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "description": {
+                "description": "New description.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "status": {
+                "description": "New status: planned, in_progress, review, blocked, done, cancelled.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "priority": {
+                "description": "New priority 1-5.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "assigned_to": {
+                "description": "New assigned agent.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "tags": {
+                "description": "JSON array of string tags. Accepts a native JSON array or a JSON-encoded string for backward compatibility.",
+                "default": null
+              },
+              "parent_id": {
+                "description": "New parent task ID.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_summary": {
+                "description": "Required when status=blocked. Short blocker summary.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_reason": {
+                "description": "Required when status=blocked. Why the agent cannot proceed.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_attempted_remedies": {
+                "description": "Optional when status=blocked. Remedies or evidence of what was attempted.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_suggested_next_step": {
+                "description": "Optional when status=blocked. Suggested next decision or unblock path.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_requires_human_input": {
+                "description": "Optional when status=blocked. Whether human input is required vs planner can replan. Default: false.",
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "task_id",
+              "agent"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_create_project",
+          "description": "Register a new project for task management, messaging, and document storage.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Unique project ID slug, e.g. 'my-project'. Typically the directory name.",
+                "type": "string"
+              },
+              "name": {
+                "description": "Human-readable display name.",
+                "type": "string"
+              },
+              "root_path": {
+                "description": "Absolute path to the project root on disk.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "description": {
+                "description": "Short description of the project.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_project",
+          "description": "Get a project by ID with summary stats (task counts by status, unread messages).",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project ID.",
+                "type": "string"
+              },
+              "agent": {
+                "description": "Your agent identity, for unread message count.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              }
+            },
+            "required": [
+              "project_id"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_list_projects",
+          "description": "List registered projects. Defaults to normal project-kind spaces only, excluding hidden or archived spaces.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "mcp_den_get_task",
+        "arguments": {
+          "task_id": 2086,
+          "verbose": true
+        },
+        "result": {
+          "fake_den_mcp": true,
+          "real_server_touched": false,
+          "ok": true,
+          "task": {
+            "id": 2086,
+            "project_id": "den-mcp",
+            "status": "review",
+            "title": "Document MCP list/search response ergonomics"
+          }
+        }
+      },
+      {
+        "tool": "mcp_den_send_message",
+        "arguments": {
+          "project_id": "den-mcp",
+          "sender": "goblinbench-eval",
+          "task_id": 2086,
+          "content": "Planner: task 2086 still needs reviewer look.",
+          "intent": "handoff"
+        },
+        "result": {
+          "fake_den_mcp": true,
+          "real_server_touched": false,
+          "ok": true,
+          "message_id": 42002,
+          "project_id": "den-mcp",
+          "task_id": 2086
+        }
+      }
+    ],
+    "scripted_bypass_attempts": [],
+    "scripted_final_response": "Posted a planner-visible handoff on den-mcp task 2086 in the fake fixture."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "mcp_den_get_task",
+            "argument_contains": {
+              "task_id": "2086"
+            }
+          },
+          {
+            "tool": "mcp_den_send_message",
+            "argument_contains": {
+              "project_id": "den-mcp",
+              "task_id": "2086"
+            }
+          }
+        ],
+        "forbidden_tools": [
+          "mcp_den_create_project",
+          "mcp_den_store_document",
+          "mcp_den_update_task"
+        ],
+        "forbidden_argument_values": [
+          {
+            "tool": "mcp_den_send_message",
+            "argument": "project_id",
+            "values": [
+              "den-system",
+              "#den-system",
+              "planner",
+              "runner",
+              "analyst",
+              "den system"
+            ]
+          }
+        ],
+        "disallow_clarification": true,
+        "artifact_markers": [
+          "den-mcp",
+          "2086"
+        ],
+        "allow_bypass": false,
+        "expect_no_tool_calls": false,
+        "final_response_contains": [
+          "2086",
+          "den-mcp",
+          "planner"
+        ]
+      },
+      "latency": {
+        "max_budget_ms": 60000
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 240
+}

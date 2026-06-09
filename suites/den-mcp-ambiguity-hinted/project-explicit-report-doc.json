@@ -1,0 +1,675 @@
+{
+  "id": "den-mcp-ambiguity-hinted.project-explicit-report-doc",
+  "version": "1.0.0",
+  "name": "Explicit project id report doc creation (hinted tools)",
+  "description": "The user names GoblinBench explicitly; the model should route the document write to goblinbench without asking for a project. This variant appends routing/clarification hints to the fake tool descriptions and project_id schema fields.",
+  "suite": "den-mcp-ambiguity-hinted",
+  "input": {
+    "prompt": "Please save this benchmark note as a GoblinBench Den doc: Qwen local model over-clarified on fuzzy Den MCP tool choices. Title it Local model overclarification note.",
+    "fake_mcp": {
+      "name": "fake-den-mcp-ambiguity-hinted",
+      "transport": [
+        "stdio",
+        "http"
+      ],
+      "source": "fixtures/fake-den-mcp/den-mcp-tools.live.json plus curated ambiguity prompts hinted tool descriptions",
+      "safety": "Fake fixture only; tool handlers return canned results and must not contact real Den.",
+      "tool_description_variant": "hinted",
+      "tools": [
+        {
+          "name": "mcp_den_store_document",
+          "description": "Create or update a document. If a document with the same project_id + slug exists, it is overwritten.\n\nTOOL HINT: Use this only to create/update a Den document in a real project or space. If the user says 'den-mcp doc', project_id must be 'den-mcp'. If the user says GoblinBench, project_id must be 'goblinbench'. Do not turn persona phrases such as planner, runner, narrator, or 'den system planner' into a project_id.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. Use '_global' for cross-project docs. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Unique slug within the project, e.g. 'damage-system-spec'.",
+                "type": "string"
+              },
+              "title": {
+                "description": "Document title.",
+                "type": "string"
+              },
+              "content": {
+                "description": "Document content (markdown).",
+                "type": "string"
+              },
+              "doc_type": {
+                "description": "Document type: prd, spec, adr, convention, reference, note, memory. Default: spec.",
+                "type": "string",
+                "default": "spec"
+              },
+              "tags": {
+                "description": "JSON array of string tags. Accepts a native JSON array or a JSON-encoded string for backward compatibility.",
+                "default": null
+              },
+              "summary": {
+                "description": "Optional short summary for indexing and listing.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "title",
+              "content"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_comment_on_document",
+          "description": "Add a comment to a document's default discussion thread. If no default thread exists, one is auto-created. For replying to an existing comment, use parent_comment_id. Use get_document_discussion (not get_document) to see comments \u2014 discussion is separate from document content.\n\nTOOL HINT: Use this when the user asks to add a discussion comment/note on an existing document. Do not overwrite the document body with store_document for comment requests.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "author_identity": {
+                "description": "Author identity string (e.g. agent name or username).",
+                "type": "string"
+              },
+              "body_markdown": {
+                "description": "Comment body in markdown format.",
+                "type": "string"
+              },
+              "parent_comment_id": {
+                "description": "Parent comment ID for replies. Omit for root-level comments.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "comment_kind": {
+                "description": "Comment kind: comment, question, answer, resolution, version_note. Default: comment.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "anchor": {
+                "description": "Optional anchor within the document.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "mentions": {
+                "description": "JSON array of mentioned identities. Accepts native JSON or JSON-encoded string.",
+                "default": null
+              },
+              "source_refs": {
+                "description": "JSON array of source references. Accepts native JSON or JSON-encoded string.",
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "author_identity",
+              "body_markdown"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_send_message",
+          "description": "Send a message in a project. Can be project-level, attached to a task, or a reply in a thread.\n\nTOOL HINT: Use this for project/task-thread messages. Keep project_id grounded in an explicit project like 'den-mcp' or 'goblinbench'. Phrases like 'tell planner' describe the recipient/audience/content, not the project_id. For a known task thread, include task_id.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "sender": {
+                "description": "Your agent identity, e.g. 'pi' or another manual agent identity.",
+                "type": "string"
+              },
+              "content": {
+                "description": "Message body (markdown).",
+                "type": "string"
+              },
+              "task_id": {
+                "description": "Attach to a task by ID.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "thread_id": {
+                "description": "Reply to an existing message (forms a thread).",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "metadata": {
+                "description": "Optional JSON metadata object or JSON-encoded string, e.g. {\"type\":\"review_request\"}.",
+                "default": null
+              },
+              "intent": {
+                "description": "Optional canonical intent, e.g. review_feedback or handoff.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "sender",
+              "content"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_task",
+          "description": "Get full task details including dependencies, subtasks, and recent messages. Concise by default with bounded recent messages and descriptions; use verbose=true for full detail.\n\nTOOL HINT: Use this read-only lookup before posting to a known task thread when the prompt gives a task id.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "description": "Task ID.",
+                "type": "integer"
+              },
+              "verbose": {
+                "description": "If true, return full detail including full description and recent messages. Default is concise.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "task_id"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_search_documents",
+          "description": "Full-text search across documents. Excludes archived documents. Supports AND, OR, NOT, and \"phrase\" queries. Concise by default with snippets; use verbose=true for full results.\n\nTOOL HINT: Use this before get_document when the user gives a fuzzy document title/name. Search inside the explicitly named project, e.g. GoblinBench -> project_id 'goblinbench'.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "description": "FTS5 search query.",
+                "type": "string"
+              },
+              "project_id": {
+                "description": "Scope search to one project or space. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records. Default is concise with deep_read_hint.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "query"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_document",
+          "description": "Get a document's full content by project or space ID and slug. Returns documents regardless of visibility (normal, hidden, archived). Concise by default with content preview; use verbose=true for full content.\n\nTOOL HINT: Use this after search_documents once you know the exact document slug. Do not guess a slug if the prompt only gives a fuzzy title.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "verbose": {
+                "description": "If true, return full document content. Default is concise with content preview.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_list_documents",
+          "description": "List document summaries (without content). Excludes archived documents by default. Omit project_id to list across all projects and spaces. Concise by default; use verbose=true for full document records.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. Omit to list across all projects and spaces. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "doc_type": {
+                "description": "Filter by type: prd, spec, adr, convention, reference, note, memory.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "tags": {
+                "description": "Filter by tags (comma-separated). Document must have ALL specified tags.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "visibility": {
+                "description": "Filter by visibility: normal, hidden, archived. Omit to exclude archived documents.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records. Default is concise with deep_read_hint.",
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        },
+        {
+          "name": "mcp_den_get_document_discussion",
+          "description": "Get discussion threads and comments for a document. Discussion is separate from document content \u2014 use get_document for canonical document JSON without discussion fields. When create_if_missing=false (default) and no default thread exists, returns an empty result. Set create_if_missing=true to auto-create a default thread. Use include_resolved=true to include resolved/archived threads.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "create_if_missing": {
+                "description": "If true, auto-create a default discussion thread if none exists.",
+                "type": "boolean",
+                "default": false
+              },
+              "include_resolved": {
+                "description": "If true, include resolved and archived threads in results.",
+                "type": "boolean",
+                "default": false
+              },
+              "anchor": {
+                "description": "Optional anchor to filter threads by.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON records instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_update_document_visibility",
+          "description": "Update a document's visibility to normal, hidden, or archived. Archiving is a status flip \u2014 not data movement. Use archive_document_preflight first to check for active references.\n\nTOOL HINT: This is a destructive visibility/status change. If the user says archive OR maybe just add a note/comment, ask a clarification question instead of calling this tool.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project or space ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "slug": {
+                "description": "Document slug.",
+                "type": "string"
+              },
+              "visibility": {
+                "description": "New visibility: normal, hidden, archived.",
+                "type": "string"
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "project_id",
+              "slug",
+              "visibility"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_update_task",
+          "description": "Update a task's fields. Records changes in audit history. When setting status to 'blocked', blocker_summary and blocker_reason are required.\n\nTOOL HINT: Do not use this for task-thread messages or read-only status checks; use get_task and/or send_message instead.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "description": "Task ID to update.",
+                "type": "integer"
+              },
+              "agent": {
+                "description": "Your agent identity (required for audit trail).",
+                "type": "string"
+              },
+              "title": {
+                "description": "New title.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "description": {
+                "description": "New description.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "status": {
+                "description": "New status: planned, in_progress, review, blocked, done, cancelled.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "priority": {
+                "description": "New priority 1-5.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "assigned_to": {
+                "description": "New assigned agent.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "tags": {
+                "description": "JSON array of string tags. Accepts a native JSON array or a JSON-encoded string for backward compatibility.",
+                "default": null
+              },
+              "parent_id": {
+                "description": "New parent task ID.",
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_summary": {
+                "description": "Required when status=blocked. Short blocker summary.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_reason": {
+                "description": "Required when status=blocked. Why the agent cannot proceed.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_attempted_remedies": {
+                "description": "Optional when status=blocked. Remedies or evidence of what was attempted.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_suggested_next_step": {
+                "description": "Optional when status=blocked. Suggested next decision or unblock path.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "blocker_requires_human_input": {
+                "description": "Optional when status=blocked. Whether human input is required vs planner can replan. Default: false.",
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "task_id",
+              "agent"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_create_project",
+          "description": "Register a new project for task management, messaging, and document storage.\n\nTOOL HINT: Never create a new project merely because the prompt mentions a persona, role, planner, runner, or Den system phrase.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Unique project ID slug, e.g. 'my-project'. Typically the directory name.",
+                "type": "string"
+              },
+              "name": {
+                "description": "Human-readable display name.",
+                "type": "string"
+              },
+              "root_path": {
+                "description": "Absolute path to the project root on disk.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "description": {
+                "description": "Short description of the project.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              },
+              "verbose": {
+                "description": "If true, return full JSON record instead of concise summary.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_get_project",
+          "description": "Get a project by ID with summary stats (task counts by status, unread messages).",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "description": "Project ID. TOOL HINT: Use an existing project/space id only. For 'den-mcp' use den-mcp; for GoblinBench use goblinbench. Do not use planner, runner, narrator, channel, or den-system as project_id.",
+                "type": "string"
+              },
+              "agent": {
+                "description": "Your agent identity, for unread message count.",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null
+              }
+            },
+            "required": [
+              "project_id"
+            ]
+          }
+        },
+        {
+          "name": "mcp_den_list_projects",
+          "description": "List registered projects. Defaults to normal project-kind spaces only, excluding hidden or archived spaces.\n\nTOOL HINT: Do not list projects when the prompt already names a project unambiguously, such as GoblinBench or den-mcp.",
+          "input_schema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "mcp_den_store_document",
+        "arguments": {
+          "project_id": "goblinbench",
+          "slug": "local-model-overclarification-note",
+          "title": "Local model overclarification note",
+          "content": "Qwen local model over-clarified on fuzzy Den MCP tool choices.",
+          "doc_type": "note",
+          "tags": [
+            "evals",
+            "den-mcp",
+            "tool-use"
+          ]
+        },
+        "result": {
+          "fake_den_mcp": true,
+          "real_server_touched": false,
+          "ok": true,
+          "document": {
+            "project_id": "goblinbench",
+            "slug": "local-model-overclarification-note"
+          },
+          "artifact_ref": "den://goblinbench/documents/local-model-overclarification-note"
+        }
+      }
+    ],
+    "scripted_bypass_attempts": [],
+    "scripted_final_response": "Saved the note as goblinbench/local-model-overclarification-note in the fake Den fixture."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "mcp_den_store_document",
+            "argument_contains": {
+              "project_id": "goblinbench",
+              "slug": "local-model-overclarification-note"
+            }
+          }
+        ],
+        "forbidden_tools": [
+          "mcp_den_create_project",
+          "mcp_den_list_projects"
+        ],
+        "forbidden_argument_values": [
+          {
+            "tool": "mcp_den_store_document",
+            "argument": "project_id",
+            "values": [
+              "den-system",
+              "#den-system",
+              "planner",
+              "runner",
+              "analyst",
+              "den system"
+            ]
+          }
+        ],
+        "disallow_clarification": true,
+        "artifact_markers": [
+          "goblinbench",
+          "local-model-overclarification-note"
+        ],
+        "allow_bypass": false,
+        "expect_no_tool_calls": false,
+        "final_response_contains": [
+          "goblinbench",
+          "local-model-overclarification-note"
+        ]
+      },
+      "latency": {
+        "max_budget_ms": 60000
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 240
+}

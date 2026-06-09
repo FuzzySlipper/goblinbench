@@ -1,0 +1,106 @@
+{
+  "id": "tool-call-behavior.guided-error-recovery",
+  "version": "1.0.0",
+  "name": "Guided tool error recovery",
+  "description": "Tool returns a validation error with a plain-language use suggestion; scorer checks whether the model recovers.",
+  "suite": "tool-call-behavior",
+  "input": {
+    "prompt": "Create an issue titled \"Cache key expires\". The user says it is urgent, but the fake tool priority enum is low, normal, high. Use the tool and recover if it rejects your call.",
+    "fake_mcp": {
+      "tools": [
+        {
+          "name": "issue_create",
+          "description": "Create a fake issue. Priority must be one of low, normal, high.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high"
+                ]
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "priority"
+            ]
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "issue_create",
+        "arguments": {
+          "title": "Cache key expires",
+          "priority": "urgent",
+          "labels": []
+        },
+        "result": {
+          "ok": false,
+          "error": "validation failed",
+          "use_suggestion": "priority must be one of low, normal, high; map urgent to high when the user implies urgency; omit optional fields you do not need"
+        }
+      },
+      {
+        "tool": "issue_create",
+        "arguments": {
+          "title": "Cache key expires",
+          "priority": "high"
+        },
+        "result": {
+          "ok": true,
+          "issue_id": "ISSUE-42"
+        }
+      }
+    ],
+    "scripted_final_response": "Created ISSUE-42 with high priority."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "issue_create",
+            "argument_contains": {
+              "title": "Cache key expires",
+              "priority": "high"
+            }
+          }
+        ],
+        "expected_error_recovery": {
+          "tool": "issue_create",
+          "guided_error_expected": true,
+          "required_guidance_contains": [
+            "priority must be one of",
+            "omit optional fields"
+          ]
+        },
+        "final_response_contains": [
+          "ISSUE-42"
+        ],
+        "allow_bypass": false
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 180
+}

@@ -1,0 +1,60 @@
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "name": "mcp_den_get_task",
+        "description": "Get full task details including dependencies, subtasks, and recent messages.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "task_id": { "type": "integer" }
+          },
+          "required": ["task_id"]
+        }
+      },
+      {
+        "name": "mcp_den_update_task",
+        "description": "Update a task's fields. Records changes in audit history. When setting status to blocked, blocker details are required.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "task_id": { "type": "integer" },
+            "agent": { "type": "string" },
+            "status": { "type": "string", "enum": ["planned", "in_progress", "review", "blocked", "done", "cancelled"] },
+            "title": { "type": "string" }
+          },
+          "required": ["task_id", "agent"]
+        }
+      },
+      {
+        "name": "mcp_den_list_tasks",
+        "description": "List tasks in a project with optional filters. Returns summaries without descriptions.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": { "type": "string" },
+            "status": { "type": "string" },
+            "assigned_to": { "type": "string" }
+          },
+          "required": ["project_id"]
+        }
+      },
+      {
+        "name": "mcp_den_store_document",
+        "description": "Create or update a document in a project or space.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": { "type": "string" },
+            "slug": { "type": "string" },
+            "title": { "type": "string" },
+            "content": { "type": "string" }
+          },
+          "required": ["project_id", "slug", "title", "content"]
+        }
+      }
+    ]
+  }
+}

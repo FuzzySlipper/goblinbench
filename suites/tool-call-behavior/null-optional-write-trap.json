@@ -1,0 +1,105 @@
+{
+  "id": "tool-call-behavior.null-optional-write-trap",
+  "version": "1.0.0",
+  "name": "Null optional write trap",
+  "description": "Checks whether a model pollutes a write-ish fake tool with null/empty optional fields.",
+  "suite": "tool-call-behavior",
+  "input": {
+    "prompt": "Create a normal-priority issue titled \"Cache key expires\". Do not add labels, assignee, milestone, or due date unless specified.",
+    "fake_mcp": {
+      "tools": [
+        {
+          "name": "issue_create",
+          "description": "Create a fake issue. Optional labels/assignee/milestone/due_date should be omitted unless specified.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "normal",
+                  "high"
+                ]
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "assignee": {
+                "type": "string"
+              },
+              "milestone": {
+                "type": "string"
+              },
+              "due_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "priority"
+            ]
+          }
+        }
+      ]
+    },
+    "scripted_tool_calls": [
+      {
+        "tool": "issue_create",
+        "arguments": {
+          "title": "Cache key expires",
+          "priority": "normal"
+        },
+        "result": {
+          "ok": true,
+          "issue_id": "ISSUE-42"
+        }
+      }
+    ],
+    "scripted_final_response": "Created ISSUE-42 for Cache key expires."
+  },
+  "scoring": {
+    "scorers": [
+      "mcp-tool-use",
+      "latency"
+    ],
+    "parameters": {
+      "mcp-tool-use": {
+        "expected_calls": [
+          {
+            "tool": "issue_create",
+            "argument_contains": {
+              "title": "Cache key expires",
+              "priority": "normal"
+            }
+          }
+        ],
+        "optional_parameter_rules": [
+          {
+            "tool": "issue_create",
+            "optional_arguments": [
+              "labels",
+              "assignee",
+              "milestone",
+              "due_date"
+            ]
+          }
+        ],
+        "final_response_contains": [
+          "ISSUE-42"
+        ],
+        "allow_bypass": false
+      }
+    },
+    "thresholds": {
+      "mcp-tool-use": 0.8
+    }
+  },
+  "timeout_seconds": 180
+}
