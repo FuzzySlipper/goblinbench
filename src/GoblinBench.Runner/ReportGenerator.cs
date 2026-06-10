@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -205,97 +204,6 @@ public static class ReportGenerator
 
     public static string RenderJson(ReportData data) =>
         JsonSerializer.Serialize(data, JsonOpts);
-
-    public static string RenderHtml(ReportData data)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("<!doctype html>");
-        sb.AppendLine("<html lang=\"en\">");
-        sb.AppendLine("<head>");
-        sb.AppendLine("  <meta charset=\"utf-8\">");
-        sb.AppendLine("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        sb.AppendLine($"  <title>GoblinBench Report Explorer — {H(data.SuiteFilter ?? string.Join(", ", data.RunIds))}</title>");
-        sb.AppendLine("  <style>");
-        sb.AppendLine("    :root{color-scheme:dark;--bg:#101014;--panel:#181923;--muted:#9aa4b2;--text:#eff3ff;--line:#313442;--good:#50d890;--bad:#ff6b7a;--mid:#ffd166;--chip:#25283a;--accent:#8bd3ff}");
-        sb.AppendLine("    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif} main{max-width:1400px;margin:0 auto;padding:24px} h1{font-size:28px;margin:0 0 8px} h2{margin-top:28px} .muted{color:var(--muted)} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.big{font-size:24px;font-weight:700}.controls{position:sticky;top:0;z-index:2;background:linear-gradient(var(--bg),rgba(16,16,20,.93));padding:12px 0;display:flex;gap:10px;flex-wrap:wrap}.controls input,.controls select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 10px} table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden} th,td{border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top} th{position:sticky;top:54px;background:#202231;text-align:left;cursor:pointer} tr:hover{background:#202231}.pass{color:var(--good);font-weight:700}.fail{color:var(--bad);font-weight:700}.maybe{color:var(--mid);font-weight:700}.chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin:1px 3px 1px 0;color:#d8def0;font-size:12px}.cat{border-color:#68424a;background:#2a1b24;color:#ffb3bf}.tag{border-color:#33485b;background:#172738;color:#bde6ff} a{color:var(--accent)} details{margin:3px 0} summary{cursor:pointer;color:var(--accent)} .nowrap{white-space:nowrap}");
-        sb.AppendLine("  </style>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body><main>");
-        sb.AppendLine("  <h1>GoblinBench Report Explorer</h1>");
-        sb.AppendLine($"  <div class=\"muted\">Generated {data.GeneratedAt:yyyy-MM-dd HH:mm:ss} UTC · Run(s): {H(string.Join(", ", data.RunIds))}</div>");
-        if (data.SuiteFilter != null) sb.AppendLine($"  <div class=\"muted\">Suite: {H(data.SuiteFilter)}</div>");
-
-        sb.AppendLine("  <section class=\"grid\">");
-        foreach (var c in data.Candidates)
-        {
-            var passRate = c.TotalScenarios > 0 ? $"{c.PassCount}/{c.TotalScenarios}" : "—";
-            var pct = c.TotalScenarios > 0 ? $"{100 * c.PassCount / c.TotalScenarios}%" : "—";
-            sb.AppendLine("    <div class=\"card\">");
-            sb.AppendLine($"      <div class=\"big\">{H(passRate)} <span class=\"muted\">({H(pct)})</span></div>");
-            sb.AppendLine($"      <div>{H(c.CandidateId)}</div>");
-            sb.AppendLine($"      <div class=\"muted\">{H(c.ModelIdentity?.Model ?? c.CandidateKind)} · {H(c.AvgLatencyMs < 1000 ? $"{c.AvgLatencyMs:F0}ms" : $"{c.AvgLatencyMs / 1000.0:F1}s")}</div>");
-            sb.AppendLine("    </div>");
-        }
-        sb.AppendLine("  </section>");
-
-        var allSuites = data.Scenarios.Select(s => s.ScenarioId.Split('.').First()).Distinct().OrderBy(s => s).ToList();
-        var allTags = data.Scenarios.SelectMany(s => s.TaskShapeTags).Distinct().OrderBy(t => t).ToList();
-        var allCategories = data.Scenarios.SelectMany(s => s.CandidateScores.Values).SelectMany(c => c.FailureCategories).Distinct().OrderBy(c => c).ToList();
-
-        sb.AppendLine("  <div class=\"controls\">");
-        sb.AppendLine("    <input id=\"searchBox\" placeholder=\"Filter candidate/scenario/model…\" oninput=\"applyFilters()\">");
-        sb.AppendLine("    <select id=\"suiteFilter\" onchange=\"applyFilters()\"><option value=\"\">All suites</option>");
-        foreach (var suite in allSuites) sb.AppendLine($"      <option value=\"{HAttr(suite)}\">{H(suite)}</option>");
-        sb.AppendLine("    </select>");
-        sb.AppendLine("    <select id=\"tagFilter\" onchange=\"applyFilters()\"><option value=\"\">All task shapes</option>");
-        foreach (var tag in allTags) sb.AppendLine($"      <option value=\"{HAttr(tag)}\">{H(tag)}</option>");
-        sb.AppendLine("    </select>");
-        sb.AppendLine("    <select id=\"categoryFilter\" onchange=\"applyFilters()\"><option value=\"\">All failure categories</option>");
-        foreach (var cat in allCategories) sb.AppendLine($"      <option value=\"{HAttr(cat)}\">{H(cat)}</option>");
-        sb.AppendLine("    </select>");
-        sb.AppendLine("    <select id=\"passFilter\" onchange=\"applyFilters()\"><option value=\"\">Pass + fail</option><option value=\"pass\">Pass only</option><option value=\"fail\">Fail only</option></select>");
-        sb.AppendLine("  </div>");
-
-        sb.AppendLine("  <h2>Candidate × scenario results</h2>");
-        sb.AppendLine("  <table id=\"resultTable\">");
-        sb.AppendLine("    <thead><tr><th data-sort-key=\"candidate\">Candidate</th><th data-sort-key=\"scenario\">Scenario</th><th data-sort-key=\"score\">Score</th><th data-sort-key=\"latency\">Latency</th><th>Task-shape tags</th><th>Failure categories</th><th>Diagnostics</th><th>Artifacts</th></tr></thead>");
-        sb.AppendLine("    <tbody>");
-        foreach (var scenario in data.Scenarios)
-        {
-            var suite = scenario.ScenarioId.Split('.').First();
-            foreach (var candidate in data.Candidates)
-            {
-                if (!scenario.CandidateScores.TryGetValue(candidate.CandidateId, out var score)) continue;
-                var passed = score.Passed == true ? "pass" : score.Passed == false ? "fail" : "unknown";
-                var scoreText = score.Score.HasValue ? score.Score.Value.ToString("F3") : "—";
-                var latencyText = score.DurationMs < 1000 ? $"{score.DurationMs}ms" : $"{score.DurationMs / 1000.0:F1}s";
-                var primary = score.ScorerDetails.FirstOrDefault(s => s.ScorerId == score.PrimaryScorerId) ?? score.ScorerDetails.FirstOrDefault();
-                var calls = primary?.ScorerId == "mcp-tool-use"
-                    ? $"calls {GetDetailInt(primary, "matched_call_count")?.ToString() ?? "—"}/{GetDetailInt(primary, "expected_call_count")?.ToString() ?? "—"}; actual {GetDetailInt(primary, "actual_call_count")?.ToString() ?? "—"}; final {GetDetailInt(primary, "final_response_match_count")?.ToString() ?? "—"}/{GetDetailInt(primary, "final_response_expected_count")?.ToString() ?? "—"}"
-                    : primary?.HumanSummary ?? "—";
-                var artifacts = ArtifactLinks(score.ArtifactDirectory);
-                var search = string.Join(" ", candidate.CandidateId, candidate.ModelIdentity?.Model, scenario.ScenarioId, string.Join(" ", scenario.TaskShapeTags), string.Join(" ", score.FailureCategories));
-                sb.AppendLine($"      <tr data-suite=\"{HAttr(suite)}\" data-tags=\"{HAttr(string.Join(" ", scenario.TaskShapeTags))}\" data-categories=\"{HAttr(string.Join(" ", score.FailureCategories))}\" data-pass=\"{passed}\" data-search=\"{HAttr(search.ToLowerInvariant())}\">");
-                sb.AppendLine($"        <td>{H(candidate.CandidateId)}<div class=\"muted\">{H(candidate.ModelIdentity?.Model ?? candidate.CandidateKind)}</div></td>");
-                sb.AppendLine($"        <td>{H(ShortScenario(scenario.ScenarioId))}</td>");
-                sb.AppendLine($"        <td data-value=\"{HAttr(score.Score?.ToString("F6") ?? "") }\"><span class=\"{(passed == "pass" ? "pass" : passed == "fail" ? "fail" : "maybe")}\">{(passed == "pass" ? "✓" : passed == "fail" ? "✗" : "~")}</span> {H(scoreText)}</td>");
-                sb.AppendLine($"        <td data-value=\"{score.DurationMs}\" class=\"nowrap\">{H(latencyText)}</td>");
-                sb.AppendLine($"        <td>{ChipList(scenario.TaskShapeTags, "tag")}</td>");
-                sb.AppendLine($"        <td>{ChipList(score.FailureCategories, "cat")}</td>");
-                sb.AppendLine($"        <td><details><summary>{H(calls)}</summary><pre>{H(primary?.HumanSummary ?? primary?.Error ?? "")}</pre></details></td>");
-                sb.AppendLine($"        <td>{artifacts}</td>");
-                sb.AppendLine("      </tr>");
-            }
-        }
-        sb.AppendLine("    </tbody>");
-        sb.AppendLine("  </table>");
-        sb.AppendLine("  <script>");
-        sb.AppendLine("    function applyFilters(){const q=document.getElementById('searchBox').value.toLowerCase();const suite=document.getElementById('suiteFilter').value;const tag=document.getElementById('tagFilter').value;const cat=document.getElementById('categoryFilter').value;const pass=document.getElementById('passFilter').value;for(const tr of document.querySelectorAll('#resultTable tbody tr')){const ok=(!q||tr.dataset.search.includes(q))&&(!suite||tr.dataset.suite===suite)&&(!tag||tr.dataset.tags.split(' ').includes(tag))&&(!cat||tr.dataset.categories.split(' ').includes(cat))&&(!pass||tr.dataset.pass===pass);tr.style.display=ok?'':'none';}} ");
-        sb.AppendLine("    for(const th of document.querySelectorAll('th[data-sort-key]')) th.addEventListener('click',()=>{const table=th.closest('table');const i=[...th.parentNode.children].indexOf(th);const rows=[...table.tBodies[0].rows];const numeric=th.dataset.sortKey==='score'||th.dataset.sortKey==='latency';const asc=th.dataset.asc!=='true';th.dataset.asc=asc;rows.sort((a,b)=>{const av=a.cells[i].dataset.value||a.cells[i].innerText;const bv=b.cells[i].dataset.value||b.cells[i].innerText;return numeric?(Number(av||-1)-Number(bv||-1))*(asc?1:-1):av.localeCompare(bv)*(asc?1:-1)});for(const r of rows)table.tBodies[0].appendChild(r);});");
-        sb.AppendLine("  </script>");
-        sb.AppendLine("</main></body></html>");
-        return sb.ToString();
-    }
 
     // ── internal ──────────────────────────────────────────────────────────────
 
@@ -698,36 +606,6 @@ public static class ReportGenerator
 
         return tags.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(t => t).ToList();
     }
-
-    private static string ArtifactLinks(string? artifactDirectory)
-    {
-        if (string.IsNullOrWhiteSpace(artifactDirectory)) return "—";
-        var links = new[]
-        {
-            "tool_calls.json",
-            "scores.json",
-            "final_response.txt",
-            "chat_transcript.json",
-            "session_transcript.json"
-        };
-        return string.Join("<br>", links.Select(name =>
-        {
-            var path = Path.Combine(artifactDirectory, name);
-            return $"<a href=\"{HAttr(path)}\">{H(name)}</a>";
-        }));
-    }
-
-    private static string ChipList(IEnumerable<string> values, string cssClass)
-    {
-        var chips = values.ToList();
-        return chips.Count == 0
-            ? "<span class=\"muted\">—</span>"
-            : string.Join("", chips.Select(v => $"<span class=\"chip {HAttr(cssClass)}\">{H(v)}</span>"));
-    }
-
-    private static string H(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
-
-    private static string HAttr(string? value) => H(value).Replace("\"", "&quot;");
 
     private static string EscapeCell(string value) => value.Replace("|", "\\|");
 

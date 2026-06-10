@@ -382,9 +382,9 @@ public static class Program
 
         var markdown = ReportGenerator.RenderMarkdown(data);
         var jsonReport = ReportGenerator.RenderJson(data);
-        var htmlReport = ReportGenerator.RenderHtml(data);
 
-        // Write report files
+        // Write report files. HTML export was retired in favor of the live viewer
+        // (`report serve`), which renders directly from run.json.
         var repoRootForOutput = ResolveRepoRoot();
         var defaultDir = data.RunIds.Count == 1
             ? Path.Combine(repoRootForOutput, "runs", data.RunIds[0])
@@ -396,18 +396,14 @@ public static class Program
         var jsonPath = outputPath != null
             ? Path.ChangeExtension(outputPath, ".json")
             : Path.Combine(defaultDir, "report.json");
-        var htmlPath = outputPath != null
-            ? Path.ChangeExtension(outputPath, ".html")
-            : Path.Combine(defaultDir, "report.html");
 
         await File.WriteAllTextAsync(mdPath, markdown);
         await File.WriteAllTextAsync(jsonPath, jsonReport);
-        await File.WriteAllTextAsync(htmlPath, htmlReport);
 
         Console.WriteLine($"Report written:");
         Console.WriteLine($"  Markdown: {mdPath}");
         Console.WriteLine($"  JSON:     {jsonPath}");
-        Console.WriteLine($"  HTML:     {htmlPath}");
+        Console.WriteLine($"  Viewer:   dotnet run --project src/GoblinBench.Runner -- report serve");
         Console.WriteLine();
         Console.Write(markdown);
 

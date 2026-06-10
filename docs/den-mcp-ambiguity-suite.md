@@ -97,6 +97,12 @@ Combined report:
 
 - Markdown: `runs/den-mcp-ambiguity-report/report.md`
 - JSON: `runs/den-mcp-ambiguity-report/report.json`
-- HTML: `runs/den-mcp-ambiguity-report/report.html`
+
+To browse and compare runs interactively, use the live viewer instead of a static export:
+
+```bash
+dotnet run --project src/GoblinBench.Runner -- report serve
+# then open the printed LAN/localhost URL
+```
 
 Early behavior signal: both real candidates often choose plausible Den tools, but both over-act on the destructive archive-vs-note case and both drift to `_global`/wrong-project routing in document creation/search cases. The named `den-mcp doc` + `den system planner` regression remains discriminating: models can match the rough tool shape while still treating planner/system wording as project-routing evidence.
