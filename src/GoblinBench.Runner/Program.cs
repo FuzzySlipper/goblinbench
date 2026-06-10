@@ -315,6 +315,18 @@ public static class Program
 
     private static async Task<int> RunReportAsync(string[] args)
     {
+        // report serve [--port N] → launch the local viewer instead of writing static files
+        if (args.Length > 0 && args[0].Equals("serve", StringComparison.OrdinalIgnoreCase))
+        {
+            var port = 8770;
+            for (var i = 1; i < args.Length - 1; i++)
+                if (args[i] == "--port" && int.TryParse(args[i + 1], out var p)) port = p;
+
+            using var cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+            return await ReportServer.ServeAsync(ResolveRepoRoot(), port, cts.Token);
+        }
+
         Console.WriteLine("=== GoblinBench Report ===");
         Console.WriteLine();
 
