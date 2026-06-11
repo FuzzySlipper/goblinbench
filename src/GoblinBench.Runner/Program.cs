@@ -40,12 +40,15 @@ public static class Program
         string? scenarioFilter = null;
         string? candidatesOverride = null;
         var candidateFilters = new List<string>();
+        var skipScenarios = new List<string>();
         for (var i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--suite") suiteFilter = args[i + 1];
             if (args[i] == "--scenario") scenarioFilter = args[i + 1];
             if (args[i] == "--candidates") candidatesOverride = args[i + 1];
             if (args[i] == "--candidate") candidateFilters.Add(args[i + 1]);
+            if (args[i] == "--skip-scenario") skipScenarios.Add(args[i + 1]);
+            if (args[i] == "--exclude-scenario") skipScenarios.Add(args[i + 1]);
         }
         if (candidatesOverride != null)
             candidatesFile = Path.IsPathRooted(candidatesOverride)
@@ -62,6 +65,7 @@ public static class Program
         if (suiteFilter != null) Console.WriteLine($"Filter:   --suite {suiteFilter}");
         if (scenarioFilter != null) Console.WriteLine($"Filter:   --scenario {scenarioFilter}");
         if (candidateFilters.Count > 0) Console.WriteLine($"Filter:   --candidate {string.Join(",", ExpandCandidateFilters(candidateFilters))}");
+        if (skipScenarios.Count > 0) Console.WriteLine($"Skip:     --skip-scenario {string.Join(",", skipScenarios)}");
         Console.WriteLine();
 
         // Discover scenarios
@@ -72,6 +76,8 @@ public static class Program
                         s.Suite.Equals(suiteFilter, StringComparison.OrdinalIgnoreCase))
             .Where(s => scenarioFilter == null ||
                         s.Id.Equals(scenarioFilter, StringComparison.OrdinalIgnoreCase))
+            .Where(s => skipScenarios.Count == 0 ||
+                        !skipScenarios.Any(skip => s.Id.Equals(skip, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         Console.WriteLine($"{scenarios.Count} found (of {allScenarios.Count} total)");
 
