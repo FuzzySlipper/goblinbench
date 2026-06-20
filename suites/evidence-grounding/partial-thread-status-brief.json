@@ -5,7 +5,7 @@
   "description": "Summarize only supported facts from a partial thread and preserve missing final status/test facts.",
   "suite": "evidence-grounding",
   "input": {
-    "prompt": "Write a status brief from this partial thread excerpt. The excerpt ends before final verification messages. Include what is known and what is unknown.",
+    "prompt": "Write a status brief from this partial thread excerpt. The excerpt ends before final verification messages. Include what is known and what is unknown.\n\nReturn your answer as a JSON decision packet with fields: decision_label, question (if asking), actions_taken (list), claims (list of strings), unknowns (list of strings), and final_response.",
     "context_pack": {
       "thread_excerpt": [
         "Task started",

@@ -55,7 +55,8 @@ public sealed class CodingAgentRunner : ICandidateRunner
             // similarly appear under the HOME/XDG paths we intentionally point
             // at the workspace. These are execution artifacts, not candidate
             // edits, so keep them out of agent.patch/files_changed.
-            ".tmp", ".cache", ".home", ".dotnet-home", ".local"
+            ".tmp", ".cache", ".home", ".dotnet-home", ".local",
+            "__pycache__", ".pytest_cache", ".venv", "node_modules", "coverage", "dist", "target", "uv.lock"
         };
 
     public bool CanHandle(CandidateConfig candidate) =>
@@ -109,6 +110,7 @@ public sealed class CodingAgentRunner : ICandidateRunner
                 context.GetCandidateDirectory(candidate.Id), "fixture");
             CopyDirectory(fixtureSource, fixtureDest);
             EnsureSandboxScratchDirs(fixtureDest);
+            EnsureFixtureRuntime(fixtureDest, resolved.SandboxRoot, trace);
 
             trace.Add(new TraceEvent
             {
@@ -153,8 +155,13 @@ public sealed class CodingAgentRunner : ICandidateRunner
             using var process = new Process { StartInfo = psi };
             process.Start();
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
+            // pi --mode json emits high-frequency JSONL message_update events.
+            // Those events contain cumulative "partial" payloads, so reasoning-heavy
+            // models can amplify a normal run into hundreds of MB of stdout.
+            // Drain the pipe continuously, but do not retain those cumulative
+            // update lines in memory/artifacts; final message/tool events remain.
+            var stdoutTask = ReadFilteredStdoutAsync(process.StandardOutput);
+            var stderrTask = ReadProcessStreamAsync(process.StandardError);
 
             using var timeoutCts = new CancellationTokenSource(
                 TimeSpan.FromSeconds(scenario.TimeoutSeconds > 0 ? scenario.TimeoutSeconds : 300));
@@ -179,8 +186,11 @@ public sealed class CodingAgentRunner : ICandidateRunner
                 Data = new
                 {
                     exit_code = process.ExitCode,
-                    stdout_length = stdout.Length,
-                    stderr_length = stderr.Length,
+                    stdout_length = stdout.RawLength,
+                    stdout_retained_length = stdout.Text.Length,
+                    stdout_filtered_message_update_lines = stdout.FilteredMessageUpdateLines,
+                    stdout_filtered_message_update_chars = stdout.FilteredMessageUpdateChars,
+                    stderr_length = stderr.RawLength,
                     duration_ms = stopwatch.ElapsedMilliseconds
                 }
             });
@@ -212,8 +222,8 @@ public sealed class CodingAgentRunner : ICandidateRunner
                 (true, true) => null,
                 (true, false) => "Agent exited 0 but produced no file changes.",
                 (false, _) => $"Agent exited with code {process.ExitCode}: " +
-                    (stderr.Length > 0
-                        ? stderr[..Math.Min(stderr.Length, 500)]
+                    (stderr.Text.Length > 0
+                        ? stderr.Text[..Math.Min(stderr.Text.Length, 500)]
                         : "(no stderr)"),
             };
 
@@ -231,16 +241,19 @@ public sealed class CodingAgentRunner : ICandidateRunner
                 Success = success && producedChanges,
                 Error = error,
                 DurationMs = stopwatch.ElapsedMilliseconds,
-                RawResponse = TruncateForInline(stdout),
+                RawResponse = TruncateForInline(stdout.Text),
                 Output = new Dictionary<string, object?>
                 {
                     ["fixture_dir"] = fixtureDest,
                     ["fixture_case"] = fixtureCase,
                     ["patch"] = diff.UnifiedDiffText,
                     ["files_changed"] = filesChanged,
-                    ["stdout_length"] = stdout.Length,
-                    ["stderr_length"] = stderr.Length,
-                    ["raw_response_truncated"] = stdout.Length > MaxInlineRawResponseChars,
+                    ["stdout_length"] = stdout.RawLength,
+                    ["stdout_retained_length"] = stdout.Text.Length,
+                    ["stdout_filtered_message_update_lines"] = stdout.FilteredMessageUpdateLines,
+                    ["stdout_filtered_message_update_chars"] = stdout.FilteredMessageUpdateChars,
+                    ["stderr_length"] = stderr.RawLength,
+                    ["raw_response_truncated"] = stdout.Text.Length > MaxInlineRawResponseChars,
                     ["bwrap_argv"] = bwrapArgv,
                     ["bwrap_command_line"] = bwrapCommandLine,
                     ["agent_command"] = cfg.CliArgs,
@@ -442,13 +455,14 @@ public sealed class CodingAgentRunner : ICandidateRunner
         var env = new Dictionary<string, string>
         {
             ["HOME"] = "/tmp/agent-workspace/.home",
-            ["PATH"] = "/usr/bin:/bin",
+            ["PATH"] = resolved.SandboxRoot + "/python-fixture-venv/bin:/usr/bin:/bin",
             ["TMPDIR"] = "/tmp/agent-workspace/.tmp",
             ["XDG_CACHE_HOME"] = "/tmp/agent-workspace/.cache",
             ["DOTNET_CLI_HOME"] = "/tmp/agent-workspace/.dotnet-home",
             ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
+            ["PI_SUPPRESS_JSON_MESSAGE_UPDATES"] = "1",
         };
 
         var hostNuGetPackages = Path.Combine(
@@ -585,8 +599,8 @@ public sealed class CodingAgentRunner : ICandidateRunner
         RunContext context,
         string fixtureDir,
         DiffResult diff,
-        string stdout,
-        string stderr,
+        ProcessOutputCapture stdout,
+        ProcessOutputCapture stderr,
         string bwrapCommandLine,
         CancellationToken ct)
     {
@@ -596,8 +610,8 @@ public sealed class CodingAgentRunner : ICandidateRunner
 
         var stdoutPath = Path.Combine(outputDir, "stdout.log");
         var stderrPath = Path.Combine(outputDir, "stderr.log");
-        await File.WriteAllTextAsync(stdoutPath, stdout, ct);
-        await File.WriteAllTextAsync(stderrPath, stderr, ct);
+        await File.WriteAllTextAsync(stdoutPath, stdout.Text, ct);
+        await File.WriteAllTextAsync(stderrPath, stderr.Text, ct);
 
         var output = new
         {
@@ -606,11 +620,14 @@ public sealed class CodingAgentRunner : ICandidateRunner
             files_changed = diff.FilesChanged,
             bwrap_command_line = bwrapCommandLine,
             stdout_path = Path.GetFileName(stdoutPath),
-            stdout_length = stdout.Length,
-            stdout_tail = TruncateForInline(stdout),
+            stdout_length = stdout.RawLength,
+            stdout_retained_length = stdout.Text.Length,
+            stdout_filtered_message_update_lines = stdout.FilteredMessageUpdateLines,
+            stdout_filtered_message_update_chars = stdout.FilteredMessageUpdateChars,
+            stdout_tail = TruncateForInline(stdout.Text),
             stderr_path = Path.GetFileName(stderrPath),
-            stderr_length = stderr.Length,
-            stderr_tail = TruncateForInline(stderr),
+            stderr_length = stderr.RawLength,
+            stderr_tail = TruncateForInline(stderr.Text),
         };
         await File.WriteAllTextAsync(outputPath,
             JsonSerializer.Serialize(output, new JsonSerializerOptions { WriteIndented = true }),
@@ -618,6 +635,72 @@ public sealed class CodingAgentRunner : ICandidateRunner
 
         var patchPath = Path.Combine(outputDir, "agent.patch");
         await File.WriteAllTextAsync(patchPath, diff.UnifiedDiffText, ct);
+    }
+
+    // ── Process output capture ─────────────────────────────────────────────
+
+    private sealed record ProcessOutputCapture(
+        string Text,
+        long RawLength,
+        int FilteredMessageUpdateLines = 0,
+        long FilteredMessageUpdateChars = 0);
+
+    private static async Task<ProcessOutputCapture> ReadProcessStreamAsync(
+        StreamReader reader)
+    {
+        var sb = new StringBuilder();
+        var rawLength = 0L;
+        var buffer = new char[8192];
+        int read;
+        while ((read = await reader.ReadAsync(buffer, 0, buffer.Length)) > 0)
+        {
+            rawLength += read;
+            sb.Append(buffer, 0, read);
+        }
+        return new ProcessOutputCapture(sb.ToString(), rawLength);
+    }
+
+    private static async Task<ProcessOutputCapture> ReadFilteredStdoutAsync(
+        StreamReader reader)
+    {
+        var sb = new StringBuilder();
+        var rawLength = 0L;
+        var filteredLines = 0;
+        var filteredChars = 0L;
+
+        string? line;
+        while ((line = await reader.ReadLineAsync()) != null)
+        {
+            var lineLength = line.Length + 1; // ReadLine strips the newline.
+            rawLength += lineLength;
+            if (IsJsonLineOfType(line, "message_update"))
+            {
+                filteredLines++;
+                filteredChars += lineLength;
+                continue;
+            }
+
+            sb.AppendLine(line);
+        }
+
+        return new ProcessOutputCapture(
+            sb.ToString(), rawLength, filteredLines, filteredChars);
+    }
+
+    private static bool IsJsonLineOfType(string line, string expectedType)
+    {
+        if (string.IsNullOrWhiteSpace(line) || line[0] != '{') return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(line);
+            if (!doc.RootElement.TryGetProperty("type", out var type)) return false;
+            return type.ValueKind == JsonValueKind.String &&
+                   string.Equals(type.GetString(), expectedType, StringComparison.Ordinal);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     // ── Misc helpers ──────────────────────────────────────────────────────
@@ -649,6 +732,106 @@ public sealed class CodingAgentRunner : ICandidateRunner
     {
         foreach (var relative in new[] { ".tmp", ".cache", ".home", ".dotnet-home" })
             Directory.CreateDirectory(Path.Combine(fixtureDest, relative));
+    }
+
+    private static void EnsureFixtureRuntime(
+        string fixtureDest,
+        string sandboxRoot,
+        List<TraceEvent> trace)
+    {
+        if (!File.Exists(Path.Combine(fixtureDest, "pyproject.toml")) &&
+            !File.Exists(Path.Combine(fixtureDest, "pytest.ini")))
+            return;
+
+        var runtimeDir = Path.Combine(sandboxRoot, "python-fixture-venv");
+        var venvPython = Path.Combine(runtimeDir, "bin", "python");
+        if (File.Exists(venvPython)) return;
+
+        var uv = LocateOnPath("uv");
+        try
+        {
+            if (!string.IsNullOrEmpty(uv))
+            {
+                RunSetupCommand(
+                    uv,
+                    new[] { "venv", "--python", "3.14", runtimeDir },
+                    sandboxRoot,
+                    TimeSpan.FromSeconds(90));
+                RunSetupCommand(
+                    uv,
+                    new[] { "pip", "install", "--python", venvPython, "pytest" },
+                    sandboxRoot,
+                    TimeSpan.FromSeconds(120));
+                trace.Add(new TraceEvent
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Event = "coding.fixture_runtime.prepared",
+                    Data = new { kind = "python", tool = "uv", path = runtimeDir }
+                });
+                return;
+            }
+
+            var python = LocateOnPath("python3") ?? LocateOnPath("python");
+            if (python == null) return;
+            RunSetupCommand(
+                python,
+                new[] { "-m", "venv", runtimeDir },
+                sandboxRoot,
+                TimeSpan.FromSeconds(90));
+            RunSetupCommand(
+                venvPython,
+                new[] { "-m", "pip", "install", "pytest" },
+                sandboxRoot,
+                TimeSpan.FromSeconds(120));
+            trace.Add(new TraceEvent
+            {
+                Timestamp = DateTime.UtcNow,
+                Event = "coding.fixture_runtime.prepared",
+                Data = new { kind = "python", tool = "venv+pip", path = runtimeDir }
+            });
+        }
+        catch (Exception ex)
+        {
+            // Runtime prep is an optimization for agent time, not a hard
+            // fixture requirement. Scorers still run from the host if this fails.
+            trace.Add(new TraceEvent
+            {
+                Timestamp = DateTime.UtcNow,
+                Event = "coding.fixture_runtime.prepare_failed",
+                Data = new { kind = "python", error = ex.Message }
+            });
+        }
+    }
+
+    private static void RunSetupCommand(
+        string fileName,
+        IReadOnlyList<string> args,
+        string workingDirectory,
+        TimeSpan timeout)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = fileName,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (var arg in args) psi.ArgumentList.Add(arg);
+        using var process = Process.Start(psi) ??
+            throw new InvalidOperationException($"Failed to start {fileName}");
+        if (!process.WaitForExit(timeout))
+        {
+            TryKill(process);
+            throw new TimeoutException($"Setup command timed out: {fileName} {string.Join(' ', args)}");
+        }
+        if (process.ExitCode != 0)
+        {
+            var stderr = process.StandardError.ReadToEnd();
+            throw new InvalidOperationException(
+                $"Setup command failed ({process.ExitCode}): {fileName} {string.Join(' ', args)}: {stderr[..Math.Min(stderr.Length, 500)]}");
+        }
     }
 
     private static void TryKill(Process p)

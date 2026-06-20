@@ -230,15 +230,31 @@ public sealed class OpenAiMcpToolUseRunner : ICandidateRunner
         CandidateConfig candidate,
         string model,
         List<Dictionary<string, object?>> messages,
-        IReadOnlyList<JsonElement> fakeTools) => new()
+        IReadOnlyList<JsonElement> fakeTools)
     {
-        ["model"] = model,
-        ["messages"] = messages,
-        ["tools"] = fakeTools.Select(ToOpenAiTool).ToList(),
-        ["tool_choice"] = ConfigString(candidate, "tool_choice") ?? "auto",
-        ["temperature"] = ConfigDouble(candidate, "temperature", 0.2),
-        ["max_tokens"] = ConfigInt(candidate, "max_tokens", 4096)
-    };
+        var body = new Dictionary<string, object?>
+        {
+            ["model"] = model,
+            ["messages"] = messages,
+            ["tools"] = fakeTools.Select(ToOpenAiTool).ToList(),
+            ["tool_choice"] = ConfigString(candidate, "tool_choice") ?? "auto",
+            ["max_tokens"] = ConfigInt(candidate, "max_tokens", 4096),
+        };
+
+        // Only include temperature if no reasoning_effort is set;
+        // some reasoning models reject temperature != 1 when reasoning_effort is present.
+        var reasoningEffort = ConfigString(candidate, "reasoning_effort");
+        if (!string.IsNullOrEmpty(reasoningEffort))
+        {
+            body["reasoning_effort"] = reasoningEffort;
+        }
+        else
+        {
+            body["temperature"] = ConfigDouble(candidate, "temperature", 0.2);
+        }
+
+        return body;
+    }
 
     private static Dictionary<string, object?> ToOpenAiTool(JsonElement tool)
     {

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using GoblinBench.Candidates;
 using GoblinBench.Core;
 using GoblinBench.Scorers;
@@ -287,6 +288,49 @@ public static class Program
         var runJsonPath = Path.Combine(runDir, "run.json");
         await File.WriteAllTextAsync(runJsonPath,
             JsonSerializer.Serialize(runResult, JsonOptions));
+
+        // Run Python scoring pipeline (post-processing)
+        var pythonPipeline = Path.Combine(repoRoot, "scripts", "gb-score.py");
+        if (File.Exists(pythonPipeline))
+        {
+            Console.Write("Running Python scoring pipeline... ");
+            try
+            {
+                var pipelinePsi = new ProcessStartInfo
+                {
+                    FileName = "python3",
+                    Arguments = $"\"{pythonPipeline}\" \"{runDir}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using var pipelineProc = new Process { StartInfo = pipelinePsi };
+                pipelineProc.Start();
+                var pipelineOut = await pipelineProc.StandardOutput.ReadToEndAsync();
+                var pipelineErr = await pipelineProc.StandardError.ReadToEndAsync();
+                await pipelineProc.WaitForExitAsync();
+
+                if (pipelineProc.ExitCode == 0)
+                    Console.WriteLine("OK");
+                else
+                {
+                    Console.WriteLine($"WARN (exit {pipelineProc.ExitCode})");
+                    if (!string.IsNullOrEmpty(pipelineErr))
+                        foreach (var ln in pipelineErr.Split('\n'))
+                            if (!string.IsNullOrWhiteSpace(ln))
+                                Console.WriteLine($"  pipeline: {ln}");
+                }
+
+                // Re-read run.json (the pipeline may have updated scores)
+                var updatedJson = await File.ReadAllTextAsync(runJsonPath);
+                runResult = JsonSerializer.Deserialize<RunResult>(updatedJson, JsonOptions) ?? runResult;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: {ex.Message}");
+            }
+        }
 
         Console.WriteLine();
         Console.WriteLine($"Run complete. Artifacts: {runDir}");

@@ -1,0 +1,28 @@
+{
+  "id": "coding.batch-ingestion-python",
+  "version": "1.0.0",
+  "name": "Batch Ingestion Pipeline — Python style probe",
+  "description": "Fixed-interface Python data pipeline probe for measuring training-data gravity (structural style bias). Agent fills function bodies in 4 impl files against fixed types + test suite.",
+  "suite": "coding",
+  "input": {
+    "task": "# Batch Ingestion Pipeline\n\nFill in the implementation functions in the `pipeline/` package. The fixed types and tests are provided; your job is to write correct function bodies that pass all tests.\n\n## Files to modify\n\n| File | What to do |\n|---|---|\n| `pipeline/validate.py` | Implement `validate_record` and `validate_batch` |\n| `pipeline/transform.py` | Implement `normalize_payload`, `flatten_payload`, `transform_batch` |\n| `pipeline/filter.py` | Implement `matches_filter_rule` and `apply_filters` |\n| `pipeline/aggregate.py` | Implement `group_by_type`, `summarize_type`, `aggregate_batch` |\n\nThe `FilterRule` dataclass is also defined in `filter.py` — do not move it.\n\n## Files you must NOT modify\n\n| File | Reason |\n|---|---|\n| `pipeline/types.py` | Fixed interface — all dataclasses used by tests |\n| `tests/*.py` | Fixed test suite |\n| `pyproject.toml`, `pytest.ini` | Project configuration |\n\n## Requirements\n\n- All tests must pass: `cd batch-ingestion && python -m pytest tests/ -v`\n- Do NOT mutate input records or their payloads/tags. Create new records.\n- The pipeline functions (`validate_batch`, `transform_batch`, `aggregate_batch`) must preserve record order.\n- Write idiomatic Python. There is no hidden trick — straightforward implementations pass all tests.\n- You may add private helper functions inside the implementation files, but do not add new public functions or change existing signatures.\n\n## Style note\n\nThis is a style probe. Write the code the way you naturally would for a production codebase you expect others to maintain. Do not over-engineer or under-engineer for the test suite — write code that feels *right* to you.",
+    "fixture_case": "batch-ingestion"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "structure-metrics",
+      "latency"
+    ],
+    "parameters": {
+      "structure-metrics": {
+        "scan_dir": "pipeline"
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 300,
+  "tags": ["style-probe", "python", "gravity-measurement"]
+}

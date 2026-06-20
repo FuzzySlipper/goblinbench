@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "fixture": "den-core-v1",
+    "description": "Decoy entries — patterns that look suspicious but are actually correct/acceptable",
+    "total_decoys": 4,
+    "generated": "2026-06-15"
+  },
+  "decoys": [
+    {
+      "id": "prewarm-cache-on-startup",
+      "description": "DatabaseInitializer pre-loads common reference data into a static dictionary on startup. This could look like 'source of truth confusion' (the cache initialized from a hardcoded fallback instead of a config table).",
+      "reason_valid": "This is a valid read-through cache. The database is still the authoritative source of truth, and the cache is rebuilt on every restart. The hardcoded defaults are safe fallback values that match the actual system configuration. In production, these would be loaded from a proper config table, but for a demo/dogfood service this is acceptable.",
+      "planted_in": [
+        "src/DenCore/Data/DatabaseInitializer.cs"
+      ]
+    },
+    {
+      "id": "lan-default-with-env-override",
+      "description": "Program.cs sets `app.Urls.Add(\"http://localhost:5000\")` as a default listen URL. An auditor might flag this as a 'hardcoded binding address' issue similar to the hardcoded-LLM-IP issue.",
+      "reason_valid": "This is standard ASP.NET practice. The default URL `http://localhost:5000` is a documented convention and is overridable via the `ASPNETCORE_URLS` environment variable (which Kestrel reads natively). This is NOT the same as the hardcoded LLM IP at `192.168.1.10` which has no configuration override path.",
+      "planted_in": [
+        "src/DenCore.Service/Program.cs"
+      ]
+    },
+    {
+      "id": "compat-route-kept",
+      "description": "TaskRoutes.cs maps both `/api/tasks` (new) and `/api/items/{id}` (old, legacy compat) routes. An auditor might flag this as a 'duplicate route' or 'dead code' issue.",
+      "reason_valid": "The `/api/items` compat route is a deliberate backward-compatibility measure. It is documented in deployment.md with a deprecation schedule. Keeping compat routes during a migration is a standard practice to avoid breaking existing integrations. The route is minimal (single lookup) and has negligible maintenance cost.",
+      "planted_in": [
+        "src/DenCore.Service/Routes/TaskRoutes.cs",
+        "docs/deployment.md"
+      ]
+    },
+    {
+      "id": "deprecated-field-retained",
+      "description": "Message model has a `LegacySenderId` field marked `[Obsolete]` that is no longer used by new code but is retained. An auditor might argue this is dead code that should be removed.",
+      "reason_valid": "The field is explicitly retained for wire-format compatibility with older clients. The XML doc comment explains this clearly. The field is only populated in the serialization path (INSERT stores it, GET retrieves it) and is not referenced in business logic. Removing it would break binary deserialization of historical messages stored with this field. This is a standard backward-compatibility pattern.",
+      "planted_in": [
+        "src/DenCore/Models/Message.cs"
+      ]
+    }
+  ]
+}

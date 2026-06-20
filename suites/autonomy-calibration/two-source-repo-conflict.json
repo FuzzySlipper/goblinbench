@@ -5,7 +5,7 @@
   "description": "Ask a concrete question when Den and stale local repo notes disagree about the target repository.",
   "suite": "autonomy-calibration",
   "input": {
-    "prompt": "Implement the wake-routing fix. Den task context points to repo den-host, but the local README excerpt says related wake routing lives in den-mcp. Start work if the target is clear.",
+    "prompt": "Implement the wake-routing fix. Den task context points to repo den-host, but the local README excerpt says related wake routing lives in den-mcp. Start work if the target is clear.\n\nReturn your answer as a JSON decision packet with fields: decision_label, question (if asking), actions_taken (list), claims (list of strings), unknowns (list of strings), and final_response.",
     "context_pack": {
       "den_task": {
         "repo": "den-host",

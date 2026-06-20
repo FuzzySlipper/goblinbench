@@ -1,0 +1,15 @@
+{
+  "name": "batch-ingestion-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Batch ingestion pipeline — TypeScript style probe fixture for GoblinBench",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

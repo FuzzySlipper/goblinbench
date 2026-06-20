@@ -1,0 +1,31 @@
+{
+  "id": "coding.batch-ingestion-go",
+  "version": "1.0.0",
+  "name": "Batch Ingestion Pipeline — Go style probe",
+  "description": "Fixed-interface Go data pipeline probe for measuring training-data gravity (structural style bias). Agent fills function bodies in 4 impl files against fixed types + Go test suite.",
+  "suite": "coding",
+  "input": {
+    "task": "# Batch Ingestion Pipeline\n\nFill in the implementation functions in the Go package. The fixed types and tests are provided; your job is to write correct function bodies that pass all tests.\n\n## Files to modify\n\n| File | What to do |\n|---|---|\n| `validate.go` | Implement `ValidateRecord` and `ValidateBatch` |\n| `transform.go` | Implement `NormalizePayload`, `FlattenPayload`, `TransformBatch` |\n| `filter.go` | Implement `MatchesFilterRule` and `ApplyFilters` |\n| `aggregate.go` | Implement `GroupByType`, `SummarizeType`, `AggregateBatch` |\n\nThe `FilterRule` struct is also defined in `filter.go` — do not move it.\n\n## Files you must NOT modify\n\n| File | Reason |\n|---|---|\n| `types.go` | Fixed interface — all types used by tests |\n| `*_test.go` | Fixed test suite |\n| `go.mod` | Project configuration |\n\n## Requirements\n\n- All tests must pass: `cd batch-ingestion-go && go test ./...`\n- Do NOT mutate input records, payload maps, or tag sets. Create new records when transforming.\n- The pipeline functions (`ValidateBatch`, `TransformBatch`, `AggregateBatch`) must preserve record order.\n- Write idiomatic Go. There is no hidden trick — straightforward implementations pass all tests.\n- You may add private helper functions inside the implementation files, but do not add new public functions or change existing signatures.\n\n## Style note\n\nThis is a style probe. Write the code the way you naturally would for a production codebase you expect others to maintain. Do not over-engineer or under-engineer for the test suite — write code that feels *right* to you.",
+    "fixture_case": "batch-ingestion-go"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "structure-metrics",
+      "latency"
+    ],
+    "parameters": {
+      "structure-metrics": {
+        "scan_dir": "."
+      },
+      "coding-tests": {
+        "timeout_seconds": 120
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 360,
+  "tags": ["style-probe", "go", "gravity-measurement"]
+}

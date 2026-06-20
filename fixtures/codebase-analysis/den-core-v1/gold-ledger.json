@@ -1,0 +1,335 @@
+{
+  "meta": {
+    "fixture": "den-core-v1",
+    "description": "Synthetic C# .NET service fixture for codebase analysis benchmark",
+    "total_issues": 12,
+    "generated": "2026-06-15"
+  },
+  "issues": [
+    {
+      "id": "contract-paging-mismatch",
+      "category": "api-contract-violation",
+      "severity": "high",
+      "scope": "cross_file",
+      "description": "MessageRoutes.cs returns cursor-paginated results using `nextCursor` field. But TaskRepository (via TaskRoutes) consumes messages using offset-based pagination with `pageNumber` and `pageSize`. The cursor is never read by the consumer, creating a pagination contract mismatch. TaskRoutes.GetTaskMessagesAsync calls TaskRepository.GetTaskMessagesAsync which calls MessageRepository.GetByTaskIdAsync — all using pageNumber/pageSize — while the primary message listing endpoint returns cursor-based results.",
+      "planted_in": [
+        "src/DenCore.Service/Routes/MessageRoutes.cs",
+        "src/DenCore/Data/TaskRepository.cs",
+        "src/DenCore/Data/MessageRepository.cs",
+        "src/DenCore.Service/Routes/TaskRoutes.cs"
+      ],
+      "expected_evidence": [
+        "MessageRoutes.cs returns `nextCursor` in response but no consumer reads it",
+        "TaskRepository.GetTaskMessagesAsync delegates to MessageRepository.GetByTaskIdAsync with pageNumber/pageSize",
+        "MessageRepository.GetByTaskIdAsync uses OFFSET/LIMIT (offset-based pagination)",
+        "TaskRoutes.cs /api/tasks/{id}/messages endpoint uses pageNumber/pageSize params"
+      ],
+      "acceptable_diagnoses": [
+        "Cursor pagination and offset pagination are mixed; cursor is produced but not consumed",
+        "Message list endpoint returns nextCursor but task messages use offset pagination",
+        "Inconsistent pagination strategy between message and task-message endpoints"
+      ],
+      "good_fix_properties": [
+        "Unify pagination strategy: either both cursor-based or both offset-based",
+        "OR: TaskRepository reads nextCursor from MessageRepository and passes it back as query param",
+        "OR: MessageRepository.GetByTaskIdAsync is replaced with cursor-based variant"
+      ],
+      "adjusted_behavior": "Both endpoints use cursor-based pagination. TaskRoutes reads `nextCursor` from MessageRepository responses and surfaces it."
+    },
+    {
+      "id": "worker-release-before-completion",
+      "category": "race-condition",
+      "severity": "high",
+      "scope": "cross_file",
+      "description": "WorkerLifecycleService.ReleaseWorkerAsync releases the pool assignment (sets member to Available) BEFORE waiting for the completion packet to be durably written. Another run can pick up the same assignment before the completion is visible, causing duplicate work or state corruption. See `ReleaseWorkerAsync`: Step 1 releases, Step 2 writes completion packet.",
+      "planted_in": [
+        "src/DenCore/Services/WorkerLifecycleService.cs"
+      ],
+      "expected_evidence": [
+        "ReleaseWorkerAsync calls ReleaseAssignmentAsync and SetMemberStatusAsync (Step 1) BEFORE WriteCompletionPacketAsync (Step 2)",
+        "Pool member becomes Available before completion is durably stored",
+        "No atomicity or ordering guarantee between release and completion write"
+      ],
+      "acceptable_diagnoses": [
+        "Worker release happens before completion write",
+        "Assignment released before completion packet is durably stored",
+        "Member is returned to pool before completion is acked"
+      ],
+      "good_fix_properties": [
+        "Write/confirm completion packet BEFORE releasing assignment",
+        "Or use a two-phase commit / transactional outbox pattern",
+        "Ensure completion is flushed to durable storage before member status change"
+      ],
+      "adjusted_behavior": "WriteCompletionPacketAsync is called first and awaited, then ReleaseAssignmentAsync releases the assignment."
+    },
+    {
+      "id": "stale-review-verdict",
+      "category": "data-staleness",
+      "severity": "medium",
+      "scope": "cross_file",
+      "description": "ReviewWorkflowService caches the review verdict in `_verdictCache` and returns it from `GetCachedVerdict()` without checking whether the current task head still matches the head that was reviewed. If a new commit lands on the task branch, the cached 'approved' verdict is still returned. The `IsReviewStillValid` method exists but is not called by `GetCachedVerdict`.",
+      "planted_in": [
+        "src/DenCore/Services/ReviewWorkflowService.cs"
+      ],
+      "expected_evidence": [
+        "GetCachedVerdict returns cached verdict without comparing heads",
+        "IsReviewStillValid method exists but is not called from GetCachedVerdict",
+        "Cache stores (Verdict, ReviewedHead) tuple but ReviewedHead is never checked on retrieval"
+      ],
+      "acceptable_diagnoses": [
+        "Cached verdict does not verify current head matches reviewed head",
+        "Stale verdict returned when task branch has advanced",
+        "ReviewedHead stored but not compared on cache hit"
+      ],
+      "good_fix_properties": [
+        "GetCachedVerdict should accept currentHead parameter and verify it matches reviewed head",
+        "Or call IsReviewStillValid before returning cached verdict",
+        "If head mismatch, invalidate cache and return Pending"
+      ],
+      "adjusted_behavior": "GetCachedVerdict takes currentHead, calls IsReviewStillValid, returns cached verdict only if heads match; otherwise returns Pending and invalidates cache."
+    },
+    {
+      "id": "hardcoded-lan-ip",
+      "category": "configuration-hardcoding",
+      "severity": "medium",
+      "scope": "single_file",
+      "description": "Program.cs hardcodes the LLM endpoint URL as `http://192.168.1.10:8080` when configuring the HttpClient for OpenAiCompatibleLlmClient. There is no environment variable or configuration fallback. This will break in any deployment where the LLM host is at a different address.",
+      "planted_in": [
+        "src/DenCore.Service/Program.cs"
+      ],
+      "expected_evidence": [
+        "Hardcoded IP address `192.168.1.10` in Program.cs",
+        "HttpClient BaseAddress set to hardcoded URI",
+        "No config/env read for the LLM endpoint URL"
+      ],
+      "acceptable_diagnoses": [
+        "LLM endpoint URL is hardcoded as http://192.168.1.10:8080",
+        "No configuration or environment variable fallback for LLM base URL",
+        "Hardcoded IP address for LLM service endpoint"
+      ],
+      "good_fix_properties": [
+        "Read LLM base URL from IConfiguration with environment variable override",
+        "Use builder.Configuration.GetValue or appsettings.json",
+        "Provide fallback default but allow override"
+      ],
+      "adjusted_behavior": "LLM endpoint URL is read from `Configuration[\"Llm:BaseUrl\"]` with env var `LLM__BASE_URL` override, defaulting to http://localhost:8080."
+    },
+    {
+      "id": "exception-in-background-loop",
+      "category": "error-handling",
+      "severity": "critical",
+      "scope": "single_file",
+      "description": "DispatchRepository.RunBackgroundLoopAsync runs a fire-and-forget async Task.Run loop. The outer while(true) iteration does NOT have a try/catch — a single unhandled exception in DequeueBatchAsync or the ProcessEntryAsync call will crash the entire background task silently. There is no per-iteration error handling, no health signal, and no exponential backoff on failure.",
+      "planted_in": [
+        "src/DenCore/Data/DispatchRepository.cs"
+      ],
+      "expected_evidence": [
+        "RunBackgroundLoopAsync uses Task.Run with while (!token.IsCancellationRequested)",
+        "No try/catch around the DequeueBatchAsync and loop body",
+        "Single exception kills the entire background task",
+        "No health check endpoint reports dispatch loop status"
+      ],
+      "acceptable_diagnoses": [
+        "Background dispatch loop has no per-iteration exception handling",
+        "Task.Run loop can die silently from a single unhandled exception",
+        "No try/catch around the main dispatch loop iteration"
+      ],
+      "good_fix_properties": [
+        "Wrap the while loop body in a try/catch",
+        "Log exceptions with context (entry ID, batch index)",
+        "Add exponential backoff between retries after failures",
+        "Add health check signal for loop status"
+      ],
+      "adjusted_behavior": "The while loop body is wrapped in try/catch. On exception, error is logged with context, and the loop applies an exponential backoff (1s, 2s, 4s...) before retrying."
+    },
+    {
+      "id": "core-mcp-boundary-leak",
+      "category": "layering-violation",
+      "severity": "medium",
+      "scope": "single_file",
+      "description": "ProjectTask.cs (core domain model, src/DenCore/Models/) has a field `McpToolProfile` which is an MCP-specific concept leaking into the core domain. The XML doc on the field acknowledges this is a layering violation ('This field is a layering violation — it exposes MCP concepts in the core domain') but the field remains. Core domain models should not reference MCP or tool profile concepts.",
+      "planted_in": [
+        "src/DenCore/Models/ProjectTask.cs"
+      ],
+      "expected_evidence": [
+        "ProjectTask has a field named `McpToolProfile` of type string",
+        "XML doc comment acknowledges the layering violation",
+        "Field is marked [Obsolete] but still present in the core model"
+      ],
+      "acceptable_diagnoses": [
+        "Core domain model ProjectTask contains MCP-specific field McpToolProfile",
+        "MCP concept leaks into core domain layer",
+        "Domain model references tool profile concept"
+      ],
+      "good_fix_properties": [
+        "Remove McpToolProfile field from ProjectTask",
+        "Move profile hinting to a separate mapping layer or metadata table",
+        "Use McpToolProfileRegistry for profile resolution instead"
+      ],
+      "adjusted_behavior": "McpToolProfile field is removed from ProjectTask. Profile-to-task mapping is handled in the service layer via McpToolProfileRegistry."
+    },
+    {
+      "id": "health-check-ignores-db",
+      "category": "observability-gap",
+      "severity": "medium",
+      "scope": "single_file",
+      "description": "Program.cs has a /health endpoint defined as `app.MapGet(\"/health\", () => Results.Ok(...))` that always returns HTTP 200 with status 'OK' regardless of whether the database is reachable or migrations are current. It does not probe the database connection. In a deployment scenario, load balancers and orchestrators rely on health checks to detect service degradation, and this check provides no signal of actual readiness.",
+      "planted_in": [
+        "src/DenCore.Service/Program.cs"
+      ],
+      "expected_evidence": [
+        "/health endpoint returns Results.Ok unconditionally",
+        "No database connectivity check performed",
+        "No migration status verification",
+        "Returns 200 even when database is unreachable"
+      ],
+      "acceptable_diagnoses": [
+        "Health check always returns OK regardless of database state",
+        "/health endpoint does not probe database connectivity",
+        "No readiness check — returns 200 even if DB is down"
+      ],
+      "good_fix_properties": [
+        "Execute a lightweight query (SELECT 1) against the database",
+        "Return 503 Service Unavailable if DB is unreachable",
+        "Include dependency status in health response body"
+      ],
+      "adjusted_behavior": "/health endpoint opens a test connection and executes SELECT 1. Returns 200 with healthy status on success, 503 with degraded status on failure."
+    },
+    {
+      "id": "tool-schema-description-mismatch",
+      "category": "api-contract-violation",
+      "severity": "medium",
+      "scope": "single_file",
+      "description": "CompletionTools.cs has MCP tool handlers where the documented tool schema field names do not match the actual route handler parameter names. The 'triage_complete' tool description documents 'projectId' as required, but the handler expects 'project_id'. The 'generate_summary' tool documents 'taskId' but the handler expects 'task_id'. Agents sending well-formed tool calls with documented field names will get binding failures.",
+      "planted_in": [
+        "src/DenCore.Service/Tools/CompletionTools.cs"
+      ],
+      "expected_evidence": [
+        "'triage_complete' handler expects `project_id` param but tool schema documents `projectId`",
+        "'generate_summary' handler expects `task_id` param but tool schema documents `taskId`",
+        "Parameter naming convention mismatch (camelCase in docs vs snake_case in implementation)",
+        "XML doc comment on class acknowledges the mismatch"
+      ],
+      "acceptable_diagnoses": [
+        "Tool parameter names differ between documentation and handler implementation",
+        "Field name mismatch between tool description and route handler",
+        "MCP tool schema documents camelCase but handler expects snake_case parameters"
+      ],
+      "good_fix_properties": [
+        "Align parameter names between tool descriptions and route handlers",
+        "Use consistent naming convention (either all camelCase or all snake_case)",
+        "Update tool schemas to match actual handler parameter names"
+      ],
+      "adjusted_behavior": "Both tool descriptions and route handlers use consistent parameter naming (e.g., all snake_case: project_id, run_id, result_json, task_id, output_format)."
+    },
+    {
+      "id": "singleton-cache-no-lock",
+      "category": "thread-safety",
+      "severity": "low",
+      "scope": "single_file",
+      "description": "TaskRepository uses a `static readonly ConcurrentDictionary<long, ProjectTask>` as an in-memory cache. While ConcurrentDictionary provides per-operation thread safety, the cache seeding logic (`SeedCacheAsync`) and invalidation pattern (`Invalidate` then immediate re-check) can race under concurrent requests. The comment on the cache field notes 'Not thread-safe — concurrent writes can cause duplicate entries or stale reads'. Under load, cache entries can be lost or throw.",
+      "planted_in": [
+        "src/DenCore/Data/TaskRepository.cs"
+      ],
+      "expected_evidence": [
+        "Static ConcurrentDictionary cache field with 'not thread-safe' comment",
+        "SeedCacheAsync populates from DB with no lock against concurrent reads/writes",
+        "InsertAsync and GetByIdAsync both write to cache without synchronization",
+        "Comment explicitly warns about thread safety issues"
+      ],
+      "acceptable_diagnoses": [
+        "In-memory cache access is not properly synchronized",
+        "ConcurrentDictionary used but seeding and invalidation race",
+        "Cache access pattern is not thread-safe despite ConcurrentDictionary"
+      ],
+      "good_fix_properties": [
+        "Use proper synchronization (lock or SemaphoreSlim) around cache operations",
+        "Use Lazy<T> or LazyInitializer for thread-safe seeding",
+        "Replace with IDistributedCache for multi-instance safety"
+      ],
+      "adjusted_behavior": "Cache seeding uses a SemaphoreSlim to prevent concurrent initialization. Cache read/write operations are synchronized correctly."
+    },
+    {
+      "id": "documentation-contradiction",
+      "category": "documentation-error",
+      "severity": "low",
+      "scope": "single_file",
+      "description": "docs/api-contract.md documents the document-by-ID endpoint as `GET /api/documents/{id}` but the actual route in DocumentRoutes.cs is mapped to `GET /api/documents/by-id/{id}`. A client following the API documentation will get a 404. The docs say `/api/documents/{id}` but code says `/api/documents/by-id/{id}`.",
+      "planted_in": [
+        "docs/api-contract.md",
+        "src/DenCore.Service/Routes/DocumentRoutes.cs"
+      ],
+      "expected_evidence": [
+        "api-contract.md lists `GET /api/documents/{id}`",
+        "DocumentRoutes.cs maps `GET /api/documents/by-id/{id}`",
+        "Path mismatch between documentation and implementation",
+        "No route for /api/documents/{id} exists"
+      ],
+      "acceptable_diagnoses": [
+        "Documented API path does not match actual route",
+        "Docs say /api/documents/{id} but code uses /api/documents/by-id/{id}",
+        "Path mismatch between API contract and DocumentRoutes"
+      ],
+      "good_fix_properties": [
+        "Update api-contract.md to reflect actual route path /api/documents/by-id/{id}",
+        "Or add a redirect from /api/documents/{id} to /api/documents/by-id/{id}"
+      ],
+      "adjusted_behavior": "api-contract.md lists `GET /api/documents/by-id/{id}` matching the route implementation."
+    },
+    {
+      "id": "missing-404-test",
+      "category": "error-handling",
+      "severity": "low",
+      "scope": "single_file",
+      "description": "DocumentRoutes.cs `by-id/{id}` endpoint calls `DocumentRepository.GetByIdAsync` which returns null when a document is not found. However, the route passes the (possibly null) result directly to `Results.Ok(doc)` instead of checking for null and returning `Results.NotFound()`. This means missing documents return HTTP 200 with an empty/null body instead of the correct HTTP 404.",
+      "planted_in": [
+        "src/DenCore.Service/Routes/DocumentRoutes.cs",
+        "src/DenCore/Data/DocumentRepository.cs"
+      ],
+      "expected_evidence": [
+        "DocumentRoutes.cs by-id handler: `return Results.Ok(doc)` — no null check",
+        "DocumentRepository.GetByIdAsync returns null for missing docs",
+        "Missing document returns 200 OK with null body instead of 404",
+        "The by-slug endpoint correctly handles null (returns 404)"
+      ],
+      "acceptable_diagnoses": [
+        "GetByIdAsync returns null but route does not convert to 404",
+        "Document by-id endpoint returns Ok(null) instead of NotFound()",
+        "No 404 handling for missing document in by-id route"
+      ],
+      "good_fix_properties": [
+        "Check if doc is null before returning",
+        "Return Results.NotFound() when document is not found",
+        "Consistent 404 handling with by-slug endpoint"
+      ],
+      "adjusted_behavior": "by-id handler checks for null and returns Results.NotFound() instead of Results.Ok(null)."
+    },
+    {
+      "id": "assignment-release-null-state",
+      "category": "state-management",
+      "severity": "medium",
+      "scope": "single_file",
+      "description": "WorkerPoolRepository.ReleaseAssignmentAsync updates the assignment state unconditionally with `UPDATE worker_assignments SET state = 'completed' WHERE id = @Id`. There is no check for whether the assignment was already released (state = 'completed'). Re-releasing an already-released assignment produces a nonsensical state transition (completed -> completed) and can cause duplicate processing in downstream consumers that watch for state changes.",
+      "planted_in": [
+        "src/DenCore/Data/WorkerPoolRepository.cs"
+      ],
+      "expected_evidence": [
+        "ReleaseAssignmentAsync does not check current state before updating",
+        "No WHERE clause checking state != 'completed'",
+        "Already-released assignments can be 're-released'",
+        "No idempotency check or release nonce verification"
+      ],
+      "acceptable_diagnoses": [
+        "ReleaseAssignmentAsync can succeed on already-released assignments",
+        "No idempotency check in release operation",
+        "State transitions not validated — completed -> completed is allowed"
+      ],
+      "good_fix_properties": [
+        "Check current state before updating (WHERE state != 'completed')",
+        "Return NoOp/count=0 when already released",
+        "Use release nonce for idempotent release operations"
+      ],
+      "adjusted_behavior": "ReleaseAssignmentAsync adds `AND state != 'completed'` to the WHERE clause. Returns a result indicating whether the release was performed or was a no-op."
+    }
+  ]
+}

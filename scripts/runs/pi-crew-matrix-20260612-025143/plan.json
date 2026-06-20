@@ -1,0 +1,17 @@
+{
+  "campaign_id": "goblinbench-2283-smoke",
+  "parent_task_id": 2283,
+  "mcp_url": "http://192.168.1.10:5199/mcp",
+  "project_id": "pi-crew",
+  "cell_count": 1,
+  "cells": [
+    {
+      "model": "deepseek-flash",
+      "provider": "den-router",
+      "role": "coder",
+      "profile_identity": "pi-crew-coder-worker",
+      "worker_identity": "pi-crew-coder-1",
+      "artifact_kind": "code_change"
+    }
+  ]
+}

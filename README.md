@@ -140,6 +140,20 @@ runs/<run-id>/
       artifacts/              — Candidate-produced files
 ```
 
+### Fast results index / CLI
+
+For cross-run comparisons, build the SQLite results index and query it with the lightweight CLI:
+
+```bash
+scripts/gb-results.py import --reset
+scripts/gb-results.py compare --suite den-mcp-ambiguity --by model
+scripts/gb-results.py model glm --by scenario
+scripts/gb-results.py coverage --suite coding --model qwenmax
+scripts/gb-results.py failures --model minimax --limit 20
+```
+
+The database at `runs/goblinbench-results.sqlite` is a rebuildable index over raw run artifacts. See `docs/results-cli.md` for commands, output formats, and agent-friendly usage patterns.
+
 ## License
 
 Proprietary — internal use only.

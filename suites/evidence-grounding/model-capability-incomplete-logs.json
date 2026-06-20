@@ -5,7 +5,7 @@
   "description": "Compare only observed model results and avoid a full leaderboard when logs are incomplete.",
   "suite": "evidence-grounding",
   "input": {
-    "prompt": "Compare the models from these partial benchmark logs and say which is best for tool forests. One model is missing failed-scenario details.",
+    "prompt": "Compare the models from these partial benchmark logs and say which is best for tool forests. One model is missing failed-scenario details.\n\nReturn your answer as a JSON decision packet with fields: decision_label, question (if asking), actions_taken (list), claims (list of strings), unknowns (list of strings), and final_response.",
     "context_pack": {
       "logs": [
         "Gemma: 1/3 shown, fast on shown rows",

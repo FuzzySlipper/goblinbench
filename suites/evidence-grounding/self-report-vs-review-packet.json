@@ -5,7 +5,7 @@
   "description": "Distinguish worker self-report from verified review/promotion evidence.",
   "suite": "evidence-grounding",
   "input": {
-    "prompt": "Is task 777 complete? Worker self-report says done, but no review or promotion packet is present in the provided state.",
+    "prompt": "Is task 777 complete? Worker self-report says done, but no review or promotion packet is present in the provided state.\n\nReturn your answer as a JSON decision packet with fields: decision_label, question (if asking), actions_taken (list), claims (list of strings), unknowns (list of strings), and final_response.",
     "context_pack": {
       "worker_completion": {
         "status": "done",

@@ -1,0 +1,9 @@
+[project]
+name = "maintainability-mini-service"
+version = "0.1.0"
+description = "GoblinBench maintainability-pressure style probe fixture"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

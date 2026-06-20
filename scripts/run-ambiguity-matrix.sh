@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Run den-mcp-ambiguity suite A/B matrix: baseline + hinted × 6 working den-router models
+# Run den-mcp-ambiguity suite A/B matrix: baseline + hinted × working den-router models
 set -euo pipefail
 cd /home/dev/goblinbench
 
 CANDIDATES=(
-  den-router-deepseek-flash-tool-behavior
-  den-router-deepseek-pro-tool-behavior
+  den-router-glm-tool-behavior
   den-router-kimi-tool-behavior
   den-router-mimo-tool-behavior
-  den-router-mimo-pro-tool-behavior
+  den-router-stepfun-tool-behavior
+  den-router-hy3-tool-behavior
   den-router-minimax-tool-behavior
 )
 
