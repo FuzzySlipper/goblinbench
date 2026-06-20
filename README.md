@@ -127,6 +127,18 @@ dotnet run --project src/GoblinBench.Runner
 
 This discovers scenarios under `suites/`, runs the default no-op candidate, and writes artifacts to `runs/<run-id>/`.
 
+#### Python runner (in progress)
+
+A drop-in Python port of the runner is available alongside the .NET one. It writes
+the same `runs/<run-id>/` artifact tree, so `gb-score.py` and `gb-results.py`
+consume it unchanged. All three milestones are complete: every candidate (72/72)
+and every scenario-declared scorer is handled in pure Python. See
+[`docs/python-runner.md`](docs/python-runner.md).
+
+```bash
+python3 scripts/gb-run.py --suite orchestrator --candidate scripted-deterministic
+```
+
 ### Output structure
 
 ```
