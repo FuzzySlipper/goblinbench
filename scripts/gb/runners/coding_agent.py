@@ -6,7 +6,7 @@ unified diff, and records ``output["fixture_dir"]`` for the test scorer.
 
 The agent is given exactly one writable mount: the per-candidate fixture
 directory bound to ``/work`` inside the sandbox. Everything else (toolchain,
-agent tree, dotnet SDK, npm cache) is read-only. This is "helpful friction
+agent tree, package-manager caches) is read-only. This is "helpful friction
 against dumb mistakes" — a confused model under context pressure cannot
 accidentally rm -rf the host filesystem, the agent's own install, or any other
 fixture. We are NOT isolating network or defending against a malicious actor.
@@ -250,7 +250,6 @@ class SandboxConfig:
     agent_resolved: str
     node_resolved: str
     sandbox_root: str
-    dotnet_root: str | None
     api_key_env: str | None
     task: str
     cli_args: list[str]
@@ -268,7 +267,6 @@ class SandboxConfig:
             agent_resolved=agent_resolved,
             node_resolved=_get_config_string(c, "node_resolved") or "",
             sandbox_root=sandbox_root,
-            dotnet_root=_get_config_string(c, "dotnet_root"),
             api_key_env=_get_config_string(c, "api_key_env"),
             task=_get_config_string(c, "task") or "",
             cli_args=list(c.cli_args),
@@ -384,12 +382,6 @@ def build_bwrap_profile(
                       "reason": "source does not exist on host"},
             ))
 
-    # ~/.dotnet is the SDK install; implicit in the / bind but re-bound for visibility.
-    home = os.environ.get("HOME") or "/root"
-    user_dotnet = os.path.join(home, ".dotnet")
-    if os.path.isdir(user_dotnet):
-        binds.append(HostBind(source=user_dotnet, destination=user_dotnet))
-
     # Env: only the keys the agent needs. HOME/TMPDIR/XDG_CACHE_HOME live under
     # /tmp/agent-workspace so scratch state (npm cache, etc.) is thrown away with
     # the workspace.
@@ -398,16 +390,8 @@ def build_bwrap_profile(
         "PATH": resolved.sandbox_root + "/python-fixture-venv/bin:/usr/bin:/bin",
         "TMPDIR": "/tmp/agent-workspace/.tmp",
         "XDG_CACHE_HOME": "/tmp/agent-workspace/.cache",
-        "DOTNET_CLI_HOME": "/tmp/agent-workspace/.dotnet-home",
-        "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
-        "DOTNET_NOLOGO": "1",
-        "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
         "PI_SUPPRESS_JSON_MESSAGE_UPDATES": "1",
     }
-
-    host_nuget = os.path.join(home, ".nuget", "packages")
-    if os.path.isdir(host_nuget):
-        env["NUGET_PACKAGES"] = host_nuget
 
     # pi looks for <PI_CODING_AGENT_DIR>/models.json when discovering custom
     # providers. Bind sandbox_root to itself so the host path == sandbox path.
@@ -670,7 +654,7 @@ def _write_artifacts(
 
 
 def _ensure_sandbox_scratch_dirs(fixture_dest: str) -> None:
-    for rel in (".tmp", ".cache", ".home", ".dotnet-home"):
+    for rel in (".tmp", ".cache", ".home"):
         os.makedirs(os.path.join(fixture_dest, rel), exist_ok=True)
 
 

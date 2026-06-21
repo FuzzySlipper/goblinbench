@@ -10,6 +10,11 @@ obj/
 artifacts/
 packages/
 
+## Python runtime artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
 ## GoblinBench run output
 ## The canonical record (runs/goblinbench.sqlite) IS committed — it's the backup.
 ## On-disk run-* trees are ring-buffered scratch space (regenerable by re-running),

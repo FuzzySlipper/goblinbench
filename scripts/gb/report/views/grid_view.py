@@ -150,7 +150,7 @@ def _render_samples(samples: list[dict[str, Any]]) -> str:
 
 
 def _short_scenario(sid: str) -> str:
-    # "coding.retry-policy" → "retry-policy" (suite shown in a separate column would be cleaner,
+    # "coding.maintainability-mini-service-python" → "maintainability-mini-service-python" (suite shown in a separate column would be cleaner,
     # but short names keep the grid readable when there are many scenarios).
     return sid.split(".", 1)[1] if "." in sid else sid
 

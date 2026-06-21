@@ -62,27 +62,25 @@ Important scorer behavior: if an expected argument key exists directly in the to
 Deterministic harness sanity:
 
 ```bash
-dotnet test tests/GoblinBench.Core.Tests/GoblinBench.Core.Tests.csproj --no-restore --filter "FakeDenMcpGeneratorTests|McpToolBehaviorSuiteTests"
-dotnet run --no-restore --project src/GoblinBench.Runner -- --suite den-mcp-ambiguity --candidate fake-mcp-scripted
+python3 -m pytest tests/ -q
+python3 scripts/gb-run.py --suite den-mcp-ambiguity --candidate fake-mcp-scripted
 ```
 
 Real-model A/B comparison example:
 
 ```bash
-dotnet run --no-restore --project src/GoblinBench.Runner -- --suite den-mcp-ambiguity --candidate qwen3-35b-local-mcp-tools
-dotnet run --no-restore --project src/GoblinBench.Runner -- --suite den-mcp-ambiguity-hinted --candidate qwen3-35b-local-mcp-tools
-dotnet run --no-restore --project src/GoblinBench.Runner -- --suite den-mcp-ambiguity --candidate den-router-deepseek-flash-tool-behavior
-dotnet run --no-restore --project src/GoblinBench.Runner -- --suite den-mcp-ambiguity-hinted --candidate den-router-deepseek-flash-tool-behavior
+python3 scripts/gb-run.py --suite den-mcp-ambiguity --candidate qwen3-35b-local-mcp-tools
+python3 scripts/gb-run.py --suite den-mcp-ambiguity-hinted --candidate qwen3-35b-local-mcp-tools
+python3 scripts/gb-run.py --suite den-mcp-ambiguity --candidate den-router-deepseek-flash-tool-behavior
+python3 scripts/gb-run.py --suite den-mcp-ambiguity-hinted --candidate den-router-deepseek-flash-tool-behavior
 ```
 
 Generate a combined report:
 
 ```bash
-mkdir -p runs/den-mcp-ambiguity-report
-dotnet run --no-restore --project src/GoblinBench.Runner -- report \
-  RUN_ID_SCRIPTED RUN_ID_QWEN RUN_ID_DEEPSEEK \
-  --suite den-mcp-ambiguity \
-  --output runs/den-mcp-ambiguity-report/report.md
+python3 scripts/gb-report.py --suite den-mcp-ambiguity --view grid \
+  --narrative "Baseline Den MCP ambiguity comparison." \
+  --out runs/den-mcp-ambiguity-report/report.html
 ```
 
 ## First checked run
@@ -101,8 +99,8 @@ Combined report:
 To browse and compare runs interactively, use the live viewer instead of a static export:
 
 ```bash
-dotnet run --project src/GoblinBench.Runner -- report serve
-# then open the printed LAN/localhost URL
+python3 scripts/gb-report.py --suite den-mcp-ambiguity --view grid --out /tmp/den-mcp-ambiguity.html
+# then open the generated static HTML report
 ```
 
 Early behavior signal: both real candidates often choose plausible Den tools, but both over-act on the destructive archive-vs-note case and both drift to `_global`/wrong-project routing in document creation/search cases. The named `den-mcp doc` + `den system planner` regression remains discriminating: models can match the rough tool shape while still treating planner/system wording as project-routing evidence.

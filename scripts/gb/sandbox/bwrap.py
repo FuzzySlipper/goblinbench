@@ -8,7 +8,7 @@ not hard isolation. The agent is untrusted only in the sense that we want
 defaults to fail safe when a confused model does something unexpected (e.g.
 rm -rf the wrong directory). We are NOT defending against a malicious agent or
 network exfiltration — the network namespace is shared with the host on purpose
-so that ``dotnet restore`` / ``npm install`` still work.
+so that package-manager installs still work when fixtures need them.
 
 Properties enforced:
   * The host root ``/`` is bound read-only.

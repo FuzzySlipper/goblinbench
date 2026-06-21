@@ -12,10 +12,10 @@ Examples:
 
   # Failure triage for one run
   gb-report --runs run-20260620-181123-a9845625 --view failures \\
-    --narrative "glm52 regressed on retry-policy — see below" --out failures.html
+    --narrative "glm52 regressed on maintainability — see below" --out failures.html
 
   # Deep-dive one cell (model × scenario)
-  gb-report --model glm52 --scenario coding.retry-policy --view cell --out cell.html
+  gb-report --model glm52 --scenario coding.maintainability-mini-service-python --view cell --out cell.html
 
   # Narrative piped via stdin
   gb-report --suite orchestrator --view grid --narrative - --out grid.html < narrative.md

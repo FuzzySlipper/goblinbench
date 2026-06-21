@@ -18,7 +18,7 @@ from dataclasses import dataclass
 # runner-owned scratch dirs, language caches, and lockfiles-that-are-rebuilt.
 SKIP_DIRS_AGENT = {
     "obj", "bin", ".git", ".vs",
-    ".tmp", ".cache", ".home", ".dotnet-home", ".local",
+    ".tmp", ".cache", ".home", ".local",
     "__pycache__", ".pytest_cache", ".venv", "node_modules",
     "coverage", "dist", "target", "uv.lock",
 }

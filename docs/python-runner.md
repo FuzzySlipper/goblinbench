@@ -1,11 +1,12 @@
 # Python runner (`scripts/gb-run.py`)
 
-A drop-in Python port of the .NET runner (`src/GoblinBench.Runner`), built to
-replace the execution layer while leaving every downstream tool untouched.
+The canonical GoblinBench runner. It began as a drop-in Python port of the old
+.NET runner, then replaced it; the old in-repo `src/` tree has been removed so
+agents have a single execution path.
 
 ## Why
 
-The .NET runner had a class of crash-with-no-trace failures under specific
+The removed .NET runner had a class of crash-with-no-trace failures under specific
 conditions that did not reproduce through a Python shim against the same
 scenarios. That asymmetry pointed at a runtime/GC/native-interop/SSE-socket
 edge rather than a logic bug, so the fix is to move the execution layer to a
@@ -43,9 +44,9 @@ downstream.
   `message_update` stdout noise is filtered, file edits are snapshotted/diffed,
   `output["fixture_dir"]` is set, and the test scorer runs against it.
 - `CodingCandidateRunner` (deterministic `coding-scripted` path — applies
-  `correct_patch.json`). Validated end-to-end against `coding.retry-policy`:
-  patch applied → `fixture_dir` set → `gb-score.py` runs `coding-tests.py` →
-  `dotnet test` → 4/4 passed → score merged.
+  `correct_patch.json`). Validated end-to-end against Python-era coding fixtures: patch applied →
+  `fixture_dir` set → `gb-score.py` runs `coding-tests.py` → language-native
+  tests pass → score merged.
 - `OpenAiChatRunner` (covers the 15 plain-chat `OpenAiModel` candidates).
   Stdlib-only (`urllib`, zero deps). Validated live against the den-router
   endpoint and structurally diffed against a historical .NET run of the same
@@ -110,12 +111,11 @@ the multilingual Python plugin under `scripts/scorers/`.)
 **All 72 candidates now claimed (100%)** across 11 runners. All scenario-declared
 scorers except `electron-flow` (tied to the dead Electron runner) are handled —
 either in-process (10 scorers) or via `gb-score.py` plugins (coding-tests,
-structure-metrics, maintainability-metrics). The .NET runner is no longer needed
-for any real workload.
+structure-metrics, maintainability-metrics). The .NET runner was removed after the port; Python is the only in-repo runner path.
 
 ### .NET → Python functionality audit
 
-Full audit of every .NET runner, scorer, and `Program.cs` feature:
+Historical audit of every removed .NET runner, scorer, and `Program.cs` feature:
 
 **Runners — all used paths ported:**
 
@@ -181,8 +181,7 @@ python3 scripts/gb-run.py --scenario orchestrator.malformed-completion-packet
 python3 scripts/gb-run.py --candidates path/to/candidates.json
 ```
 
-Produces `runs/run-<timestamp>-<8hex>/` with the same layout as the .NET runner
-and then hands off to `scripts/gb-score.py` (unchanged).
+Produces `runs/run-<timestamp>-<8hex>/` and then hands off to `scripts/gb-score.py`.
 
 ## Layout
 
@@ -243,7 +242,7 @@ The acceptance bar is **artifact-contract equivalence**, not byte-equality
 
 ## Note: `trace.jsonl` format
 
-The .NET runner produced malformed `trace.jsonl` files: one compact event
+The removed .NET runner produced malformed `trace.jsonl` files: one compact event
 written by the candidate runner followed by **indented, multi-line** JSON
 objects written by the main loop (the two writers used different
 `JsonSerializerOptions`). The result was not valid JSONL. Nothing downstream

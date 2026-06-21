@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GoblinBench runner entrypoint — Python port of GoblinBench.Runner/Program.cs.
+"""GoblinBench runner entrypoint — canonical Python runner.
 
 Discovers scenarios under ``suites/``, runs the matching candidate runner for
 each (scenario × candidate) cell, applies declared scorers, and writes the
@@ -10,7 +10,7 @@ Usage mirrors the .NET CLI:
 
     python3 scripts/gb-run.py
     python3 scripts/gb-run.py --suite coding --candidate demo-noop
-    python3 scripts/gb-run.py --scenario coding.tree-prune --skip-scenario coding.retry-policy
+    python3 scripts/gb-run.py --scenario coding.maintainability-mini-service-python
     python3 scripts/gb-run.py --candidates path/to/candidates.json
 
 After the run completes (mirroring Program.cs) it hands off to the existing

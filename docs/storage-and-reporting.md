@@ -72,21 +72,22 @@ Ring buffer retention defaults to 20 run dirs; override via the
 
 ## Git tracking
 
-The canonical store (`runs/goblinbench.sqlite`) and on-disk run trees are
-**committed to git** — git is the backup. The genuinely-regenerable heavy stuff
-is gitignored so history doesn't balloon:
+The canonical store (`runs/goblinbench.sqlite`) is **committed to git** — it is
+the backup. On-disk run trees (`runs/run-*`) are ring-buffered scratch space and
+are gitignored by default so routine smoke/model runs do not balloon history.
 
-- **Tracked**: `goblinbench.sqlite`, run manifests (`run.json`), scores,
-  traces, logs, patches, the surviving named campaign dirs.
-- **Ignored**: copied `fixture/` trees, `bin/`/`obj/` build artifacts, agent
-  scratch (`.tmp/`, `__pycache__/`, `node_modules/`, `target/`, …), the WAL/shm
-  runtime files, and the legacy `goblinbench-results.sqlite` (rebuildable,
-  superseded by the canonical store).
+- **Tracked**: `runs/goblinbench.sqlite`, plus source fixtures, suites,
+  candidates, runner/reporting code, docs, and any deliberately promoted named
+  campaign artifact outside the ignored run-tree pattern.
+- **Ignored**: `runs/run-*` trees, copied `fixture/` trees, `bin/`/`obj/` build
+  artifacts, agent scratch (`.tmp/`, `__pycache__/`, `node_modules/`, `target/`,
+  …), SQLite WAL/shm runtime files, and the legacy `goblinbench-results.sqlite`
+  (rebuildable, superseded by the canonical store).
 
-Note: the ring buffer bounds the *working tree*; **git history grows with each
-committed run**. For routine smoke runs that's kilobytes; for coding runs with
-large stdout logs it can be megabytes. Commit thoughtfully, or `prune`/`delete`
-before committing if you don't want a run in history.
+Note: the ring buffer bounds the working tree and the ignored run dirs; **the
+committed SQLite store still grows as benchmark history grows**. Use `gb-store
+prune` for on-disk files and `gb-store delete` / `vacuum` for intentional DB-side
+curation.
 
 ## The report tool (`scripts/gb-report.py`)
 
@@ -95,7 +96,7 @@ Static HTML report generation with an LLM-friendly contract:
 ```bash
 gb-report --suite coding --view grid --narrative "..." --out coding-grid.html
 gb-report --runs run-... --view failures --narrative "..." --out failures.html
-gb-report --model glm52 --scenario coding.retry-policy --view cell --out cell.html
+gb-report --model glm52 --scenario coding.maintainability-mini-service-python --view cell --out cell.html
 gb-report --suite orchestrator --view grid --narrative - --out grid.html  < narrative.md
 ```
 
@@ -149,7 +150,7 @@ but you rarely need it. The DB holds the judgement + code samples; if you need
 to poke at a specific old run's full tree, re-run the scenario:
 
 ```bash
-gb-run.py --scenario coding.retry-policy --candidate pi-coding-glm52-den-router
+python3 scripts/gb-run.py --scenario coding.maintainability-mini-service-python --candidate pi-coding-glm52-den-router
 ```
 
 Files regenerate, slightly non-deterministically (good enough — this isn't peer

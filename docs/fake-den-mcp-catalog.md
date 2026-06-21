@@ -91,7 +91,7 @@ This lets us compare whether guided fake errors reduce hallucinated completion o
 Run deterministic validation:
 
 ```bash
-dotnet run -- --suite fake-den-mcp --candidate fake-mcp-scripted
+python3 scripts/gb-run.py --suite fake-den-mcp --candidate fake-mcp-scripted
 ```
 
 Run a real OpenAI-compatible tool-calling candidate the same way as other fake-MCP suites, for example a den-router candidate using `runner: mcp-openai-tool-use`.
@@ -101,8 +101,8 @@ Run a real OpenAI-compatible tool-calling candidate the same way as other fake-M
 A cron/job can run the generator against the real Den MCP HTTP facade and then run:
 
 ```bash
-dotnet test --no-restore --filter FakeDenMcpGeneratorTests
-dotnet run -- --suite fake-den-mcp --candidate fake-mcp-scripted
+python3 -m pytest tests/ -q
+python3 scripts/gb-run.py --suite fake-den-mcp --candidate fake-mcp-scripted
 ```
 
 If the generated catalog diff is large, inspect it before committing. The important regression signal is not only added/removed tools; description/schema wording changes can change model routing behavior.

@@ -207,7 +207,9 @@ class DbPaths:
 def _default_repo_root() -> Path:
     d = Path(__file__).resolve().parents[1]
     while True:
-        if (d / "suites").is_dir() and (d / "src").is_dir():
+        # Python is the canonical runner now; the old .NET src/ tree is not part
+        # of repo-root detection. Use durable Python-era anchors instead.
+        if (d / "suites").is_dir() and (d / "scripts" / "gb").is_dir():
             return d
         if d.parent == d:
             return Path.cwd()

@@ -12,8 +12,8 @@ GoblinBench answers recurring operational questions:
 > **Entrypoint for agents:** the runner is `python3 scripts/gb-run.py`. The
 > canonical results store is `runs/goblinbench.sqlite` (committed; it's the
 > backup). See **[Quick start](#quick-start)** and
-> **[CLI reference](#cli-reference)**. The .NET runner under `src/` is legacy
-> and retained for reference only — Python is the primary path.
+> **[CLI reference](#cli-reference)**. Python is the only in-repo runner path;
+> the old .NET implementation was removed after the port.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ A **Scenario** is a versioned evaluation case. It supplies inputs, fixture setup
 
 Suite categories:
 - `orchestrator` — workflow decision-making, worker claim validation
-- `coding` (14 scenarios) — maintenance tasks against copied fixtures (Python/Go/Rust/TS)
+- `coding` — maintenance/style tasks against copied fixtures (Python/Go/Rust/TS)
 - `mcp-tools` / `mcp-tools-hard` — fake-MCP tool-use behavior
 - `mcp-session` — multi-turn durable tool-use sessions
 - `autonomy-calibration` / `evidence-grounding` — fuzzy autonomy + groundedness
@@ -87,7 +87,7 @@ candidates.json             Candidate definitions (72 candidates)
 fixtures/                   Fixture sources (copied per-run by coding runners)
 runs/                       Run artifacts (ring-buffered; gitignored)
   goblinbench.sqlite        Canonical results store (committed — the backup)
-src/                        Legacy .NET runner (retained for reference; Python is primary)
+tests/                      Python tests for runner/store/reporting behavior
 docs/                       Documentation
 ```
 
@@ -97,7 +97,7 @@ docs/                       Documentation
 
 - Python 3.10+ (stdlib only — no venv or pip install needed for the runner itself)
 - `bwrap` (bubblewrap) for the coding-agent sandbox path
-- Toolchains per fixture language when running coding scenarios (python/pytest, dotnet, go, cargo, node — only the ones you exercise)
+- Toolchains per fixture language when running coding scenarios (python/pytest, go, cargo, node — only the ones you exercise)
 
 ### Run a scenario
 
@@ -173,10 +173,6 @@ Every score includes:
 - `passed` — whether the score meets the configured threshold
 - `human_summary` — concise one-line summary for reports
 - `judge_model` / `judge_prompt_version` — for LLM judges only (the `llm-judge` scorer is currently a placeholder, 0 scenario uses)
-
-## Legacy .NET runner
-
-`src/GoblinBench.*` is the original .NET implementation. It is retained for reference but is **not the primary path** — every used candidate (72/72) and every scenario-declared scorer is handled by the Python runner in `scripts/gb/`. The .NET runner exhibited a class of crash-with-no-trace failures under specific conditions that did not reproduce through a Python shim, which is what motivated the port. See [`docs/python-runner.md`](docs/python-runner.md) for the full port audit. To build/run the legacy runner (if needed for comparison): `dotnet build` / `dotnet run --project src/GoblinBench.Runner`.
 
 ## License
 

@@ -103,20 +103,19 @@ The scorer detail includes counts for matched calls, argument matches, bypass at
 ## Running
 
 ```bash
-dotnet test --no-restore --filter 'McpToolUseSuiteTests'
+python3 -m pytest tests/ -q
 
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite mcp-tools \
   --candidate fake-mcp-scripted
 
 # Real local OpenAI-compatible model tool-calling smoke
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite mcp-tools \
   --scenario mcp-tools.customer-case-summary \
   --candidate qwen3-35b-local-mcp-tools
 
-dotnet run --project src/GoblinBench.Runner --no-build -- \
-  report --suite mcp-tools
+python3 scripts/gb-report.py --suite mcp-tools --view grid --out /tmp/mcp-tools.html
 ```
 
 ## Adding scenarios

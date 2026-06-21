@@ -7,7 +7,6 @@ command. Returns a score contract JSON on stdout.
 
 Supported languages:
   - Python (pyproject.toml, pytest.ini, setup.py/setup.cfg) — pytest
-  - C# / .NET (.csproj, .sln) — dotnet test
   - TypeScript/JavaScript (package.json + jest/vitest/mocha config)
   - Go (go.mod) — go test ./...
   - Rust (Cargo.toml) — cargo test
@@ -41,10 +40,6 @@ def detect_language(fixture_dir: str) -> str | None:
     for pat in ("setup.py", "setup.cfg"):
         if (f / pat).exists():
             return "python"
-
-    csproj = list(f.glob("*.csproj"))
-    if csproj:
-        return "dotnet"
 
     if (f / "go.mod").exists():
         return "go"
@@ -130,90 +125,6 @@ def run_pytest(fixture_dir: str, timeout: int) -> dict:
         "passed": all_pass,
         "human_summary": f"PASS" if all_pass else f"FAIL",
         "explanation": f"pytest: {passed}/{total} passed, {failed} failed",
-        "detail": detail,
-    }
-
-
-def run_dotnet(fixture_dir: str, timeout: int) -> dict:
-    """Run dotnet test on the first .csproj found."""
-    csproj = list(pathlib.Path(fixture_dir).glob("*.csproj"))
-    if not csproj:
-        return {
-            "success": False, "error": "No .csproj found",
-            "human_summary": "FAIL: coding-tests: no .csproj",
-            "passed": False, "score": 0.0,
-        }
-
-    test_project = csproj[0]
-
-    # Restore + build
-    try:
-        subprocess.run(
-            ["dotnet", "restore", str(test_project), "--force"],
-            cwd=fixture_dir, capture_output=True, text=True, timeout=120,
-        )
-        build = subprocess.run(
-            ["dotnet", "build", str(test_project), "-v", "quiet"],
-            cwd=fixture_dir, capture_output=True, text=True, timeout=timeout,
-        )
-        if build.returncode != 0:
-            return {
-                "success": False,
-                "error": f"Build failed: {build.stderr[:500]}",
-                "human_summary": "FAIL: coding-tests: build failed",
-                "passed": False, "score": 0.0,
-            }
-    except subprocess.TimeoutExpired:
-        return {
-            "success": False, "error": "dotnet restore/build timed out",
-            "human_summary": "FAIL: coding-tests: build timed out",
-            "passed": False, "score": 0.0,
-        }
-
-    # Run tests
-    try:
-        result = subprocess.run(
-            ["dotnet", "test", str(test_project), "--no-build", "-v", "quiet"],
-            cwd=fixture_dir,
-            capture_output=True, text=True,
-            timeout=timeout,
-        )
-        output = result.stdout + result.stderr
-    except subprocess.TimeoutExpired:
-        return {
-            "success": False, "error": f"dotnet test timed out after {timeout}s",
-            "human_summary": "FAIL: coding-tests: test timed out",
-            "passed": False, "score": 0.0,
-        }
-
-    # Parse dotnet test output
-    passed = total = 0
-    for line in output.split("\n"):
-        if "Total:" in line:
-            totals = re.findall(r"Passed:\s*(\d+)", line)
-            total_m = re.findall(r"Total:\s*(\d+)", line)
-            if total_m:
-                total = int(total_m[0])
-            if totals:
-                passed = int(totals[0])
-
-    score = passed / total if total > 0 else 0.0
-    all_pass = passed == total > 0
-
-    detail = {
-        "language": "dotnet",
-        "framework": "dotnet test",
-        "passed": passed,
-        "total": total,
-        "output": output[-2000:],
-    }
-
-    return {
-        "success": True,
-        "score": score,
-        "passed": all_pass,
-        "human_summary": f"PASS" if all_pass else f"FAIL",
-        "explanation": f"dotnet test: {passed}/{total} passed",
         "detail": detail,
     }
 
@@ -431,7 +342,6 @@ def run_npm_test(fixture_dir: str, timeout: int) -> dict:
 
 LANGUAGE_RUNNERS = {
     "python": run_pytest,
-    "dotnet": run_dotnet,
     "go": run_go_test,
     "rust": run_cargo_test,
     "typescript": run_npm_test,
@@ -468,8 +378,8 @@ def main():
             "scorer_name": "Coding Test Scorer",
             "scoring_kind": "script",
             "success": False,
-            "error": "Could not detect fixture language (no .csproj, pyproject.toml, "
-                     "Cargo.toml, or package.json with test framework found)",
+            "error": "Could not detect fixture language (no pyproject.toml, "
+                     "go.mod, Cargo.toml, or package.json with test framework found)",
             "human_summary": "FAIL: coding-tests: unknown language",
             "passed": False,
             "score": 0.0,

@@ -25,13 +25,13 @@ Each scenario exposes at least 10 fake tools. The deterministic `fake-mcp-script
 Useful commands:
 
 ```bash
-dotnet test --no-restore --filter McpHardAndSessionSuiteTests
+python3 -m pytest tests/ -q
 
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite mcp-tools-hard \
   --candidate fake-mcp-scripted
 
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite mcp-tools-hard \
   --candidate qwen3-35b-local-mcp-tools
 ```
@@ -78,7 +78,7 @@ Scorer:
 Useful command:
 
 ```bash
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite mcp-session \
   --candidate qwen3-35b-local-mcp-session
 ```

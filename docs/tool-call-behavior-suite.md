@@ -54,7 +54,7 @@ Current failure categories include:
 ## Running deterministic smoke
 
 ```bash
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite tool-call-behavior \
   --candidate fake-mcp-scripted
 ```
@@ -62,7 +62,7 @@ dotnet run --project src/GoblinBench.Runner --no-build -- \
 ## Running local model smoke
 
 ```bash
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite tool-call-behavior \
   --candidate qwen3-35b-local-mcp-tools
 ```
@@ -93,7 +93,7 @@ GoblinBench's `OpenAiMcpToolUseRunner` can also hit the same OpenAI-compatible r
 Example:
 
 ```bash
-dotnet run --project src/GoblinBench.Runner --no-build -- \
+python3 scripts/gb-run.py \
   --suite tool-call-behavior \
   --candidate den-router-deepseek-tool-behavior
 ```
