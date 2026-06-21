@@ -1,0 +1,15 @@
+{
+  "name": "maintainability-mini-service-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Maintainability mini-service — TypeScript architecture-pressure probe for GoblinBench",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

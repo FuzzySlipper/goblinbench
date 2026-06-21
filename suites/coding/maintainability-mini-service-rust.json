@@ -1,0 +1,53 @@
+{
+  "id": "coding.maintainability-mini-service-rust",
+  "version": "1.0.0",
+  "name": "Maintainability Mini-Service \u2014 Rust architecture-pressure probe",
+  "description": "Small Rust service fixture that tests whether a coding agent preserves architectural seams or collapses cross-cutting feature work into central modules/fat handlers.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "maintainability-mini-service-rust",
+    "task": "# Maintainability Mini-Service Probe\n\nImplement the bulk customer import feature in this tiny in-memory Rust service crate. The existing service already has routing, auth, validation, repository, audit, and customer-handler seams split across modules. Your implementation must pass the behavior tests while keeping the code maintainable.\n\n## Feature to implement\n\nAdd behavior for `POST /customers/bulk-import`. The route is already registered and currently returns `501`.\n\nThe request body shape is represented by the fixture's `JsonValue` helpers as an object containing a `rows` array of customer objects.\n\nRules:\n\n- User must be admin or have `customers:bulk_import`; otherwise return `403` and do not mutate state or audit.\n- If `rows` is missing or not an array, return `400` with `{\"error\": \"rows must be a list\"}`.\n- Validate each row using the same domain rules as single-customer create:\n  - non-empty `name`\n  - valid email with `@` and a dot after `@`\n  - `plan` is one of `free`, `pro`, `enterprise` and defaults to `free`\n  - `tags` defaults to empty and must be an array of strings\n- Normalize accepted emails to lowercase and tags to lowercase.\n- Reject rows whose email already exists in the repository.\n- Reject duplicate emails within the same import batch, accepting the first valid occurrence and rejecting later duplicates.\n- Accepted rows should be inserted into the repository.\n- Return `200` with `accepted_count`, `rejected_count`, `accepted`, and `rejected` fields.\n- If any rows are rejected, write exactly one audit event:\n  - type: `customers.bulk_import.rejected`\n  - actor ID: current user ID\n  - payload: `{\"accepted_count\": n, \"rejected_count\": m}`\n- Existing `GET /customers` and `POST /customers` behavior must continue to work.\n\n## Architectural intent\n\nThis is a maintainability-pressure probe. The tests assert behavior, not architecture. Use the existing seams where they make sense rather than dumping every concern into one large handler. Write the code you would want to maintain in a small production service.\n\n## Useful commands\n\n```bash\ncargo test --no-fail-fast\n```"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "structure-metrics",
+      "maintainability-metrics",
+      "latency"
+    ],
+    "parameters": {
+      "coding-tests": {
+        "timeout_seconds": 120
+      },
+      "structure-metrics": {
+        "scan_dir": "src"
+      },
+      "maintainability-metrics": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "central_paths": [
+          "src/router.rs",
+          "src/container.rs",
+          "src/customers.rs"
+        ],
+        "setup_paths": [
+          "src/container.rs"
+        ],
+        "handler_paths": [
+          "src/customers.rs"
+        ]
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 900,
+  "tags": [
+    "style-probe",
+    "maintainability",
+    "godfile",
+    "architecture-pressure",
+    "rust"
+  ]
+}

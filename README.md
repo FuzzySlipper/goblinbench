@@ -106,8 +106,18 @@ docs/                       Documentation
 python3 scripts/gb-run.py --suite orchestrator --candidate scripted-deterministic
 
 # Real coding-agent hot path (bwrap-sandboxed pi against a copied fixture)
+# Maintainability mini-service probes currently exist for Python, TypeScript, Go, and Rust.
 python3 scripts/gb-run.py \
   --scenario coding.maintainability-mini-service-python \
+  --candidate pi-coding-glm52-den-router
+python3 scripts/gb-run.py \
+  --scenario coding.maintainability-mini-service-typescript \
+  --candidate pi-coding-glm52-den-router
+python3 scripts/gb-run.py \
+  --scenario coding.maintainability-mini-service-go \
+  --candidate pi-coding-glm52-den-router
+python3 scripts/gb-run.py \
+  --scenario coding.maintainability-mini-service-rust \
   --candidate pi-coding-glm52-den-router
 
 # Filter by suite / scenario / candidate (repeatable, comma-separated)

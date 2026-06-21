@@ -21,6 +21,10 @@ from pathlib import Path
 from typing import Any
 
 SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", "dist", "coverage", "target"}
+SOURCE_EXTS = {".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs"}
+TS_EXTS = {".ts", ".tsx", ".js", ".jsx"}
+GO_EXTS = {".go"}
+RS_EXTS = {".rs"}
 DEFAULT_SOURCE_ROOT = "service"
 DEFAULT_BASELINE_PATH = ".goblinbench/maintainability-baseline.json"
 GENERIC_NAMES = {
@@ -91,10 +95,12 @@ def collect_source_files(root: Path, source_root: str) -> list[Path]:
     if not base.exists():
         return []
     files: list[Path] = []
-    for path in base.rglob("*.py"):
+    for path in base.rglob("*"):
+        if not path.is_file() or path.suffix not in SOURCE_EXTS:
+            continue
         if should_skip(path.relative_to(root)):
             continue
-        if path.name == "__init__.py":
+        if path.name in {"__init__.py"} or path.name.endswith((".d.ts", "_test.go")):
             continue
         files.append(path)
     return sorted(files)
@@ -165,7 +171,320 @@ def count_magic_literals(tree: ast.AST) -> int:
     return count
 
 
+def _line_no_at(text: str, index: int) -> int:
+    return text.count("\n", 0, index) + 1
+
+
+def _find_matching_brace(text: str, open_index: int) -> int:
+    depth = 0
+    in_string: str | None = None
+    escaped = False
+    in_line_comment = False
+    in_block_comment = False
+    i = open_index
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+        if in_line_comment:
+            if ch == "\n":
+                in_line_comment = False
+            i += 1
+            continue
+        if in_block_comment:
+            if ch == "*" and nxt == "/":
+                in_block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == in_string:
+                in_string = None
+            i += 1
+            continue
+        if ch == "/" and nxt == "/":
+            in_line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            in_block_comment = True
+            i += 2
+            continue
+        if ch in {"'", '"', "`"}:
+            in_string = ch
+            i += 1
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return len(text) - 1
+
+
+def _split_params(params: str) -> list[str]:
+    params = params.strip()
+    if not params:
+        return []
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for ch in params:
+        if ch in "<{([":
+            depth += 1
+        elif ch in ">})]" and depth > 0:
+            depth -= 1
+        if ch == "," and depth == 0:
+            part = "".join(current).strip()
+            if part:
+                parts.append(part)
+            current = []
+        else:
+            current.append(ch)
+    part = "".join(current).strip()
+    if part:
+        parts.append(part)
+    return parts
+
+
+def _has_jsdoc_before(text: str, start: int) -> bool:
+    return bool(re.search(r"/\*\*[\s\S]*?\*/\s*$", text[:start][-500:]))
+
+
+def _brace_nesting(body: str) -> int:
+    depth = 0
+    max_depth = 0
+    for ch in body:
+        if ch == "{":
+            depth += 1
+            max_depth = max(max_depth, depth)
+        elif ch == "}" and depth > 0:
+            depth -= 1
+    return max_depth
+
+
+def analyse_ts_file(path: Path, root: Path) -> FileMetric:
+    text = read_text(path)
+    rel_path = rel(path, root)
+    line_comments = len(re.findall(r"^\s*//", text, re.MULTILINE))
+    block_comments = len(re.findall(r"/\*", text))
+    comments = line_comments + block_comments
+    semantic_comments = sum(1 for line in text.splitlines() if "//" in line and any(h in line.lower() for h in SEMANTIC_COMMENT_HINTS))
+    restatement_comments = sum(1 for line in text.splitlines() if any(pattern.search(line.replace("//", "#", 1)) for pattern in RESTATEMENT_PATTERNS))
+    imports = len(re.findall(r"^\s*import\b", text, re.MULTILINE))
+    classes = re.findall(r"(?:export\s+)?class\s+([A-Za-z_$][\w$]*)", text)
+    exported_symbols = re.findall(r"^\s*export\s+(?:function|class|interface|type|const|let|var)\s+([A-Za-z_$][\w$]*)", text, re.MULTILINE)
+
+    patterns = [
+        re.compile(
+            r"(?:export\s+)?(?:async\s+)?function\s+(?P<name>[A-Za-z_$][\w$]*)\s*"
+            r"(?:<[^>{}]*>)?\s*\((?P<params>[^)]*)\)\s*(?P<ret>:\s*[^=;{]+)?\s*\{",
+            re.MULTILINE,
+        ),
+        re.compile(
+            r"(?:export\s+)?(?:const|let|var)\s+(?P<name>[A-Za-z_$][\w$]*)\s*"
+            r"(?P<var_ann>:\s*[^=]+)?=\s*(?:async\s*)?(?:<[^>{}]*>\s*)?"
+            r"\((?P<params>[^)]*)\)\s*(?P<ret>:\s*[^=;{]+)?\s*=>\s*\{",
+            re.MULTILINE,
+        ),
+        re.compile(
+            r"^\s*(?:public\s+|private\s+|protected\s+)?(?P<name>[A-Za-z_$][\w$]*)\s*"
+            r"\((?P<params>[^)]*)\)\s*(?P<ret>:\s*[^=;{]+)?\s*\{",
+            re.MULTILINE,
+        ),
+    ]
+    functions: list[dict[str, Any]] = []
+    seen: set[tuple[int, int]] = set()
+    for pattern in patterns:
+        for match in pattern.finditer(text):
+            if match.span() in seen:
+                continue
+            seen.add(match.span())
+            name = match.group("name")
+            if name in {"if", "for", "while", "switch", "catch"}:
+                continue
+            open_index = text.find("{", match.end() - 1)
+            close_index = _find_matching_brace(text, open_index) if open_index >= 0 else match.end()
+            body = text[open_index + 1:close_index] if open_index >= 0 else ""
+            start_line = _line_no_at(text, match.start())
+            end_line = _line_no_at(text, close_index)
+            branch_count = len(re.findall(r"\b(if|for|while|switch|catch|case)\b|&&|\|\|", body))
+            functions.append({
+                "name": name,
+                "lineno": start_line,
+                "end_lineno": end_line,
+                "body_lines": max(0, end_line - start_line),
+                "max_nesting": _brace_nesting(body),
+                "branch_count": branch_count,
+                "is_public": not name.startswith("_") and not re.search(rf"private\s+{re.escape(name)}\s*\(", text),
+                "has_docstring": _has_jsdoc_before(text, match.start()),
+            })
+
+    identifiers = re.findall(r"\b[A-Za-z_$][\w$]*\b", text)
+    magic_literals = len(re.findall(r"(['\"])(?:(?!(?<!\\)\1).){3,}(?<!\\)\1", text))
+    loc = sum(1 for line in text.splitlines() if line.strip() and not line.lstrip().startswith(("//", "/*", "*")))
+    public_api = len(set(exported_symbols))
+    return FileMetric(
+        path=rel_path,
+        sha256=sha256_text(text),
+        loc=loc,
+        comments=comments,
+        restatement_comments=restatement_comments,
+        semantic_comments=semantic_comments,
+        imports=imports,
+        public_api_count=public_api,
+        function_count=len(functions),
+        class_count=len(classes),
+        functions=functions,
+        identifiers=identifiers,
+        magic_literals=magic_literals,
+    )
+
+
+def analyse_go_file(path: Path, root: Path) -> FileMetric:
+    text = read_text(path)
+    rel_path = rel(path, root)
+    line_comments = len(re.findall(r"^\s*//", text, re.MULTILINE))
+    block_comments = len(re.findall(r"/\*", text))
+    comments = line_comments + block_comments
+    semantic_comments = sum(1 for line in text.splitlines() if "//" in line and any(h in line.lower() for h in SEMANTIC_COMMENT_HINTS))
+    restatement_comments = sum(1 for line in text.splitlines() if any(pattern.search(line.replace("//", "#", 1)) for pattern in RESTATEMENT_PATTERNS))
+    import_blocks = re.findall(r"^\s*import\s*\((?P<body>[\s\S]*?)\)", text, re.MULTILINE)
+    imports = sum(len([line for line in block.splitlines() if line.strip() and not line.strip().startswith("//")]) for block in import_blocks)
+    imports += len(re.findall(r"^\s*import\s+\"", text, re.MULTILINE))
+    type_names = re.findall(r"^\s*type\s+([A-Za-z_][\w]*)", text, re.MULTILINE)
+    exported_types = [name for name in type_names if name[:1].isupper()]
+    exported_consts = re.findall(r"^\s*(?:const|var)\s+([A-Z][\w]*)", text, re.MULTILINE)
+
+    function_pattern = re.compile(
+        r"func\s+(?:\([^)]*\)\s*)?(?P<name>[A-Za-z_][\w]*)\s*"
+        r"\((?P<params>[^)]*)\)\s*(?P<ret>[^\{]*)\{",
+        re.MULTILINE,
+    )
+    functions: list[dict[str, Any]] = []
+    exported_funcs: list[str] = []
+    for match in function_pattern.finditer(text):
+        name = match.group("name")
+        open_index = text.find("{", match.end() - 1)
+        close_index = _find_matching_brace(text, open_index) if open_index >= 0 else match.end()
+        body = text[open_index + 1:close_index] if open_index >= 0 else ""
+        start_line = _line_no_at(text, match.start())
+        end_line = _line_no_at(text, close_index)
+        branch_count = len(re.findall(r"\b(if|for|switch|case|select|range|defer|go)\b|&&|\|\|", body))
+        is_public = name[:1].isupper()
+        if is_public:
+            exported_funcs.append(name)
+        prefix = text[:match.start()][-300:]
+        has_doc = bool(re.search(rf"//\s*{re.escape(name)}\b[^\n]*\n\s*$", prefix))
+        functions.append({
+            "name": name,
+            "lineno": start_line,
+            "end_lineno": end_line,
+            "body_lines": max(0, end_line - start_line),
+            "max_nesting": _brace_nesting(body),
+            "branch_count": branch_count,
+            "is_public": is_public,
+            "has_docstring": has_doc,
+        })
+
+    identifiers = re.findall(r"\b[A-Za-z_][\w]*\b", text)
+    magic_literals = len(re.findall(r"(['\"])(?:(?!(?<!\\)\1).){3,}(?<!\\)\1", text))
+    loc = sum(1 for line in text.splitlines() if line.strip() and not line.lstrip().startswith(("//", "/*", "*")))
+    public_api = len(set(exported_types + exported_consts + exported_funcs))
+    return FileMetric(
+        path=rel_path,
+        sha256=sha256_text(text),
+        loc=loc,
+        comments=comments,
+        restatement_comments=restatement_comments,
+        semantic_comments=semantic_comments,
+        imports=imports,
+        public_api_count=public_api,
+        function_count=len(functions),
+        class_count=len(type_names),
+        functions=functions,
+        identifiers=identifiers,
+        magic_literals=magic_literals,
+    )
+
+
+def analyse_rust_file(path: Path, root: Path) -> FileMetric:
+    text = read_text(path)
+    rel_path = rel(path, root)
+    line_comments = len(re.findall(r"^\s*///?", text, re.MULTILINE))
+    block_comments = len(re.findall(r"/\*", text))
+    comments = line_comments + block_comments
+    semantic_comments = sum(1 for line in text.splitlines() if "//" in line and any(h in line.lower() for h in SEMANTIC_COMMENT_HINTS))
+    restatement_comments = sum(1 for line in text.splitlines() if any(pattern.search(line.replace("//", "#", 1)) for pattern in RESTATEMENT_PATTERNS))
+    imports = len(re.findall(r"^\s*use\s+", text, re.MULTILINE))
+    type_names = re.findall(r"^\s*(?:pub\s+)?(?:struct|enum|type|trait)\s+([A-Za-z_][\w]*)", text, re.MULTILINE)
+    exported_items = re.findall(r"^\s*pub\s+(?:struct|enum|type|trait|const|static)\s+([A-Za-z_][\w]*)", text, re.MULTILINE)
+
+    function_pattern = re.compile(
+        r"(?P<prefix>^\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+)"
+        r"(?P<name>[A-Za-z_][\w]*)\s*(?:<[^>{}]*>)?\s*\((?P<params>[^)]*)\)\s*(?:->\s*[^\{]+)?\{",
+        re.MULTILINE,
+    )
+    functions: list[dict[str, Any]] = []
+    exported_funcs: list[str] = []
+    for match in function_pattern.finditer(text):
+        name = match.group("name")
+        open_index = text.find("{", match.end() - 1)
+        close_index = _find_matching_brace(text, open_index) if open_index >= 0 else match.end()
+        body = text[open_index + 1:close_index] if open_index >= 0 else ""
+        start_line = _line_no_at(text, match.start())
+        end_line = _line_no_at(text, close_index)
+        is_public = "pub" in match.group("prefix")
+        if is_public:
+            exported_funcs.append(name)
+        prefix = text[:match.start()][-400:]
+        has_doc = bool(re.search(rf"///\s*{re.escape(name)}\b[^\n]*\n\s*$", prefix))
+        branch_count = len(re.findall(r"\b(if|for|while|loop|match|else|return)\b|&&|\|\||\?", body))
+        functions.append({
+            "name": name,
+            "lineno": start_line,
+            "end_lineno": end_line,
+            "body_lines": max(0, end_line - start_line),
+            "max_nesting": _brace_nesting(body),
+            "branch_count": branch_count,
+            "is_public": is_public,
+            "has_docstring": has_doc,
+        })
+
+    identifiers = re.findall(r"\b[A-Za-z_][\w]*\b", text)
+    magic_literals = len(re.findall(r"(['\"])(?:(?!(?<!\\)\1).){3,}(?<!\\)\1", text))
+    loc = sum(1 for line in text.splitlines() if line.strip() and not line.lstrip().startswith(("//", "/*", "*")))
+    public_api = len(set(exported_items + exported_funcs))
+    return FileMetric(
+        path=rel_path,
+        sha256=sha256_text(text),
+        loc=loc,
+        comments=comments,
+        restatement_comments=restatement_comments,
+        semantic_comments=semantic_comments,
+        imports=imports,
+        public_api_count=public_api,
+        function_count=len(functions),
+        class_count=len(type_names),
+        functions=functions,
+        identifiers=identifiers,
+        magic_literals=magic_literals,
+    )
+
+
 def analyse_file(path: Path, root: Path) -> FileMetric:
+    if path.suffix in TS_EXTS:
+        return analyse_ts_file(path, root)
+    if path.suffix in GO_EXTS:
+        return analyse_go_file(path, root)
+    if path.suffix in RS_EXTS:
+        return analyse_rust_file(path, root)
     text = read_text(path)
     tree = ast.parse(text, filename=str(path))
     funcs: list[dict[str, Any]] = []

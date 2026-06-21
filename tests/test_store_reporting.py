@@ -221,3 +221,119 @@ def test_coding_tests_scorer_no_longer_detects_dotnet_fixtures(tmp_path: Path) -
     (fixture / "OldTests.csproj").write_text("<Project />", encoding="utf-8")
 
     assert scorer.detect_language(str(fixture)) is None
+
+
+def test_maintainability_metrics_support_typescript_fixture() -> None:
+    metrics = load_cli_module("maintainability-metrics.py", "maintainability_metrics_ts_fixture_test")
+    fixture = REPO / "fixtures" / "coding" / "maintainability-mini-service-ts"
+
+    result = metrics.run_metrics(
+        str(fixture),
+        source_root="src",
+        baseline_path=".goblinbench/maintainability-baseline.json",
+        central_paths=["src/router.ts", "src/container.ts", "src/handlers/customers.ts"],
+        setup_paths=["src/container.ts"],
+        handler_paths=["src/handlers/customers.ts"],
+    )
+
+    assert result["baseline_available"] is True
+    assert result["current"]["source_files"] == 8
+    assert result["current"]["max_handler_function_lines"] > 0
+    assert result["deltas"]["changed_file_count"] == 0
+    assert set(result["current"]["files"]).issuperset({
+        "src/handlers/customers.ts",
+        "src/validation.ts",
+        "src/repository.ts",
+    })
+
+
+def test_typescript_maintainability_scenario_points_at_existing_fixture() -> None:
+    scenario_path = REPO / "suites" / "coding" / "maintainability-mini-service-typescript.json"
+    scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+
+    fixture_case = scenario["input"]["fixture_case"]
+    fixture = REPO / "fixtures" / "coding" / fixture_case
+    assert fixture.is_dir()
+    assert (fixture / "package.json").is_file()
+    assert scenario["scoring"]["parameters"]["maintainability-metrics"]["source_root"] == "src"
+
+    scorer = load_cli_module("scorers/coding-tests.py", "coding_tests_scorer_ts_fixture_test")
+    assert scorer.detect_language(str(fixture)) == "typescript"
+
+
+def test_maintainability_metrics_support_go_fixture() -> None:
+    metrics = load_cli_module("maintainability-metrics.py", "maintainability_metrics_go_fixture_test")
+    fixture = REPO / "fixtures" / "coding" / "maintainability-mini-service-go"
+
+    result = metrics.run_metrics(
+        str(fixture),
+        source_root=".",
+        baseline_path=".goblinbench/maintainability-baseline.json",
+        central_paths=["router.go", "container.go", "customers.go"],
+        setup_paths=["container.go"],
+        handler_paths=["customers.go"],
+    )
+
+    assert result["baseline_available"] is True
+    assert result["current"]["source_files"] == 8
+    assert result["current"]["max_handler_function_lines"] > 0
+    assert result["deltas"]["changed_file_count"] == 0
+    assert "bulk_import_test.go" not in result["current"]["files"]
+    assert set(result["current"]["files"]).issuperset({
+        "customers.go",
+        "validation.go",
+        "repository.go",
+    })
+
+
+def test_go_maintainability_scenario_points_at_existing_fixture() -> None:
+    scenario_path = REPO / "suites" / "coding" / "maintainability-mini-service-go.json"
+    scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+
+    fixture_case = scenario["input"]["fixture_case"]
+    fixture = REPO / "fixtures" / "coding" / fixture_case
+    assert fixture.is_dir()
+    assert (fixture / "go.mod").is_file()
+    assert scenario["scoring"]["parameters"]["maintainability-metrics"]["source_root"] == "."
+
+    scorer = load_cli_module("scorers/coding-tests.py", "coding_tests_scorer_go_fixture_test")
+    assert scorer.detect_language(str(fixture)) == "go"
+
+
+def test_maintainability_metrics_support_rust_fixture() -> None:
+    metrics = load_cli_module("maintainability-metrics.py", "maintainability_metrics_rust_fixture_test")
+    fixture = REPO / "fixtures" / "coding" / "maintainability-mini-service-rust"
+
+    result = metrics.run_metrics(
+        str(fixture),
+        source_root="src",
+        baseline_path=".goblinbench/maintainability-baseline.json",
+        central_paths=["src/router.rs", "src/container.rs", "src/customers.rs"],
+        setup_paths=["src/container.rs"],
+        handler_paths=["src/customers.rs"],
+    )
+
+    assert result["baseline_available"] is True
+    assert result["current"]["source_files"] == 9
+    assert result["current"]["max_handler_function_lines"] > 0
+    assert result["deltas"]["changed_file_count"] == 0
+    assert "tests/bulk_import.rs" not in result["current"]["files"]
+    assert set(result["current"]["files"]).issuperset({
+        "src/customers.rs",
+        "src/validation.rs",
+        "src/repository.rs",
+    })
+
+
+def test_rust_maintainability_scenario_points_at_existing_fixture() -> None:
+    scenario_path = REPO / "suites" / "coding" / "maintainability-mini-service-rust.json"
+    scenario = json.loads(scenario_path.read_text(encoding="utf-8"))
+
+    fixture_case = scenario["input"]["fixture_case"]
+    fixture = REPO / "fixtures" / "coding" / fixture_case
+    assert fixture.is_dir()
+    assert (fixture / "Cargo.toml").is_file()
+    assert scenario["scoring"]["parameters"]["maintainability-metrics"]["source_root"] == "src"
+
+    scorer = load_cli_module("scorers/coding-tests.py", "coding_tests_scorer_rust_fixture_test")
+    assert scorer.detect_language(str(fixture)) == "rust"

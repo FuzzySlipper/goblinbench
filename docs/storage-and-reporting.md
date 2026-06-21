@@ -96,7 +96,7 @@ Static HTML report generation with an LLM-friendly contract:
 ```bash
 gb-report --suite coding --view grid --narrative "..." --out coding-grid.html
 gb-report --runs run-... --view failures --narrative "..." --out failures.html
-gb-report --model glm52 --scenario coding.maintainability-mini-service-python --view cell --out cell.html
+gb-report --model glm52 --scenario coding.maintainability-mini-service-rust --view cell --out cell.html
 gb-report --suite orchestrator --view grid --narrative - --out grid.html  < narrative.md
 ```
 
