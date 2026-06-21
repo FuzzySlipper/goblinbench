@@ -32,6 +32,7 @@ import sys
 import time
 import traceback
 import uuid
+from pathlib import Path
 
 # Make the sibling ``gb`` package importable regardless of CWD.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -54,6 +55,11 @@ from gb.registry import (  # noqa: E402
     pick_runner,
 )
 from gb.serialize import dumps, now_iso  # noqa: E402
+from gb.store import DbPaths, ingest_run, open_db, prune_run_files  # noqa: E402
+
+# Default ring-buffer size for on-disk run files. Override via the
+# GOBLINBENCH_RUN_FILE_RETENTION env var. DB history is unaffected (canonical).
+DEFAULT_RUN_FILE_RETENTION = 20
 
 
 def resolve_repo_root() -> str:
@@ -323,6 +329,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {ex}")
         else:
             del run_result_dump  # not used further; run.json on disk is authoritative
+
+    # Ingest the finished run into the canonical SQLite store (inline artifacts
+    # + scores + representative samples). The DB is the durable record; the
+    # on-disk runs/ files are now scratch space bounded by a ring buffer.
+    try:
+        paths = DbPaths.resolve(repo_root)
+        conn = open_db(paths.db_path)
+        try:
+            ingest_run(conn, Path(run_json_path), repo_root)
+            conn.commit()
+        finally:
+            conn.close()
+        retention = int(os.environ.get("GOBLINBENCH_RUN_FILE_RETENTION", DEFAULT_RUN_FILE_RETENTION))
+        pruned = prune_run_files(paths.runs_root, retention)
+        if pruned:
+            print(f"Ring buffer: pruned {len(pruned)} old run dir(s) from disk (kept {retention} most recent; DB retains full history).")
+    except Exception as ex:  # noqa: BLE001 — store failure must not mask a successful run
+        print(f"WARN: store ingest/prune failed: {ex}")
 
     print()
     print(f"Run complete. Artifacts: {run_dir}")

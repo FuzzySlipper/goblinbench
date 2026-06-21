@@ -17,6 +17,8 @@ from .models import CandidateConfig, CandidateResult, Scenario, ScoreResult
 from .runners import (
     CodingAgentRunner,
     CodingScriptedRunner,
+    FakeFuzzyScriptedRunner,
+    FakeMcpScriptedRunner,
     NoOpRunner,
     OpenAiChatRunner,
     OpenAiFuzzyAgentRunner,
@@ -27,10 +29,13 @@ from .runners import (
 )
 from .runners.base import CandidateRunner
 from .scorers import (
+    ExactDecisionScorer,
     FuzzyAgentBehaviorScorer,
+    HeuristicTextScorer,
     LatencyScorer,
     McpSessionTrajectoryScorer,
     McpToolUseScorer,
+    NoOpScorer,
     OrchestratorDecisionScorer,
     SchemaComplianceScorer,
     VisionCorrectnessScorer,
@@ -41,16 +46,18 @@ from .scorers.base import Scorer
 def default_runners() -> list[CandidateRunner]:
     # ORDER-SENSITIVE. Matches the C# registration order in Program.cs so that
     # first-match dispatch resolves the same way for every candidate:
-    #   - Scripted / CodingScripted / NoOp claim by cli_command or Kind=Unknown
-    #     (specific cli_commands must precede NoOp's catch-all)
+    #   - specific cli_command runners precede the generic ones
+    #   - Scripted / CodingScripted / Fake* claim by cli_command
     #   - specialized OpenAiModel runners claim by cli_command/config.runner
-    #     (mcp-tool-use, fuzzy, mcp-session) — these must precede OpenAiChatRunner
-    #   - VisionCandidateRunner keys on cli_command only (any kind)
+    #   - Vision keys on cli_command only (any kind)
     #   - CodingAgent claims by kind=CodingAgent
     #   - OpenAiChatRunner claims remaining kind=OpenAiModel (plain chat)
+    #   - NoOp is the catch-all (Kind=Unknown or cli_command=noop)
     return [
         ScriptedRunner(),
         CodingScriptedRunner(),
+        FakeMcpScriptedRunner(),
+        FakeFuzzyScriptedRunner(),
         OpenAiMcpToolUseRunner(),
         OpenAiFuzzyAgentRunner(),
         OpenAiMcpSessionRunner(),
@@ -72,9 +79,13 @@ def default_scorers() -> list[Scorer]:
         VisionCorrectnessScorer(),
         FuzzyAgentBehaviorScorer(),
         McpSessionTrajectoryScorer(),
-        # NoOpScorer(),         # trivial, port on demand
-        # ExactDecisionScorer(),  # used by 1 scenario; port on demand
-        # CodingTestScorer(),   # already a Python plugin (scripts/scorers/coding-tests.py)
+        NoOpScorer(),
+        ExactDecisionScorer(),
+        HeuristicTextScorer(),
+        # CodingTestScorer is already the Python plugin scripts/scorers/coding-tests.py
+        # (invoked by gb-score.py); not duplicated here.
+        # LlmJudgeScorer is a placeholder (0 scenario uses) — not ported.
+        # ElectronFlowScorer depends on the dead Electron runner — not ported.
     ]
 
 

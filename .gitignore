@@ -11,8 +11,17 @@ artifacts/
 packages/
 
 ## GoblinBench run output
+## The canonical record (runs/goblinbench.sqlite) IS committed — it's the backup.
+## On-disk run-* trees are ring-buffered scratch space (regenerable by re-running),
+## gitignored so git history doesn't grow unboundedly with every run.
 runs/*
 !runs/.gitkeep
+!runs/goblinbench.sqlite
+## SQLite runtime files (WAL + shm) — never commit; the main .sqlite is current.
+runs/goblinbench.sqlite-wal
+runs/goblinbench.sqlite-shm
+runs/goblinbench-results.sqlite
+runs/goblinbench-results.sqlite-*
 
 ## IDE
 .idea/

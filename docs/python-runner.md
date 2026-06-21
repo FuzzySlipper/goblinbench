@@ -107,10 +107,63 @@ the multilingual Python plugin under `scripts/scorers/`.)
 
 ### Coverage
 
-**All 72 candidates now claimed (100%)** across 9 runners. All scenario-declared
-scorers (except the Python-plugin-only `structure-metrics`/`maintainability-metrics`,
-handled by `gb-score.py`) are now in-process Python scorers. The .NET runner is
-no longer needed for any real workload.
+**All 72 candidates now claimed (100%)** across 11 runners. All scenario-declared
+scorers except `electron-flow` (tied to the dead Electron runner) are handled —
+either in-process (10 scorers) or via `gb-score.py` plugins (coding-tests,
+structure-metrics, maintainability-metrics). The .NET runner is no longer needed
+for any real workload.
+
+### .NET → Python functionality audit
+
+Full audit of every .NET runner, scorer, and `Program.cs` feature:
+
+**Runners — all used paths ported:**
+
+| .NET runner | Status |
+|---|---|
+| ScriptedCandidateRunner | PORTED → `scripted` |
+| CodingCandidateRunner | PORTED → `coding` |
+| CodingAgentRunner | PORTED → `coding-agent` (the hot path) |
+| OpenAiChatRunner | PORTED → `openai-chat` |
+| OpenAiMcpToolUseRunner | PORTED → `mcp-openai-tool-use` |
+| OpenAiFuzzyAgentRunner | PORTED → `fuzzy-openai` |
+| OpenAiMcpSessionRunner | PORTED → `mcp-openai-session` |
+| VisionCandidateRunner | PORTED → `vision-openai` |
+| NoOpCandidateRunner | PORTED → `noop` |
+| FakeMcpCandidateRunner | PORTED → `fake-mcp-scripted` |
+| FakeFuzzyCandidateRunner | PORTED → `fuzzy-scripted` |
+| HermesProfileRunner | **DEAD** — 0 candidates use `kind=HermesProfile` |
+| ServiceEndpointRunner | **DEAD** — 0 candidates use `kind=ServiceEndpoint` |
+| ExternalCliRunner | **DEAD** — 0 candidates use `kind=ExternalCli` |
+| ElectronCandidateRunner | **DEAD** — Playwright path is stubbed in .NET itself; 0 historical runs |
+
+**Scorers — all scenario-declared scorers covered:**
+
+| .NET scorer | Status |
+|---|---|
+| Latency, SchemaCompliance, OrchestratorDecision, McpToolUse, VisionCorrectness, FuzzyAgentBehavior, McpSessionTrajectory, NoOp, ExactDecision, HeuristicText | PORTED (in-process) |
+| CodingTest | already the `scripts/scorers/coding-tests.py` plugin (multilingual; the C# version was .NET-fixture-only and vestigial) |
+| LlmJudge | **PLACEHOLDER** — 0 scenario uses (README marks it as a placeholder) |
+| ElectronFlow | **DEAD** — depends on the stubbed Electron runner; its 2 scenarios never run |
+| Command | **UNUSED** — 0 scenario uses |
+
+**Program.cs features:** run-mode CLI flags, scenario discovery/filters, the
+`gb-score.py` post-run handoff, and `run.json` artifact writing are all ported.
+The `report serve` / `--den` / `--output` / `--port` paths (the live report
+server + Den-post client, ~1.6k LoC) are the dead web frontend and were
+intentionally **excluded** per the port scope.
+
+### Process-tree cleanup fix (CodingAgentRunner)
+
+A previous version launched bwrap with `start_new_session=True`, which caused a
+bwrap pre-exec hang on GLM52 maintainability runs (confirmed by an A/B
+reproducer). The launch now omits that option. Because the bwrap child then
+shares the runner's process group, `_kill_process_tree` was rewritten to walk
+`/proc` for descendants and SIGKILL each — a faithful port of .NET's
+`Process.Kill(entireProcessTree: true)` — instead of `os.killpg` on the shared
+group (which would have killed the runner itself on timeout). The timeout
+cleanup path was unit-tested: it finds all descendants, never includes the
+runner pid, and reaps the whole tree.
 
 ### Dropped (not porting)
 
@@ -157,6 +210,8 @@ scripts/
       fuzzy_agent.py        OpenAiFuzzyAgentRunner (decision packet)
       mcp_session.py        OpenAiMcpSessionRunner (multi-turn)
       vision.py             VisionCandidateRunner (multimodal images)
+      fake_mcp_scripted.py  FakeMcpCandidateRunner (deterministic smoke)
+      fake_fuzzy_scripted.py FakeFuzzyCandidateRunner (deterministic smoke)
     scorers/
       base.py               Scorer protocol
       latency.py            LatencyScorer
@@ -166,6 +221,7 @@ scripts/
       vision_correctness.py
       fuzzy_agent_behavior.py
       mcp_session_trajectory.py
+      noop.py / exact_decision.py / heuristic_text.py
   scorers/                  (existing) gb-score.py post-processing plugins — untouched
 ```
 

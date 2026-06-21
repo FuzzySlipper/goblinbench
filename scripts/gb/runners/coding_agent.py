@@ -472,11 +472,12 @@ def _run_bwrap(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        # Do not force a new session here. In practice bwrap creates its own
-        # process group, and the earlier Python A/B reproducer that successfully
-        # ran GLM52 did not use start_new_session. Keeping this parent/child
-        # relationship closer to the known-good path avoids a bwrap pre-exec
-        # hang observed on GLM52 maintainability runs.
+        # Deliberately NOT start_new_session=True: a new session was observed
+        # to hang bwrap's pre-exec on GLM52 maintainability runs (confirmed by
+        # the A/B reproducer). Without a new session the bwrap child shares the
+        # runner's process group, so process-tree cleanup must NOT use killpg on
+        # that group — see _kill_process_tree, which walks /proc descendants
+        # instead (matching .NET's Kill(entireProcessTree: true)).
     )
     deadline = time.monotonic() + timeout
     timed_out = False
@@ -537,14 +538,74 @@ def _run_bwrap(
 
 
 def _kill_process_tree(proc: subprocess.Popen) -> None:
-    try:
-        pgid = os.getpgid(proc.pid)
-        os.killpg(pgid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError, OSError):
+    """SIGKILL the bwrap process and all its descendants.
+
+    Faithful port of the C# ``Process.Kill(entireProcessTree: true)`` behavior
+    on Linux, which walks the process tree and kills each descendant — it does
+    NOT use process groups. This matters here: we deliberately launch bwrap
+    WITHOUT ``start_new_session`` (a new session was observed to hang bwrap's
+    pre-exec on GLM52 maintainability runs), so the bwrap process shares the
+    runner's process group. Calling ``os.killpg`` on its pgid would therefore
+    SIGKILL the runner itself. Walking /proc for descendants avoids that and
+    also catches the node agent (and any of its children) running inside the
+    sandbox even though they're in a different PID namespace — they still
+    appear under the bwrap pid from the host's perspective.
+    """
+    pids = _collect_descendants(proc.pid)
+    pids.append(proc.pid)
+    for pid in pids:
         try:
-            proc.kill()
+            os.kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError, OSError):
+            pass  # already gone or not ours
+
+
+def _collect_descendants(root_pid: int) -> list[int]:
+    """Return descendant PIDs of root_pid (transitively) by reading /proc.
+
+    Linux-only — bwrap itself is Linux-only, so the whole module is. If /proc
+    isn't readable for any reason, returns [] (the caller still kills root_pid).
+    """
+    # Build pid → ppid map from /proc/<pid>/stat (fields: pid(comm)state ppid ...).
+    # stat field 4 is ppid. The comm field may contain spaces/parens, so parse
+    # from the last ')' to be safe.
+    children: dict[int, list[int]] = {}
+    try:
+        entries = os.listdir("/proc")
+    except OSError:
+        return []
+    for entry in entries:
+        if not entry.isdigit():
+            continue
+        pid = int(entry)
+        try:
+            with open(f"/proc/{pid}/stat", "rb") as f:
+                data = f.read().decode("utf-8", errors="replace")
         except OSError:
-            pass
+            continue
+        rparen = data.rfind(")")
+        if rparen < 0:
+            continue
+        rest = data[rparen + 1:].split()
+        if len(rest) < 2:
+            continue
+        try:
+            ppid = int(rest[1])
+        except ValueError:
+            continue
+        children.setdefault(ppid, []).append(pid)
+    # BFS from root_pid.
+    out: list[int] = []
+    queue = list(children.get(root_pid, []))
+    seen: set[int] = set()
+    while queue:
+        pid = queue.pop()
+        if pid in seen:
+            continue
+        seen.add(pid)
+        out.append(pid)
+        queue.extend(children.get(pid, []))
+    return out
 
 
 def _is_json_line_of_type(line: str, expected_type: str) -> bool:
