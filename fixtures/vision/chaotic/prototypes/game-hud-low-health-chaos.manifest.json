@@ -1,0 +1,112 @@
+{
+  "ambiguous_items": [
+    "tiny skeletons in center background"
+  ],
+  "description_goal": "Inspect border HUD state while ignoring chaotic center combat art.",
+  "distractor_mentions": [
+    "CHAOS BOSS",
+    "skeleton",
+    "hill",
+    "bones",
+    "particles"
+  ],
+  "forbidden_claims": [
+    "full health",
+    "health is 100",
+    "no warning",
+    "ammo 30 / 30"
+  ],
+  "image_path": "fixtures/vision/chaotic/prototypes/game-hud-low-health-chaos.png",
+  "relationship_expectations": [
+    {
+      "object": "HUD",
+      "relation": "upper center",
+      "subject": "LOW HEALTH"
+    },
+    {
+      "object": "HUD",
+      "relation": "lower right",
+      "subject": "ammo"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "HEALTH 23%",
+        "health 23",
+        "23% health"
+      ],
+      "id": "health_23",
+      "importance": 4,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "LOW HEALTH",
+        "USE POTION"
+      ],
+      "id": "low_health_warning",
+      "importance": 4,
+      "region": "upper center"
+    },
+    {
+      "aliases": [
+        "MANA 61%",
+        "mana 61"
+      ],
+      "id": "mana_61",
+      "importance": 2,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "POISONED",
+        "status poisoned"
+      ],
+      "id": "poisoned",
+      "importance": 2,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "OBJECTIVE: REACH EXIT",
+        "reach exit"
+      ],
+      "id": "objective_exit",
+      "importance": 3,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "7 / 30",
+        "ammo 7"
+      ],
+      "id": "ammo_7_30",
+      "importance": 3,
+      "region": "lower right"
+    },
+    {
+      "aliases": [
+        "QUEST TRACKER",
+        "Escape the crypt"
+      ],
+      "id": "quest_tracker",
+      "importance": 2,
+      "region": "lower left"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "HEALTH 23%"
+    },
+    {
+      "strict": false,
+      "text": "LOW HEALTH"
+    },
+    {
+      "strict": true,
+      "text": "7 / 30"
+    }
+  ]
+}

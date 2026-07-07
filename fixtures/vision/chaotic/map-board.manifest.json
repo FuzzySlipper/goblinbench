@@ -1,0 +1,92 @@
+{
+  "ambiguous_items": [],
+  "description_goal": "Describe a route board with nodes, crossings, alert markers, and text.",
+  "forbidden_claims": [
+    "map is blank",
+    "three nodes",
+    "success"
+  ],
+  "image_path": "fixtures/vision/chaotic/map-board.png",
+  "relationship_expectations": [
+    {
+      "object": "Omega",
+      "relation": "line",
+      "subject": "Beta"
+    },
+    {
+      "object": "board",
+      "relation": "lower left",
+      "subject": "ROUTE B BLOCKED"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "Alpha"
+      ],
+      "id": "alpha_node",
+      "importance": 2,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "Beta"
+      ],
+      "id": "beta_node",
+      "importance": 2,
+      "region": "upper center"
+    },
+    {
+      "aliases": [
+        "Gamma"
+      ],
+      "id": "gamma_node",
+      "importance": 2,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "Delta"
+      ],
+      "id": "delta_node",
+      "importance": 2,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "Omega"
+      ],
+      "id": "omega_node",
+      "importance": 2,
+      "region": "lower right"
+    },
+    {
+      "aliases": [
+        "ROUTE B BLOCKED",
+        "blocked"
+      ],
+      "id": "route_b_blocked",
+      "importance": 3,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "alert",
+        "red triangle"
+      ],
+      "id": "alert_triangle",
+      "importance": 1,
+      "region": "upper right"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "ROUTE B BLOCKED"
+    },
+    {
+      "strict": true,
+      "text": "Omega"
+    }
+  ]
+}

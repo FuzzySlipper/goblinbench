@@ -1,0 +1,190 @@
+{
+  "id": "vision.describe-busy-dashboard",
+  "version": "1.0.0",
+  "name": "Describe Busy Dashboard",
+  "description": "Noisy UI screenshot with navigation, cards, chart, modal, warning toast, table rows, and visible text. Tests UI semantic description under overlap and clutter.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Describe this deliberately chaotic image in enough detail that another agent, who cannot see it, could decide what regions or objects to inspect next. Be concrete about what is visible, where it is, and important relationships or overlaps. If something is ambiguous, mark it uncertain rather than inventing specifics.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/busy-dashboard.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "ui-chaos-description",
+          "statement": "The model identifies the major dashboard regions and overlapping modal/toast state.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "pixel-over-prose",
+          "statement": "The model does not invent a success banner or all-checks-passed state.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect chaotic screenshot understanding benchmark",
+        "acceptance_summary": "candidate should produce a concrete, useful, uncertainty-aware description",
+        "ui_surface": "synthetic chaotic GoblinBench fixture"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "A busy dashboard has a dark left navigation sidebar, three surface cards across the top, charts and a task table, with a review modal overlapping the middle and a warning toast in the upper right.",
+      "salient_regions": [
+        {
+          "region": "left",
+          "description": "A dark sidebar lists Home, Surfaces, Reviews, and Settings."
+        },
+        {
+          "region": "upper",
+          "description": "Browser, Terminal, and Notes surface cards appear across the top."
+        },
+        {
+          "region": "center",
+          "description": "A Review modal says the Terminal card needs focus."
+        },
+        {
+          "region": "upper right",
+          "description": "A warning toast says stale screenshot."
+        },
+        {
+          "region": "right",
+          "description": "A Task table includes ERR-42 failing."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "sidebar",
+          "location": "left",
+          "attributes": [
+            "dark navigation"
+          ]
+        },
+        {
+          "label": "Browser card",
+          "location": "upper",
+          "attributes": [
+            "surface card"
+          ]
+        },
+        {
+          "label": "Terminal card",
+          "location": "upper",
+          "attributes": [
+            "surface card"
+          ]
+        },
+        {
+          "label": "Notes card",
+          "location": "upper right",
+          "attributes": [
+            "surface card"
+          ]
+        },
+        {
+          "label": "Review modal",
+          "location": "center",
+          "attributes": [
+            "overlapping"
+          ]
+        },
+        {
+          "label": "Warning stale screenshot toast",
+          "location": "upper right",
+          "attributes": [
+            "warning"
+          ]
+        },
+        {
+          "label": "Task table ERR-42",
+          "location": "right",
+          "attributes": [
+            "failing row"
+          ]
+        }
+      ],
+      "relationships": [
+        "The Review modal overlaps the task table area.",
+        "The warning toast is in the upper right of the dashboard."
+      ],
+      "text_observed": [
+        "ERR-42",
+        "Terminal card needs focus",
+        "Warning: stale screenshot"
+      ],
+      "uncertainties": [],
+      "answer": "The screenshot does not show a clean success state; it shows a busy dashboard with a modal and warning that would need inspection.",
+      "confidence": 0.9,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/busy-dashboard.manifest.json",
+        "target_concrete_items": 8
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.7,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

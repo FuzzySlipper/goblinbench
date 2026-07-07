@@ -1,0 +1,93 @@
+{
+  "ambiguous_items": [
+    "unknown gray box"
+  ],
+  "description_goal": "Describe shelf contents, labels, and occlusion patterns.",
+  "forbidden_claims": [
+    "empty shelf",
+    "person",
+    "barcode scanner"
+  ],
+  "image_path": "fixtures/vision/chaotic/warehouse-shelf.png",
+  "relationship_expectations": [
+    {
+      "object": "QR-55",
+      "relation": "occluding",
+      "subject": "occluding_dark_box"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "top shelf",
+        "A-12",
+        "B-07",
+        "C-19",
+        "FRAGILE"
+      ],
+      "id": "top_shelf_boxes",
+      "importance": 3,
+      "region": "upper"
+    },
+    {
+      "aliases": [
+        "BIN-3",
+        "blue bin"
+      ],
+      "id": "blue_bin_3",
+      "importance": 2,
+      "region": "middle left"
+    },
+    {
+      "aliases": [
+        "QR-55",
+        "green box"
+      ],
+      "id": "green_qr_55",
+      "importance": 2,
+      "region": "middle"
+    },
+    {
+      "aliases": [
+        "occluding",
+        "dark box",
+        "black box"
+      ],
+      "id": "occluding_dark_box",
+      "importance": 3,
+      "region": "center"
+    },
+    {
+      "aliases": [
+        "TOOLS",
+        "tools box"
+      ],
+      "id": "tools_box",
+      "importance": 1,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "gray box",
+        "?"
+      ],
+      "id": "unknown_gray_box",
+      "importance": 1,
+      "region": "lower right"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "FRAGILE"
+    },
+    {
+      "strict": true,
+      "text": "BIN-3"
+    },
+    {
+      "strict": true,
+      "text": "QR-55"
+    }
+  ]
+}

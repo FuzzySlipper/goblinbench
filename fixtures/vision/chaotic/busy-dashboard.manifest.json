@@ -1,0 +1,99 @@
+{
+  "ambiguous_items": [],
+  "description_goal": "Describe a noisy UI dashboard and identify overlapping UI state.",
+  "forbidden_claims": [
+    "success banner",
+    "all checks passed",
+    "four surface cards"
+  ],
+  "image_path": "fixtures/vision/chaotic/busy-dashboard.png",
+  "relationship_expectations": [
+    {
+      "object": "task_table",
+      "relation": "overlaps",
+      "subject": "review_modal"
+    },
+    {
+      "object": "dashboard",
+      "relation": "upper right",
+      "subject": "warning_toast"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "sidebar",
+        "navigation"
+      ],
+      "id": "sidebar",
+      "importance": 2,
+      "region": "left"
+    },
+    {
+      "aliases": [
+        "Browser",
+        "browser card"
+      ],
+      "id": "browser_card",
+      "importance": 2,
+      "region": "upper"
+    },
+    {
+      "aliases": [
+        "Terminal",
+        "terminal card"
+      ],
+      "id": "terminal_card",
+      "importance": 3,
+      "region": "upper"
+    },
+    {
+      "aliases": [
+        "Notes",
+        "notes card"
+      ],
+      "id": "notes_card",
+      "importance": 2,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "Review modal",
+        "modal"
+      ],
+      "id": "review_modal",
+      "importance": 3,
+      "region": "center"
+    },
+    {
+      "aliases": [
+        "Warning",
+        "stale screenshot",
+        "toast"
+      ],
+      "id": "warning_toast",
+      "importance": 2,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "Task table",
+        "ERR-42",
+        "table"
+      ],
+      "id": "task_table",
+      "importance": 2,
+      "region": "right"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "ERR-42"
+    },
+    {
+      "strict": false,
+      "text": "Terminal card needs focus"
+    }
+  ]
+}

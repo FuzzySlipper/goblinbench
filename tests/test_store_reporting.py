@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -337,3 +338,37 @@ def test_rust_maintainability_scenario_points_at_existing_fixture() -> None:
 
     scorer = load_cli_module("scorers/coding-tests.py", "coding_tests_scorer_rust_fixture_test")
     assert scorer.detect_language(str(fixture)) == "rust"
+
+
+def test_structure_metrics_scorer_honors_scan_dir(tmp_path: Path) -> None:
+    fixture = tmp_path / "fixture"
+    (fixture / "src").mkdir(parents=True)
+    (fixture / "tests").mkdir()
+    (fixture / "src" / "impl.rs").write_text(
+        "pub fn impl_fn(value: i32) -> i32 {\n    value + 1\n}\n",
+        encoding="utf-8",
+    )
+    (fixture / "tests" / "integration.rs").write_text(
+        "#[test]\nfn noisy_test() { assert_eq!(1, 1); }\n",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "scorers" / "structure-metrics.py"),
+            "--fixture-dir",
+            str(fixture),
+            "--params",
+            json.dumps({"scan_dir": "src"}),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout)
+
+    assert result["success"] is True
+    assert result["detail"]["total_impl_files"] == 1
+    assert result["detail"]["total_test_files"] == 0
+    assert "1 impl files" in result["human_summary"]

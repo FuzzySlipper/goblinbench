@@ -8,6 +8,7 @@ from .mcp_tool_use import McpToolUseScorer
 from .noop import NoOpScorer
 from .orchestrator_decision import OrchestratorDecisionScorer
 from .schema_compliance import SchemaComplianceScorer
+from .vision_description_quality import VisionDescriptionQualityScorer
 from .vision_correctness import VisionCorrectnessScorer
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "OrchestratorDecisionScorer",
     "McpToolUseScorer",
     "VisionCorrectnessScorer",
+    "VisionDescriptionQualityScorer",
     "FuzzyAgentBehaviorScorer",
     "McpSessionTrajectoryScorer",
     "NoOpScorer",

@@ -1,0 +1,103 @@
+{
+  "ambiguous_items": [
+    "small dark object"
+  ],
+  "description_goal": "Describe the cluttered desk with enough detail for another agent to inspect regions.",
+  "forbidden_claims": [
+    "fire extinguisher",
+    "person",
+    "dog"
+  ],
+  "image_path": "fixtures/vision/chaotic/chaotic-desk.png",
+  "optional_mentions": [
+    {
+      "aliases": [
+        "colored bars",
+        "blue and green blocks"
+      ],
+      "id": "colored_bars",
+      "importance": 1,
+      "region": "upper left"
+    }
+  ],
+  "relationship_expectations": [
+    {
+      "object": "open_notebook",
+      "relation": "beside",
+      "subject": "red_mug"
+    },
+    {
+      "object": "lower left",
+      "relation": "crosses",
+      "subject": "tangled_cable"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "open notebook",
+        "notebook"
+      ],
+      "id": "open_notebook",
+      "importance": 3,
+      "region": "center"
+    },
+    {
+      "aliases": [
+        "red mug",
+        "mug",
+        "cup"
+      ],
+      "id": "red_mug",
+      "importance": 3,
+      "region": "lower right"
+    },
+    {
+      "aliases": [
+        "yellow sticky note",
+        "sticky note",
+        "TODO"
+      ],
+      "id": "yellow_sticky_note",
+      "importance": 2,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "tangled cable",
+        "cable"
+      ],
+      "id": "tangled_cable",
+      "importance": 2,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "phone",
+        "black phone"
+      ],
+      "id": "phone",
+      "importance": 1,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "receipt",
+        "paper receipt"
+      ],
+      "id": "receipt",
+      "importance": 1,
+      "region": "left"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "TODO"
+    },
+    {
+      "strict": false,
+      "text": "OPEN NOTEBOOK"
+    }
+  ]
+}

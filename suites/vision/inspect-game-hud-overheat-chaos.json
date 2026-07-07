@@ -1,0 +1,212 @@
+{
+  "id": "vision.inspect-game-hud-overheat-chaos",
+  "version": "1.0.0",
+  "name": "Inspect Game HUD Overheat Chaos",
+  "description": "Dense fake mech combat screenshot where the correct task is to extract border HUD/mech status and ignore noisy center labels.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Inspect this noisy game-like screenshot for task-relevant HUD/status information around the borders. Report player/mech status bars, warnings, minimap/objective/status text, ammo/ability/core indicators, and their locations. Do not inventory the chaotic center combat art except to mark it as irrelevant visual noise if needed.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/prototypes/game-hud-overheat-chaos.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "mech-bars",
+          "statement": "Extract armor, shield, and heat values from the upper-left HUD.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "overheat-core",
+          "statement": "Notice OVERHEAT WARNING and CORE CRITICAL status.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "ignore-center-noise",
+          "statement": "Do not focus on central combat/nameplate clutter over actionable HUD state.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect HUD-over-chaos distractor-resistance benchmark",
+        "acceptance_summary": "candidate should extract actionable border HUD state and not get distracted by central combat clutter",
+        "ui_surface": "synthetic game-like HUD screenshot"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "A mech HUD surrounds a chaotic center scene; the key status is armor/shield/heat, overheat warning, tactical map zone, comms, weapons, and core status.",
+      "salient_regions": [
+        {
+          "region": "upper left",
+          "description": "MECH UNIT panel shows ARMOR 74%, SHIELD 91%, and HEAT 88%."
+        },
+        {
+          "region": "upper center",
+          "description": "Warning banner reads OVERHEAT WARNING."
+        },
+        {
+          "region": "upper right",
+          "description": "Tactical map shows ZONE: BETA-9."
+        },
+        {
+          "region": "lower left",
+          "description": "Comms panel includes SYS: coolant low and PING: 142ms."
+        },
+        {
+          "region": "lower right",
+          "description": "Core panel says CRITICAL."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "ARMOR 74%",
+          "location": "upper left",
+          "attributes": [
+            "green armor bar"
+          ]
+        },
+        {
+          "label": "SHIELD 91%",
+          "location": "upper left",
+          "attributes": [
+            "blue shield bar"
+          ]
+        },
+        {
+          "label": "HEAT 88%",
+          "location": "upper left",
+          "attributes": [
+            "orange heat bar"
+          ]
+        },
+        {
+          "label": "OVERHEAT WARNING",
+          "location": "upper center",
+          "attributes": [
+            "warning banner"
+          ]
+        },
+        {
+          "label": "ZONE: BETA-9",
+          "location": "upper right",
+          "attributes": [
+            "tactical map label"
+          ]
+        },
+        {
+          "label": "SYS: coolant low",
+          "location": "lower left",
+          "attributes": [
+            "comms warning"
+          ]
+        },
+        {
+          "label": "PING: 142ms",
+          "location": "lower left",
+          "attributes": [
+            "network status"
+          ]
+        },
+        {
+          "label": "CORE CRITICAL",
+          "location": "lower right",
+          "attributes": [
+            "critical core status"
+          ]
+        }
+      ],
+      "relationships": [
+        "OVERHEAT WARNING is in the upper center HUD.",
+        "CORE is marked CRITICAL in the lower-right panel."
+      ],
+      "text_observed": [
+        "ARMOR 74%",
+        "SHIELD 91%",
+        "HEAT 88%",
+        "OVERHEAT WARNING",
+        "ZONE: BETA-9",
+        "SYS: coolant low",
+        "PING: 142ms",
+        "CRITICAL"
+      ],
+      "uncertainties": [
+        "The central combat labels are distracting visual noise and not central to the status answer."
+      ],
+      "answer": "The mech is near overheating: heat is 88% with an OVERHEAT WARNING, armor is 74%, shield is 91%, zone is BETA-9, coolant is low, ping is 142ms, and core is CRITICAL.",
+      "confidence": 0.9,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/prototypes/game-hud-overheat-chaos.manifest.json",
+        "target_concrete_items": 8,
+        "distractor_weight": 0.2,
+        "allowed_distractor_mentions": 1
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.75,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

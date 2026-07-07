@@ -73,7 +73,7 @@ class VisionCandidateRunner:
         try:
             image_parts, image_count = _build_image_parts(scenario, context, trace)
             prompt = _get_prompt(scenario)
-            messages = _build_messages(prompt, image_parts, candidate)
+            messages = _build_messages(prompt, image_parts, candidate, scenario)
             request_body = {
                 "model": model,
                 "messages": messages,
@@ -177,10 +177,55 @@ def _get_prompt(scenario: Scenario) -> str:
     return scenario.description
 
 
+def _scenario_system_prompt(scenario: Scenario, candidate: CandidateConfig) -> str:
+    """Resolve the prompt contract for a vision scenario.
+
+    Existing UI scenarios use the candidate/default prompt. Richer visual-inspect
+    probes (for example chaotic-description scenarios) can provide an
+    ``input.system_prompt`` or ``input.response_schema`` block so one candidate
+    can run both old UI verdict tests and new description-quality tests without
+    duplicating candidate entries just to swap schemas.
+    """
+    explicit = scenario.input.get("system_prompt")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit
+
+    schema = scenario.input.get("response_schema")
+    if schema == "vision_description_v1":
+        return _VISION_DESCRIPTION_SYSTEM_PROMPT
+
+    return candidate.system_prompt or _VISION_SYSTEM_PROMPT
+
+
+_VISION_DESCRIPTION_SYSTEM_PROMPT = """You are a careful visual description assistant for visual-inspect benchmark scenarios.
+
+Analyze the provided screenshot(s) and produce a concrete, region-aware description. If the image is cluttered or ambiguous, still make a serious attempt, but mark uncertain details as uncertain instead of inventing specifics.
+
+Always respond with a JSON object matching this exact schema:
+{
+  "scene_summary": "one or two sentence overview of the image",
+  "salient_regions": [{"region": "upper left|upper right|center|lower left|lower right|other", "description": "what is visible there"}],
+  "objects_and_entities": [{"label": "visible object or UI element", "location": "where it appears", "attributes": ["concrete visible attributes"]}],
+  "relationships": ["spatial relationships, overlaps, containment, adjacency, or UI state relationships"],
+  "text_observed": ["visible text snippets only when legible"],
+  "uncertainties": ["ambiguous or occluded details"],
+  "answer": "direct answer to the scenario prompt",
+  "confidence": 0.0,
+  "hallucination_risk": "low|medium|high"
+}
+
+Rules:
+- Be specific: name visible objects, UI regions, text, and locations when possible.
+- Do not give only a generic summary like "a cluttered image with many objects".
+- Do not claim absent target objects just because the prompt mentions them.
+- Use uncertainties for occluded, blurry, tiny, or ambiguous details.
+- Output ONLY the JSON object. Do not wrap it in markdown code blocks or add explanation."""
+
+
 def _build_messages(
-    prompt: str, image_parts: list[dict[str, Any]], candidate: CandidateConfig
+    prompt: str, image_parts: list[dict[str, Any]], candidate: CandidateConfig, scenario: Scenario
 ) -> list[dict[str, Any]]:
-    system_prompt = candidate.system_prompt or _VISION_SYSTEM_PROMPT
+    system_prompt = _scenario_system_prompt(scenario, candidate)
     content: list[dict[str, Any]] = [{"type": "text", "text": prompt}] + image_parts
     return [
         {"role": "system", "content": system_prompt},

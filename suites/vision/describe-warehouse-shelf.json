@@ -1,0 +1,189 @@
+{
+  "id": "vision.describe-warehouse-shelf",
+  "version": "1.0.0",
+  "name": "Describe Warehouse Shelf",
+  "description": "Shelves with many labels, bins, boxes, and a central occluder. Tests inventory-like description, visible labels, grouping, and uncertainty.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Describe this deliberately chaotic image in enough detail that another agent, who cannot see it, could decide what regions or objects to inspect next. Be concrete about what is visible, where it is, and important relationships or overlaps. If something is ambiguous, mark it uncertain rather than inventing specifics.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/warehouse-shelf.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "shelf-inventory",
+          "statement": "The model describes shelf contents, labels, and the central occluding object.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "avoid-empty-shelf",
+          "statement": "The model does not claim the shelf is empty or contains a person.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect chaotic screenshot understanding benchmark",
+        "acceptance_summary": "candidate should produce a concrete, useful, uncertainty-aware description",
+        "ui_surface": "synthetic chaotic GoblinBench fixture"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "A warehouse shelf contains many labeled boxes and bins across three shelf levels, with a dark central box occluding part of the middle shelf.",
+      "salient_regions": [
+        {
+          "region": "upper",
+          "description": "Top shelf boxes include A-12, B-07, C-19, and FRAGILE."
+        },
+        {
+          "region": "middle left",
+          "description": "A blue BIN-3 box is visible."
+        },
+        {
+          "region": "middle",
+          "description": "A green QR-55 box is partly near the central occluder."
+        },
+        {
+          "region": "center",
+          "description": "A dark box labeled occluding blocks part of the shelf."
+        },
+        {
+          "region": "lower left",
+          "description": "A TOOLS box is visible."
+        },
+        {
+          "region": "lower right",
+          "description": "A gray unknown box with a question mark appears."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "top shelf boxes A-12 B-07 C-19 FRAGILE",
+          "location": "upper",
+          "attributes": [
+            "labeled boxes"
+          ]
+        },
+        {
+          "label": "BIN-3 blue bin",
+          "location": "middle left",
+          "attributes": [
+            "blue"
+          ]
+        },
+        {
+          "label": "QR-55 green box",
+          "location": "middle",
+          "attributes": [
+            "green"
+          ]
+        },
+        {
+          "label": "occluding dark box",
+          "location": "center",
+          "attributes": [
+            "blocks view"
+          ]
+        },
+        {
+          "label": "TOOLS box",
+          "location": "lower left",
+          "attributes": [
+            "labeled"
+          ]
+        },
+        {
+          "label": "gray box ?",
+          "location": "lower right",
+          "attributes": [
+            "unknown"
+          ]
+        }
+      ],
+      "relationships": [
+        "The occluding dark box is occluding part of the QR-55 area."
+      ],
+      "text_observed": [
+        "FRAGILE",
+        "BIN-3",
+        "QR-55",
+        "TOOLS"
+      ],
+      "uncertainties": [
+        "The gray lower-right box is marked with a question mark and should be treated as unknown."
+      ],
+      "answer": "The useful inspection points are the top labels, the middle bins, and the center occlusion.",
+      "confidence": 0.86,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/warehouse-shelf.manifest.json",
+        "target_concrete_items": 8
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.7,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

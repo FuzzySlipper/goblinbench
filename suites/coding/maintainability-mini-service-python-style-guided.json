@@ -1,0 +1,55 @@
+{
+  "id": "coding.maintainability-mini-service-python-style-guided",
+  "version": "1.0.0",
+  "name": "Maintainability Mini-Service \u2014 Python architecture-pressure probe \u2014 style-guided",
+  "description": "Small Python service fixture that tests whether a coding agent preserves architectural seams or collapses cross-cutting feature work into central files/fat handlers. Style-guided variant with explicit maintainability/seam-preservation instructions.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "maintainability-mini-service-python",
+    "task": "# Maintainability Mini-Service Probe\n\nImplement the bulk customer import feature in this tiny in-memory Python service. The existing service already has routing, auth, validation, repository, audit, and customer-handler seams. Your implementation must pass the behavior tests while keeping the code maintainable.\n\n## Feature to implement\n\nAdd behavior for `POST /customers/bulk-import`. The route is already registered and currently returns `501`.\n\nThe request body shape is:\n\n```python\n{\n  \"rows\": [\n    {\"name\": \"Ada Lovelace\", \"email\": \"ada@example.com\", \"plan\": \"pro\", \"tags\": [\"vip\"]}\n  ]\n}\n```\n\nRules:\n\n- User must be admin or have `customers:bulk_import`; otherwise return `403` and do not mutate state or audit.\n- If `rows` is missing or not a list, return `400` with `{\"error\": \"rows must be a list\"}`.\n- Validate each row using the same domain rules as single-customer create:\n  - non-empty `name`\n  - valid email with `@` and a dot after `@`\n  - `plan` is one of `free`, `pro`, `enterprise` and defaults to `free`\n  - `tags` defaults to `[]` and must be a list of strings\n- Normalize accepted emails to lowercase and tags to lowercase.\n- Reject rows whose email already exists in the repository.\n- Reject duplicate emails within the same import batch, accepting the first valid occurrence and rejecting later duplicates.\n- Accepted rows should be inserted into the repository.\n- Return `200` with:\n\n```python\n{\n  \"accepted_count\": int,\n  \"rejected_count\": int,\n  \"accepted\": [serialized_customer, ...],\n  \"rejected\": [{\"index\": row_index, \"email\": normalized_or_original_email, \"errors\": [...]}, ...]\n}\n```\n\n- If any rows are rejected, write exactly one audit event:\n  - type: `customers.bulk_import.rejected`\n  - actor_id: current user id\n  - payload: `{\"accepted_count\": n, \"rejected_count\": m}`\n- Existing `GET /customers` and `POST /customers` behavior must continue to work.\n\n## Architectural style note\n\nThis is a maintainability/style probe. There are several obvious seams already present (`auth`, `validation`, `repository`, `audit`, `handlers`, `container`, `router`). Implement the feature the way you naturally would in a small production codebase. Do not optimize for the metric scorer directly; write code that feels maintainable to you.\n\n## Files you may modify\n\nYou may modify existing `service/` files and add new `service/` helper modules if that feels appropriate. Do not modify tests, `pyproject.toml`, or `pytest.ini`. Ignore hidden scorer/benchmark metadata directories such as `.goblinbench/`; they are not part of the application implementation.\n\n## Verify\n\nRun:\n\n```bash\npython -m pytest tests/ -q\n```\n\n## Style guidance variant\n\nThis run is measuring how strongly explicit maintainability guidance changes your implementation style. In addition to passing the behavior tests:\n\n- Preserve the existing service seams. Keep routing, auth, validation, repository/persistence, audit, and response shaping concerns in cohesive places.\n- Prefer small, named helpers or modules/files when logic becomes cross-cutting.\n- Avoid implementing the bulk import primarily as one large central handler. The handler should coordinate the workflow; detailed validation, duplicate detection, normalization, persistence, audit payload construction, and response shaping should live behind clear seams where that is idiomatic for this language.\n- Do not over-engineer or add framework layers. Use the existing project style and language idioms.\n- Keep the implementation readable for a small production service maintainer.\n"
+  },
+  "scoring": {
+    "scorers": [
+      "coding-tests",
+      "structure-metrics",
+      "maintainability-metrics",
+      "latency"
+    ],
+    "parameters": {
+      "coding-tests": {
+        "timeout_seconds": 120
+      },
+      "structure-metrics": {
+        "scan_dir": "service"
+      },
+      "maintainability-metrics": {
+        "source_root": "service",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "central_paths": [
+          "service/router.py",
+          "service/container.py",
+          "service/handlers/customers.py"
+        ],
+        "setup_paths": [
+          "service/container.py"
+        ],
+        "handler_paths": [
+          "service/handlers/customers.py"
+        ]
+      }
+    },
+    "thresholds": {
+      "coding-tests": 1.0
+    }
+  },
+  "timeout_seconds": 900,
+  "tags": [
+    "style-probe",
+    "maintainability",
+    "godfile",
+    "architecture-pressure",
+    "python",
+    "style-guided",
+    "prompt-variant"
+  ]
+}

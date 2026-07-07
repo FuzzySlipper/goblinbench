@@ -1,0 +1,206 @@
+{
+  "id": "vision.inspect-game-hud-low-health-chaos",
+  "version": "1.0.0",
+  "name": "Inspect Game HUD Low-Health Chaos",
+  "description": "Dense fake game combat screenshot where the correct task is to extract border HUD/player status and ignore center combat clutter.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Inspect this noisy game-like screenshot for task-relevant HUD/status information around the borders. Report player/mech status bars, warnings, minimap/objective/status text, ammo/ability/core indicators, and their locations. Do not inventory the chaotic center combat art except to mark it as irrelevant visual noise if needed.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/prototypes/game-hud-low-health-chaos.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "hud-health",
+          "statement": "Extract health/mana/status from the upper-left HUD.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "low-health-warning",
+          "statement": "Notice the LOW HEALTH warning banner.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "ignore-center-noise",
+          "statement": "Do not focus on central skeleton/particle clutter over actionable HUD state.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect HUD-over-chaos distractor-resistance benchmark",
+        "acceptance_summary": "candidate should extract actionable border HUD state and not get distracted by central combat clutter",
+        "ui_surface": "synthetic game-like HUD screenshot"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "The actionable information is in the HUD around the border: low health warning, health and mana bars, minimap/objective, quest tracker, abilities, and ammo. The central battle art is noisy background clutter.",
+      "salient_regions": [
+        {
+          "region": "upper left",
+          "description": "Player panel shows HEALTH 23%, MANA 61%, and STATUS: POISONED."
+        },
+        {
+          "region": "upper center",
+          "description": "Warning banner says LOW HEALTH \u2014 USE POTION."
+        },
+        {
+          "region": "upper right",
+          "description": "Minimap panel includes OBJECTIVE: REACH EXIT."
+        },
+        {
+          "region": "lower right",
+          "description": "Ammo panel reads 7 / 30."
+        },
+        {
+          "region": "lower left",
+          "description": "Quest tracker includes Escape the crypt."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "HEALTH 23%",
+          "location": "upper left",
+          "attributes": [
+            "red health bar",
+            "low"
+          ]
+        },
+        {
+          "label": "MANA 61%",
+          "location": "upper left",
+          "attributes": [
+            "blue mana bar"
+          ]
+        },
+        {
+          "label": "STATUS: POISONED",
+          "location": "upper left",
+          "attributes": [
+            "green status text"
+          ]
+        },
+        {
+          "label": "LOW HEALTH \u2014 USE POTION",
+          "location": "upper center",
+          "attributes": [
+            "warning banner"
+          ]
+        },
+        {
+          "label": "OBJECTIVE: REACH EXIT",
+          "location": "upper right",
+          "attributes": [
+            "minimap objective"
+          ]
+        },
+        {
+          "label": "7 / 30",
+          "location": "lower right",
+          "attributes": [
+            "ammo counter"
+          ]
+        },
+        {
+          "label": "QUEST TRACKER",
+          "location": "lower left",
+          "attributes": [
+            "Escape the crypt"
+          ]
+        }
+      ],
+      "relationships": [
+        "LOW HEALTH is in the upper center HUD.",
+        "Ammo 7 / 30 is in the lower-right HUD panel."
+      ],
+      "text_observed": [
+        "HEALTH 23%",
+        "MANA 61%",
+        "STATUS: POISONED",
+        "LOW HEALTH",
+        "OBJECTIVE: REACH EXIT",
+        "7 / 30",
+        "QUEST TRACKER",
+        "Escape the crypt"
+      ],
+      "uncertainties": [
+        "The central combat art is noisy and not necessary for the HUD status answer."
+      ],
+      "answer": "Health is critically low at 23%, mana is 61%, the player is poisoned, a LOW HEALTH/USE POTION warning is active, objective is REACH EXIT, and ammo is 7 / 30.",
+      "confidence": 0.9,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/prototypes/game-hud-low-health-chaos.manifest.json",
+        "target_concrete_items": 8,
+        "distractor_weight": 0.2,
+        "allowed_distractor_mentions": 1
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.75,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

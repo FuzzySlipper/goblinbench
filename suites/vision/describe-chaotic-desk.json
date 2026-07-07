@@ -1,0 +1,188 @@
+{
+  "id": "vision.describe-chaotic-desk",
+  "version": "1.0.0",
+  "name": "Describe Chaotic Desk",
+  "description": "Dense object inventory and spatial coverage for a cluttered desk scene. Tests concrete description, region coverage, visible text, and uncertainty around an ambiguous object.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Describe this deliberately chaotic image in enough detail that another agent, who cannot see it, could decide what regions or objects to inspect next. Be concrete about what is visible, where it is, and important relationships or overlaps. If something is ambiguous, mark it uncertain rather than inventing specifics.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/chaotic-desk.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "concrete-description",
+          "statement": "The model provides a concrete, region-aware description of the chaotic desk.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "avoid-red-herring",
+          "statement": "The model does not claim a fire extinguisher, person, or animal is visible.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect chaotic screenshot understanding benchmark",
+        "acceptance_summary": "candidate should produce a concrete, useful, uncertainty-aware description",
+        "ui_surface": "synthetic chaotic GoblinBench fixture"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "A cluttered desk shows an open notebook in the center, a red mug in the lower right, sticky notes and colored bars in the upper left, a phone in the upper right, and cables across the lower left.",
+      "salient_regions": [
+        {
+          "region": "upper left",
+          "description": "A yellow sticky note with TODO text sits above colored blue and green bars."
+        },
+        {
+          "region": "center",
+          "description": "An open notebook is the central object."
+        },
+        {
+          "region": "lower right",
+          "description": "A red mug or cup sits beside the open notebook."
+        },
+        {
+          "region": "lower left",
+          "description": "A tangled cable crosses the lower-left corner."
+        },
+        {
+          "region": "upper right",
+          "description": "A black phone is visible."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "open notebook",
+          "location": "center",
+          "attributes": [
+            "open",
+            "large"
+          ]
+        },
+        {
+          "label": "red mug",
+          "location": "lower right",
+          "attributes": [
+            "red",
+            "beside notebook"
+          ]
+        },
+        {
+          "label": "yellow sticky note",
+          "location": "upper left",
+          "attributes": [
+            "TODO text"
+          ]
+        },
+        {
+          "label": "tangled cable",
+          "location": "lower left",
+          "attributes": [
+            "black",
+            "crossing"
+          ]
+        },
+        {
+          "label": "phone",
+          "location": "upper right",
+          "attributes": [
+            "black"
+          ]
+        },
+        {
+          "label": "receipt",
+          "location": "left",
+          "attributes": [
+            "white paper"
+          ]
+        }
+      ],
+      "relationships": [
+        "The red mug is beside the open notebook.",
+        "The tangled cable crosses the lower-left area."
+      ],
+      "text_observed": [
+        "TODO",
+        "OPEN NOTEBOOK",
+        "RED MUG"
+      ],
+      "uncertainties": [
+        "A small dark object near the lower center is ambiguous."
+      ],
+      "answer": "The image is chaotic but describable: inspect the center notebook, lower-right mug, upper-left note, and lower-left cable first.",
+      "confidence": 0.88,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/chaotic-desk.manifest.json",
+        "target_concrete_items": 8
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.7,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

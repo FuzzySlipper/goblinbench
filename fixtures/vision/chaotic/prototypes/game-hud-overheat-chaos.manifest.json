@@ -1,0 +1,120 @@
+{
+  "ambiguous_items": [
+    "many central combat nameplates"
+  ],
+  "description_goal": "Inspect mech HUD status around borders; ignore noisy combat/nameplate center.",
+  "distractor_mentions": [
+    "SKELETON",
+    "DRONE",
+    "CHAOS BOSS",
+    "LOOT",
+    "TARGET"
+  ],
+  "forbidden_claims": [
+    "heat is low",
+    "shield down",
+    "zone alpha",
+    "core stable"
+  ],
+  "image_path": "fixtures/vision/chaotic/prototypes/game-hud-overheat-chaos.png",
+  "relationship_expectations": [
+    {
+      "object": "HUD",
+      "relation": "upper center",
+      "subject": "OVERHEAT WARNING"
+    },
+    {
+      "object": "CRITICAL",
+      "relation": "lower right",
+      "subject": "CORE"
+    }
+  ],
+  "required_mentions": [
+    {
+      "aliases": [
+        "ARMOR 74%",
+        "armor 74"
+      ],
+      "id": "armor_74",
+      "importance": 3,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "SHIELD 91%",
+        "shield 91"
+      ],
+      "id": "shield_91",
+      "importance": 3,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "HEAT 88%",
+        "heat 88"
+      ],
+      "id": "heat_88",
+      "importance": 4,
+      "region": "upper left"
+    },
+    {
+      "aliases": [
+        "OVERHEAT WARNING",
+        "overheat"
+      ],
+      "id": "overheat_warning",
+      "importance": 4,
+      "region": "upper center"
+    },
+    {
+      "aliases": [
+        "ZONE: BETA-9",
+        "Beta-9"
+      ],
+      "id": "zone_beta_9",
+      "importance": 2,
+      "region": "upper right"
+    },
+    {
+      "aliases": [
+        "coolant low",
+        "SYS: coolant low"
+      ],
+      "id": "coolant_low",
+      "importance": 3,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "PING: 142ms",
+        "142ms"
+      ],
+      "id": "ping_142",
+      "importance": 2,
+      "region": "lower left"
+    },
+    {
+      "aliases": [
+        "CORE",
+        "CRITICAL"
+      ],
+      "id": "core_critical",
+      "importance": 4,
+      "region": "lower right"
+    }
+  ],
+  "visible_text": [
+    {
+      "strict": true,
+      "text": "OVERHEAT WARNING"
+    },
+    {
+      "strict": true,
+      "text": "HEAT 88%"
+    },
+    {
+      "strict": true,
+      "text": "CRITICAL"
+    }
+  ]
+}

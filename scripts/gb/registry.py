@@ -38,6 +38,7 @@ from .scorers import (
     NoOpScorer,
     OrchestratorDecisionScorer,
     SchemaComplianceScorer,
+    VisionDescriptionQualityScorer,
     VisionCorrectnessScorer,
 )
 from .scorers.base import Scorer
@@ -77,6 +78,7 @@ def default_scorers() -> list[Scorer]:
         OrchestratorDecisionScorer(),
         McpToolUseScorer(),
         VisionCorrectnessScorer(),
+        VisionDescriptionQualityScorer(),
         FuzzyAgentBehaviorScorer(),
         McpSessionTrajectoryScorer(),
         NoOpScorer(),

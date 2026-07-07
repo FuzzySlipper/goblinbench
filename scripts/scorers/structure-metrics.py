@@ -43,6 +43,14 @@ def main():
     args = parser.parse_args()
 
     fixture_dir = args.fixture_dir
+    scan_dir = "."
+    if args.params:
+        try:
+            params = json.loads(args.params)
+            scan_dir = params.get("scan_dir", ".") or "."
+        except json.JSONDecodeError:
+            scan_dir = "."
+    analysis_dir = os.path.normpath(os.path.join(fixture_dir, scan_dir))
 
     if not os.path.isdir(fixture_dir):
         print(json.dumps({
@@ -55,8 +63,19 @@ def main():
         }))
         sys.exit(0)
 
+    if not os.path.isdir(analysis_dir):
+        print(json.dumps({
+            "scorer_id": "structure-metrics",
+            "scorer_name": "Structure Metrics",
+            "scoring_kind": "script",
+            "success": False,
+            "error": f"Structure metrics scan directory not found: {analysis_dir}",
+            "human_summary": "FAIL: structure-metrics: scan_dir not found",
+        }))
+        sys.exit(0)
+
     try:
-        metrics = run_metrics(fixture_dir)
+        metrics = run_metrics(analysis_dir)
     except Exception as ex:
         print(json.dumps({
             "scorer_id": "structure-metrics",

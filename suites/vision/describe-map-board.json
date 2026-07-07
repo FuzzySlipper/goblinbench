@@ -1,0 +1,193 @@
+{
+  "id": "vision.describe-map-board",
+  "version": "1.0.0",
+  "name": "Describe Map Board",
+  "description": "A route/diagram board with labeled nodes, crossing lines, a blocked-route note, and an alert marker. Tests relationship/topology and text capture.",
+  "suite": "vision",
+  "input": {
+    "prompt": "Describe this deliberately chaotic image in enough detail that another agent, who cannot see it, could decide what regions or objects to inspect next. Be concrete about what is visible, where it is, and important relationships or overlaps. If something is ambiguous, mark it uncertain rather than inventing specifics.",
+    "response_schema": "vision_description_v1",
+    "image_paths": [
+      "fixtures/vision/chaotic/map-board.png"
+    ],
+    "visual_inspect_request": {
+      "criteria": [
+        {
+          "id": "topology-description",
+          "statement": "The model identifies labeled nodes, connecting lines, blocked-route text, and alert marker.",
+          "required": true,
+          "weight": 1.0
+        },
+        {
+          "id": "avoid-blank-map",
+          "statement": "The model does not claim the map is blank or only has three nodes.",
+          "required": true,
+          "weight": 1.0
+        }
+      ],
+      "context": {
+        "task_title": "visual-inspect chaotic screenshot understanding benchmark",
+        "acceptance_summary": "candidate should produce a concrete, useful, uncertainty-aware description",
+        "ui_surface": "synthetic chaotic GoblinBench fixture"
+      },
+      "options": {
+        "profile": "vision-description-v1",
+        "return_regions": true
+      }
+    },
+    "scripted_response": {
+      "scene_summary": "A route board shows five labeled nodes Alpha, Beta, Gamma, Delta, and Omega connected by lines, with a ROUTE B BLOCKED note and an alert triangle.",
+      "salient_regions": [
+        {
+          "region": "upper left",
+          "description": "Alpha node appears in red."
+        },
+        {
+          "region": "upper center",
+          "description": "Beta node has lines to other nodes."
+        },
+        {
+          "region": "upper right",
+          "description": "Gamma node and a red alert triangle are visible."
+        },
+        {
+          "region": "lower left",
+          "description": "Delta node and ROUTE B BLOCKED text appear."
+        },
+        {
+          "region": "lower right",
+          "description": "Omega node appears with connecting lines."
+        }
+      ],
+      "objects_and_entities": [
+        {
+          "label": "Alpha node",
+          "location": "upper left",
+          "attributes": [
+            "red"
+          ]
+        },
+        {
+          "label": "Beta node",
+          "location": "upper center",
+          "attributes": [
+            "blue"
+          ]
+        },
+        {
+          "label": "Gamma node",
+          "location": "upper right",
+          "attributes": [
+            "green"
+          ]
+        },
+        {
+          "label": "Delta node",
+          "location": "lower left",
+          "attributes": [
+            "yellow"
+          ]
+        },
+        {
+          "label": "Omega node",
+          "location": "lower right",
+          "attributes": [
+            "purple"
+          ]
+        },
+        {
+          "label": "ROUTE B BLOCKED note",
+          "location": "lower left",
+          "attributes": [
+            "yellow note"
+          ]
+        },
+        {
+          "label": "alert red triangle",
+          "location": "upper right",
+          "attributes": [
+            "red"
+          ]
+        }
+      ],
+      "relationships": [
+        "A line connects Beta and Omega.",
+        "The ROUTE B BLOCKED note is in the lower left of the board."
+      ],
+      "text_observed": [
+        "ROUTE B BLOCKED",
+        "Alpha",
+        "Beta",
+        "Gamma",
+        "Delta",
+        "Omega"
+      ],
+      "uncertainties": [],
+      "answer": "The board is not blank; it shows five connected nodes, blocked-route text, and an alert marker.",
+      "confidence": 0.9,
+      "hallucination_risk": "low"
+    }
+  },
+  "scoring": {
+    "scorers": [
+      "vision-description-quality",
+      "schema-compliance",
+      "latency"
+    ],
+    "parameters": {
+      "vision-description-quality": {
+        "manifest_path": "fixtures/vision/chaotic/map-board.manifest.json",
+        "target_concrete_items": 8
+      },
+      "schema-compliance": {
+        "schema": {
+          "required": [
+            "scene_summary",
+            "salient_regions",
+            "objects_and_entities",
+            "relationships",
+            "text_observed",
+            "uncertainties",
+            "answer",
+            "confidence",
+            "hallucination_risk"
+          ],
+          "properties": {
+            "scene_summary": {
+              "type": "string"
+            },
+            "salient_regions": {
+              "type": "array"
+            },
+            "objects_and_entities": {
+              "type": "array"
+            },
+            "relationships": {
+              "type": "array"
+            },
+            "text_observed": {
+              "type": "array"
+            },
+            "uncertainties": {
+              "type": "array"
+            },
+            "answer": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "hallucination_risk": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "vision-description-quality": 0.7,
+      "schema-compliance": 0.8
+    }
+  },
+  "timeout_seconds": 120
+}

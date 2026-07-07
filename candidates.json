@@ -30,6 +30,123 @@
     }
   },
   {
+    "id": "lemonade-gemma4-26b-q4-vision",
+    "name": "Lemonade Gemma 4 26B Q4 Vision",
+    "kind": "OpenAiModel",
+    "model": "Gemma-4-26B-A4B-it-GGUF",
+    "provider": "lemonade",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.0,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "lemonade-qwen35-4b-q4-vision",
+    "name": "Lemonade Qwen3.5 4B Q4 Vision",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.5-4B-GGUF",
+    "provider": "lemonade",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.0,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "lemonade-qwen36-35b-q4mtp-vision",
+    "name": "Lemonade Qwen3.6 35B A3B MTP Q4 Vision",
+    "kind": "OpenAiModel",
+    "model": "Qwen3.6-35B-A3B-MTP-GGUF",
+    "provider": "lemonade",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.0,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-mimo-vision",
+    "name": "Den Router Mimo Vision",
+    "kind": "OpenAiModel",
+    "model": "mimo",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-kimi-code-vision",
+    "name": "Den Router Kimi Code Vision",
+    "kind": "OpenAiModel",
+    "model": "kimi-code",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 1.0,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-minimax-vision",
+    "name": "Den Router MiniMax Vision",
+    "kind": "OpenAiModel",
+    "model": "minimax",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-grok-vision",
+    "name": "Den Router Grok Vision",
+    "kind": "OpenAiModel",
+    "model": "grok",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-stepfun-vision",
+    "name": "Den Router StepFun Vision",
+    "kind": "OpenAiModel",
+    "model": "stepfun",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  {
+    "id": "den-router-qwenplus-vision",
+    "name": "Den Router Qwen Plus Vision",
+    "kind": "OpenAiModel",
+    "model": "qwenplus",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "vision-openai",
+    "config": {
+      "temperature": 0.2,
+      "max_tokens": 8192
+    }
+  },
+  {
     "id": "electron-scripted",
     "name": "Scripted Electron Runner (deterministic)",
     "kind": "Unknown",
@@ -949,6 +1066,58 @@
       "den-router",
       "--model",
       "qwenmax",
+      "--mode",
+      "json"
+    ],
+    "config": {
+      "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "sandbox_root": "/home/dev/goblinbench/.sandbox-runtime",
+      "node_resolved": "/usr/bin/node",
+      "workspace": "/home/dev/goblinbench/.sandbox-runtime/den-router-coding-workspace"
+    }
+  },
+  {
+    "id": "pi-coding-qwen-max-den-router",
+    "name": "Pi Coding Agent — Qwen Max via den-router (sandboxed)",
+    "kind": "CodingAgent",
+    "model": "qwen-max",
+    "provider": "den-router",
+    "cli_args": [
+      "--print",
+      "--no-session",
+      "--no-extensions",
+      "--extension",
+      "/home/dev/goblinbench/.sandbox-runtime/den-router-coding-workspace/den-router.ts",
+      "--provider",
+      "den-router",
+      "--model",
+      "qwen-max",
+      "--mode",
+      "json"
+    ],
+    "config": {
+      "agent_resolved": "/home/dev/goblinbench/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+      "sandbox_root": "/home/dev/goblinbench/.sandbox-runtime",
+      "node_resolved": "/usr/bin/node",
+      "workspace": "/home/dev/goblinbench/.sandbox-runtime/den-router-coding-workspace"
+    }
+  },
+  {
+    "id": "pi-coding-kimi-code-den-router",
+    "name": "Pi Coding Agent — Kimi Code via den-router (sandboxed)",
+    "kind": "CodingAgent",
+    "model": "kimi-code",
+    "provider": "den-router",
+    "cli_args": [
+      "--print",
+      "--no-session",
+      "--no-extensions",
+      "--extension",
+      "/home/dev/goblinbench/.sandbox-runtime/den-router-coding-workspace/den-router.ts",
+      "--provider",
+      "den-router",
+      "--model",
+      "kimi-code",
       "--mode",
       "json"
     ],
