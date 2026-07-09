@@ -1,0 +1,142 @@
+[
+  {
+    "id": "denrouter-qwen-max-fuzzy",
+    "name": "den-router qwen-max \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "qwen-max",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-deepseek-flash-fuzzy",
+    "name": "den-router deepseek-flash \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "deepseek-flash",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-deepseek-pro-fuzzy",
+    "name": "den-router deepseek-pro \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "deepseek-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-glm-5-2-fuzzy",
+    "name": "den-router glm-5.2 \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "glm-5.2",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-longcat-2-0-fuzzy",
+    "name": "den-router longcat-2.0 \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "longcat-2.0",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-grok-4-5-fuzzy",
+    "name": "den-router grok-4.5 \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "grok-4.5",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-kimi-code-fuzzy",
+    "name": "den-router kimi-code \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "kimi-code",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 12288,
+      "temperature": 1.0
+    }
+  },
+  {
+    "id": "denrouter-gpt-5-5-test-only-fuzzy",
+    "name": "den-router gpt-5.5-test-only \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "gpt-5.5-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-stepfun-fuzzy",
+    "name": "den-router stepfun \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "stepfun",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "denrouter-mimo-pro-fuzzy",
+    "name": "den-router mimo-pro \u2014 fuzzy autonomy/grounding",
+    "kind": "OpenAiModel",
+    "model": "mimo-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "cli_command": "fuzzy-openai",
+    "config": {
+      "runner": "fuzzy-openai",
+      "max_tokens": 8192,
+      "temperature": 0.2
+    }
+  }
+]

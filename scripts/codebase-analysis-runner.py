@@ -150,6 +150,7 @@ MODEL_TEMPS = {
 
 MODEL_EXTRAS = {
     # Models that need extra API parameters
+    'glm-5.2': {'reasoning_effort': 'low'},
     'glm52': {'reasoning_effort': 'low'},
     'glm': {'reasoning_effort': 'low'},
 }
@@ -638,8 +639,8 @@ def generate_report(fixture, judge_results, output_path):
     report.append("## Issue Coverage Matrix")
     report.append("")
     report.append("| Gold Issue | Severity | " + " | ".join(
-        jr.get('candidate', '?') for jr in judge_results if jr) + " |")
-    report.append("|" + "---|" * (1 + len([jr for jr in judge_results if jr])) + "")
+        jr.get('candidate', '?') for jr in valid_results) + " |")
+    report.append("|" + "---|" * (2 + len(valid_results)) + "")
     report.append("")
 
     # Map judges by model
@@ -653,10 +654,7 @@ def generate_report(fixture, judge_results, output_path):
     for g in gold:
         gid = g['id']
         row = [f"**{gid}**", g.get('severity', '?')]
-        for jr in judge_results:
-            if jr is None:
-                row.append('?')
-                continue
+        for jr in valid_results:
             judged = jr.get('judge_output', {}).get('findings', [])
             matched = [f for f in judged if f.get('match_gold_id') == gid]
             if matched:

@@ -203,6 +203,8 @@ def test_report_generates_html_from_store(monkeypatch: pytest.MonkeyPatch, tmp_p
     assert "Unit smoke narrative." in html
     assert "sample" in html  # grid headers intentionally shorten suite-prefixed scenario ids
     assert "scripted" in html
+    assert 'name="viewport"' in html
+    assert "Swipe table" in html
 
 
 def test_report_returns_error_when_filter_matches_no_cells(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_repo: DbPaths, capsys: pytest.CaptureFixture[str]) -> None:

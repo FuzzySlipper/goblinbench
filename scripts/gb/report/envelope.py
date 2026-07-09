@@ -14,8 +14,11 @@ from datetime import datetime, timezone
 
 PAGE_CSS = """
 :root { color-scheme: light dark; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { box-sizing: border-box; }
 body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-       max-width: 1200px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #fff; }
+       max-width: 1200px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #fff;
+       overflow-wrap: anywhere; }
 @media (prefers-color-scheme: dark) { body { color: #e0e0e0; background: #1a1a1a; } }
 h1 { font-size: 20px; margin: 0 0 4px; }
 h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #888; padding-bottom: 4px; }
@@ -49,6 +52,19 @@ summary { cursor: pointer; font-size: 12px; color: #4a90d9; }
 .cell-detail { padding: 8px 0; }
 .muted { color: #888; font-size: 11px; }
 .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #999; }
+@media (max-width: 760px) {
+  body { padding: 14px 8px; font-size: 13px; }
+  h1 { font-size: 18px; }
+  .scope { overflow-wrap: anywhere; }
+  table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain;
+          -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  table::before { content: "Swipe table →"; display: block; color: #888; font-size: 11px;
+                  font-weight: 600; letter-spacing: 0.02em; padding: 6px 4px; text-transform: uppercase; }
+  th, td { padding: 4px 6px; font-size: 12px; }
+  .cell-detail table { white-space: normal; }
+  .cell-detail pre { max-width: 86vw; }
+  details { max-width: 100%; }
+}
 """
 
 
@@ -77,6 +93,7 @@ def render_page(
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(title)}</title>
 <style>{PAGE_CSS}</style>
 </head>
