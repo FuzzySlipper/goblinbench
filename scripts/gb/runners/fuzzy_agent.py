@@ -69,10 +69,16 @@ class OpenAiFuzzyAgentRunner:
             request_body: dict[str, Any] = {
                 "model": model,
                 "messages": messages,
-                "temperature": _openai.config_double(candidate, "temperature", 0.1),
                 "max_tokens": _openai.config_int(candidate, "max_tokens", 2048),
                 "response_format": {"type": "json_object"},
             }
+            # Only include temperature when no reasoning_effort is set. Several
+            # reasoning-model APIs reject temperature when effort is provided.
+            reasoning_effort = _openai.config_string(candidate, "reasoning_effort")
+            if reasoning_effort:
+                request_body["reasoning_effort"] = reasoning_effort
+            else:
+                request_body["temperature"] = _openai.config_double(candidate, "temperature", 0.1)
             _write(artifact_dir, "request.json", json.dumps(request_body, indent=2))
 
             resp = _openai.post_chat_completions(base_url, request_body, api_key, req_timeout)

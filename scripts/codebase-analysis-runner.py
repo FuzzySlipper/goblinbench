@@ -156,22 +156,43 @@ MODEL_EXTRAS = {
 }
 
 
-def call_model(model, prompt, max_tokens=16384, temperature=0.2):
+def parse_model_spec(spec):
+    """Return (api_model, display_name, extra_params) for model specs.
+
+    The normal spec is just a den-router model id. For reasoning-effort A/B
+    runs, append @medium or @high, e.g. gpt-5.6-sol-test-only@high. The API
+    model remains gpt-5.6-sol-test-only, while reports use the suffixed display
+    name so effort variants stay separate rows.
+    """
+    spec = spec.strip()
+    if '@' in spec:
+        api_model, effort = spec.rsplit('@', 1)
+        if effort in {'low', 'medium', 'high'}:
+            return api_model, f"{api_model}-reasoning-{effort}", {'reasoning_effort': effort}
+    return spec, spec, dict(MODEL_EXTRAS.get(spec, {}))
+
+
+def call_model(model, prompt, max_tokens=16384, temperature=0.2, extra_params=None):
     """Call a model via den-router. Returns response text."""
     import urllib.request, urllib.error
 
     # Check for model-specific temperature constraints
     effective_temp = MODEL_TEMPS.get(model, temperature)
+    extras = dict(MODEL_EXTRAS.get(model, {}))
+    if extra_params:
+        extras.update(extra_params)
 
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
-        "temperature": effective_temp
     }
-    # Merge model-specific extras
-    extras = MODEL_EXTRAS.get(model, {})
-    payload.update(extras)
+    # Some reasoning APIs reject temperature when reasoning_effort is present.
+    if 'reasoning_effort' in extras:
+        payload.update(extras)
+    else:
+        payload["temperature"] = effective_temp
+        payload.update(extras)
 
     body = json.dumps(payload).encode()
 
@@ -333,20 +354,21 @@ def extract_findings(text):
     return None
 
 
-def run_candidate(model, fixture, output_dir, judge_model=None):
+def run_candidate(model_spec, fixture, output_dir, judge_model=None):
     """Run one candidate model against the fixture."""
+    api_model, display_model, extra_params = parse_model_spec(model_spec)
     outdir = pathlib.Path(output_dir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    log(f"Running {model} against {fixture['dir'].name}...")
+    log(f"Running {display_model} ({api_model}) against {fixture['dir'].name}...")
     prompt = CANDIDATE_PROMPT_TPL.format(packet=fixture['packet'])
 
     t0 = time.time()
-    response = call_model(model, prompt)
+    response = call_model(api_model, prompt, extra_params=extra_params)
     elapsed = time.time() - t0
 
     if not response:
-        log(f"  {model}: NO RESPONSE")
+        log(f"  {display_model}: NO RESPONSE")
         return None
 
     # Save full response
@@ -358,7 +380,10 @@ def run_candidate(model, fixture, output_dir, judge_model=None):
 
     # Save meta
     meta = {
-        'model': model,
+        'model': display_model,
+        'api_model': api_model,
+        'model_spec': model_spec,
+        'extra_params': extra_params,
         'fixture': fixture['dir'].name,
         'timestamp': datetime.utcnow().isoformat(),
         'duration_s': round(elapsed, 1),
@@ -372,9 +397,9 @@ def run_candidate(model, fixture, output_dir, judge_model=None):
     if findings:
         with open(outdir / 'findings.json', 'w') as f:
             json.dump(findings, f, indent=2)
-        log(f"  {model}: {len(findings)} findings extracted ({elapsed:.0f}s)")
+        log(f"  {display_model}: {len(findings)} findings extracted ({elapsed:.0f}s)")
     else:
-        log(f"  {model}: JSON PARSE FAILED ({elapsed:.0f}s)")
+        log(f"  {display_model}: JSON PARSE FAILED ({elapsed:.0f}s)")
         # Save raw text for inspection
         with open(outdir / 'raw-response.txt', 'w') as f:
             f.write(response)
@@ -762,7 +787,8 @@ def cmd_run(args):
 
     results = []
     for i, model in enumerate(models):
-        od = output_dir / model.replace('/', '-').replace(':', '-')
+        _, display_model, _ = parse_model_spec(model)
+        od = output_dir / display_model.replace('/', '-').replace(':', '-').replace('@', '-')
         result = run_candidate(model, fixture, str(od))
         results.append((model, result))
 
@@ -770,7 +796,8 @@ def cmd_run(args):
         log(f"\n--- Judging candidates ---")
         judge_results = []
         for model, result in results:
-            od = output_dir / model.replace('/', '-').replace(':', '-')
+            _, display_model, _ = parse_model_spec(model)
+            od = output_dir / display_model.replace('/', '-').replace(':', '-').replace('@', '-')
             judge_path = od / 'judge-result.json'
             jr = judge_candidate(fixture, str(od), str(judge_path), judge_model=args.judge_model)
             judge_results.append(jr)
@@ -811,7 +838,8 @@ def cmd_all(args):
     log(f"=== Phase 1: Running {len(models)} candidates ===")
     run_results = []
     for model in models:
-        od = output_base / model.replace('/', '-').replace(':', '-')
+        _, display_model, _ = parse_model_spec(model)
+        od = output_base / display_model.replace('/', '-').replace(':', '-').replace('@', '-')
         result = run_candidate(model, fixture, str(od))
         run_results.append((model, result))
 
@@ -819,7 +847,8 @@ def cmd_all(args):
     log(f"\n=== Phase 2: Judging candidates ===")
     judge_results = []
     for model, result in run_results:
-        od = output_base / model.replace('/', '-').replace(':', '-')
+        _, display_model, _ = parse_model_spec(model)
+        od = output_base / display_model.replace('/', '-').replace(':', '-').replace('@', '-')
         judge_path = od / 'judge-result.json'
         if not args.no_judge:
             jr = judge_candidate(fixture, str(od), str(judge_path), judge_model=args.judge_model)

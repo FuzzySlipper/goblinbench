@@ -195,14 +195,21 @@ def _initial_system_message(candidate: CandidateConfig) -> dict[str, Any]:
 def _build_request_body(
     candidate: CandidateConfig, model: str, messages: list[dict[str, Any]], fake_tools: list[dict[str, Any]]
 ) -> dict[str, Any]:
-    return {
+    body = {
         "model": model,
         "messages": messages,
         "tools": [_openai.to_openai_tool(t) for t in fake_tools],
         "tool_choice": _openai.config_string(candidate, "tool_choice") or "auto",
-        "temperature": _openai.config_double(candidate, "temperature", 0.2),
         "max_tokens": _openai.config_int(candidate, "max_tokens", 4096),
     }
+    # Match the single-turn MCP runner: omit temperature when reasoning_effort
+    # is set because some reasoning APIs reject both knobs together.
+    reasoning_effort = _openai.config_string(candidate, "reasoning_effort")
+    if reasoning_effort:
+        body["reasoning_effort"] = reasoning_effort
+    else:
+        body["temperature"] = _openai.config_double(candidate, "temperature", 0.2)
+    return body
 
 
 def _get_fake_tools(turn: dict[str, Any]) -> list[dict[str, Any]]:

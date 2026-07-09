@@ -1,0 +1,92 @@
+[
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-terra-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-terra-test-only-reasoning-medium-tool-behavior",
+    "name": "den-router gpt-5.6-terra-test-only reasoning medium \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "medium"
+    }
+  },
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-terra-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-terra-test-only-reasoning-high-tool-behavior",
+    "name": "den-router gpt-5.6-terra-test-only reasoning high \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "high"
+    }
+  },
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-luna-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-luna-test-only-reasoning-medium-tool-behavior",
+    "name": "den-router gpt-5.6-luna-test-only reasoning medium \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "medium"
+    }
+  },
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-luna-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-luna-test-only-reasoning-high-tool-behavior",
+    "name": "den-router gpt-5.6-luna-test-only reasoning high \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "high"
+    }
+  },
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-sol-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-sol-test-only-reasoning-medium-tool-behavior",
+    "name": "den-router gpt-5.6-sol-test-only reasoning medium \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "medium"
+    }
+  },
+  {
+    "kind": "OpenAiModel",
+    "model": "gpt-5.6-sol-test-only",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "id": "denrouter-gpt-5-6-sol-test-only-reasoning-high-tool-behavior",
+    "name": "den-router gpt-5.6-sol-test-only reasoning high \u2014 MCP/tool behavior",
+    "cli_command": "mcp-openai-tool-use",
+    "config": {
+      "runner": "mcp-openai-tool-use",
+      "max_tokens": 16384,
+      "max_tool_rounds": 8,
+      "reasoning_effort": "high"
+    }
+  }
+]
