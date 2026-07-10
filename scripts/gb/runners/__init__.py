@@ -1,5 +1,6 @@
 from .base import CandidateRunner
 from .coding_agent import CodingAgentRunner
+from .codex_app_server import CodexAppServerRunner
 from .coding_scripted import CodingScriptedRunner
 from .fake_fuzzy_scripted import FakeFuzzyScriptedRunner
 from .fake_mcp_scripted import FakeMcpScriptedRunner
@@ -17,6 +18,7 @@ __all__ = [
     "ScriptedRunner",
     "CodingScriptedRunner",
     "CodingAgentRunner",
+    "CodexAppServerRunner",
     "OpenAiChatRunner",
     "OpenAiMcpToolUseRunner",
     "OpenAiFuzzyAgentRunner",

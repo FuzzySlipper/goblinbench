@@ -1,0 +1,17 @@
+[
+  {
+    "id": "codex-app-server-gpt-5-6-terra-smoke",
+    "name": "Codex app-server — GPT-5.6 Terra (medium smoke)",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-terra",
+    "provider": "codex-app-server",
+    "config": {
+      "runner": "codex-app-server",
+      "socket_path": "/run/user/1001/codex-app-server/app-server.sock",
+      "reasoning_effort": "medium",
+      "turn_start_ack_timeout_seconds": 15,
+      "approval_policy": "never",
+      "network_access": false
+    }
+  }
+]
