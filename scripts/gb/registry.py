@@ -37,6 +37,7 @@ from .scorers import (
     McpToolUseScorer,
     NoOpScorer,
     OrchestratorDecisionScorer,
+    RoleplayHeatBoundaryScorer,
     SchemaComplianceScorer,
     VisionDescriptionQualityScorer,
     VisionCorrectnessScorer,
@@ -84,6 +85,7 @@ def default_scorers() -> list[Scorer]:
         NoOpScorer(),
         ExactDecisionScorer(),
         HeuristicTextScorer(),
+        RoleplayHeatBoundaryScorer(),
         # CodingTestScorer is already the Python plugin scripts/scorers/coding-tests.py
         # (invoked by gb-score.py); not duplicated here.
         # LlmJudgeScorer is a placeholder (0 scenario uses) — not ported.

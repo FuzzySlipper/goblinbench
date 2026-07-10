@@ -1,0 +1,59 @@
+{
+  "id": "roleplay-instruction.no-user-control-reliquary-v0",
+  "version": "0.1.0",
+  "name": "No user-control reliquary scene",
+  "description": "Roleplay instruction-following probe: can the model write rich scene/NPC prose without taking actions, dialogue, thoughts, or feelings for the user's character.",
+  "suite": "roleplay-instruction",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not analysis. Aim for 500-750 words.\n\nCritical roleplay contract:\n- The user controls Ari, the viewpoint/player character.\n- Do not write Ari's actions, dialogue, thoughts, feelings, reactions, decisions, body language, or internal state.\n- Do not use second-person narration that tells the user what they do, feel, say, notice, realize, or decide.\n- You may write the room, consequences visible to anyone, NPC actions, NPC dialogue, and pauses that leave space for Ari to respond.\n- If someone asks Ari a direct question, stop with the question hanging or show NPCs waiting; do not answer for Ari.\n\nScene context:\nAri has broken into the reliquary under Saint Orlen's chapel looking for a stolen saint-bone charm. Cael, a nervous novice who owes Ari a favor, is helping from the stairwell with a lantern. Sister Maud, the chapel warden, is approaching from the corridor with keys. The reliquary door is open. The charm is visible in a glass case, but the case is threaded with a thin silver alarm wire.\n\nUser's latest message:\nI crouch beside the case and hold my breath, trying to see where the wire goes. From the hallway, Maud says, 'I know someone is in there.'\n\nContinue the scene. Keep tension high, but leave Ari fully under the user's control."
+  },
+  "scoring": {
+    "scorers": ["latency", "heuristic-text"],
+    "thresholds": {"heuristic-text": 0.9},
+    "parameters": {
+      "heuristic-text": {
+        "required": ["Cael", "Maud"],
+        "forbidden": [
+          "Ari said",
+          "Ari whispered",
+          "Ari asked",
+          "Ari answered",
+          "Ari nodded",
+          "Ari shook",
+          "Ari stepped",
+          "Ari moved",
+          "Ari reached",
+          "Ari pulled",
+          "Ari grabbed",
+          "Ari froze",
+          "Ari felt",
+          "Ari thought",
+          "Ari wondered",
+          "Ari realized",
+          "Ari knew",
+          "you say",
+          "you said",
+          "you ask",
+          "you answer",
+          "you nod",
+          "you shake",
+          "you step",
+          "you move",
+          "you reach",
+          "you pull",
+          "you grab",
+          "you freeze",
+          "you feel",
+          "you think",
+          "you realize",
+          "you know",
+          "your heart",
+          "your breath",
+          "your hand moves",
+          "your fingers close"
+        ]
+      }
+    }
+  },
+  "timeout_seconds": 900
+}

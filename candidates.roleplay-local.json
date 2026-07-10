@@ -1,0 +1,36 @@
+[
+  {
+    "id": "lemonade-gemma4-26b-roleplay",
+    "name": "Lemonade Gemma 4 26B A4B roleplay prose (thinking disabled)",
+    "kind": "OpenAiModel",
+    "model": "Gemma-4-26B-A4B-it-GGUF",
+    "provider": "lemonade",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "system_prompt": "You write immersive collaborative roleplay replies. Stay in-scene. Do not explain the task, summarize the prompt, apologize, add safety disclaimers, or address the user. Write polished narrative prose with natural dialogue and concrete sensory detail.",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 2200,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  {
+    "id": "lemonade-gemma4-26b-roleplay-thinking-high",
+    "name": "Lemonade Gemma 4 26B A4B roleplay prose (thinking high)",
+    "kind": "OpenAiModel",
+    "model": "Gemma-4-26B-A4B-it-GGUF",
+    "provider": "lemonade",
+    "base_url": "http://192.168.1.23:13305/v1",
+    "system_prompt": "You write immersive collaborative roleplay replies. Stay in-scene. Do not explain the task, summarize the prompt, apologize, add safety disclaimers, or address the user. Write polished narrative prose with natural dialogue and concrete sensory detail.",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 8192,
+      "reasoning_effort": "high",
+      "include_temperature_with_reasoning_effort": true,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    }
+  }
+]

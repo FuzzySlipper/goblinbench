@@ -1,0 +1,42 @@
+{
+  "id": "roleplay-prose.rainy-inn-doorway-v0",
+  "version": "0.1.0",
+  "name": "Rainy inn doorway — quiet character prose",
+  "description": "Long-form roleplay continuation focused on bare narrative prose quality, restraint, sensory specificity, and non-sloppy character interiority.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: literary but readable; concrete physical details; character interiority through action and observation; no bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nMara has walked three days through freezing rain to reach the hill town of Greyhaven. She is carrying a sealed letter from her dead brother, but she does not know whether the woman named on the envelope is family, enemy, or both. The town's only inn has just closed its doors for the night. A stable lantern is still burning. Mara is exhausted, soaked through, and trying not to look desperate.\n\nUser's latest message:\nI stop under the inn's narrow awning and stare at the locked door for a moment longer than I should. My hand is still on the letter inside my coat. I hear someone moving in the stable, maybe pretending not to notice me.\n\nContinue from Mara's point of view in third person limited. Let the scene breathe; do not rush to reveal the letter's secret."
+  },
+  "scoring": {
+    "scorers": ["latency", "heuristic-text"],
+    "thresholds": {"heuristic-text": 0.86},
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down her spine",
+          "heart skipped a beat",
+          "breath she didn't know she was holding",
+          "little did she know",
+          "something she couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "emerald orbs",
+          "cerulean",
+          "a single tear",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met her gaze"
+        ],
+        "required": ["Mara", "stable"]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

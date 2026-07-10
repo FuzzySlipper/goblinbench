@@ -1,0 +1,61 @@
+{
+  "id": "roleplay-prose.orbital-maintenance-v1",
+  "version": "0.2.0",
+  "name": "Orbital maintenance tunnel \u2014 movement and tension (anti-slop prompt)",
+  "description": "Long-form roleplay continuation focused on spatially clear action prose, tension, and avoiding purple generic phrases. Variant v1 adds explicit anti-cliche/style-control instructions.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: clean, vivid action prose with clear spatial relationships and no cinematic cliche pileup. Keep the prose grounded in what the viewpoint character can notice. No bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nJuno is a maintenance tech on an old orbital city. During a station-wide evacuation drill that has gone wrong, she has crawled into a service duct to manually reopen an oxygen valve for a sealed residential ring. Her ex, Saye, is on comms from the control room. They are both pretending the breakup is irrelevant. The duct is narrow, hot, and vibrating as pressure shifts through the pipes.\n\nUser's latest message:\nThe schematic on my wrist display jumps, then freezes. I slap the casing once, harder than I meant to. 'Tell me you still have my position,' I say into the comm. Ahead of me, something metal bends with a sound like a spoon being crushed.\n\nContinue from Juno's point of view in first person. Keep the action legible; let the relationship tension leak in through timing and word choice.\n\nAdditional style constraints for this variant:\n- Prefer plain, specific prose over dramatic intensity.\n- Do not use stock physical reactions (spine shivers, breath catching, heart hammering, eyes widening).\n- Do not write phrases shaped like \"not a cleansing thing; it was...\" or \"the silence was...\".\n- Avoid abstract atmosphere labels such as palpable, thick, electric, heavy with tension, destiny, fate, ghosts, ache, precipice, or secrets buried.\n- Let emotion appear through small choices, timing, objects, and what the character refuses to say.\n- Keep sentences varied; leave some lines quiet.\n"
+  },
+  "scoring": {
+    "scorers": [
+      "latency",
+      "heuristic-text"
+    ],
+    "thresholds": {
+      "heuristic-text": 0.86
+    },
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down my spine",
+          "heart skipped a beat",
+          "breath I didn't know I was holding",
+          "little did I know",
+          "something I couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "adrenaline surged",
+          "time seemed to slow",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met his gaze",
+          "met her gaze",
+          "not a cleansing thing",
+          "ghost",
+          "ache",
+          "precipice",
+          "secrets buried",
+          "heavy with tension",
+          "electric",
+          "spine",
+          "breath hitching",
+          "heart hammer",
+          "the silence was"
+        ],
+        "required": [
+          "Juno",
+          "Saye"
+        ]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

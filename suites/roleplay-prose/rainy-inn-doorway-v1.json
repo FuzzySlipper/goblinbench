@@ -1,0 +1,61 @@
+{
+  "id": "roleplay-prose.rainy-inn-doorway-v1",
+  "version": "0.2.0",
+  "name": "Rainy inn doorway \u2014 quiet character prose (anti-slop prompt)",
+  "description": "Long-form roleplay continuation focused on bare narrative prose quality, restraint, sensory specificity, and non-sloppy character interiority. Variant v1 adds explicit anti-cliche/style-control instructions.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: literary but readable; concrete physical details; character interiority through action and observation; no bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nMara has walked three days through freezing rain to reach the hill town of Greyhaven. She is carrying a sealed letter from her dead brother, but she does not know whether the woman named on the envelope is family, enemy, or both. The town's only inn has just closed its doors for the night. A stable lantern is still burning. Mara is exhausted, soaked through, and trying not to look desperate.\n\nUser's latest message:\nI stop under the inn's narrow awning and stare at the locked door for a moment longer than I should. My hand is still on the letter inside my coat. I hear someone moving in the stable, maybe pretending not to notice me.\n\nContinue from Mara's point of view in third person limited. Let the scene breathe; do not rush to reveal the letter's secret.\n\nAdditional style constraints for this variant:\n- Prefer plain, specific prose over dramatic intensity.\n- Do not use stock physical reactions (spine shivers, breath catching, heart hammering, eyes widening).\n- Do not write phrases shaped like \"not a cleansing thing; it was...\" or \"the silence was...\".\n- Avoid abstract atmosphere labels such as palpable, thick, electric, heavy with tension, destiny, fate, ghosts, ache, precipice, or secrets buried.\n- Let emotion appear through small choices, timing, objects, and what the character refuses to say.\n- Keep sentences varied; leave some lines quiet.\n"
+  },
+  "scoring": {
+    "scorers": [
+      "latency",
+      "heuristic-text"
+    ],
+    "thresholds": {
+      "heuristic-text": 0.86
+    },
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down her spine",
+          "heart skipped a beat",
+          "breath she didn't know she was holding",
+          "little did she know",
+          "something she couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "emerald orbs",
+          "cerulean",
+          "a single tear",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met her gaze",
+          "not a cleansing thing",
+          "ghost",
+          "ache",
+          "precipice",
+          "secrets buried",
+          "heavy with tension",
+          "electric",
+          "spine",
+          "breath hitching",
+          "heart hammer",
+          "the silence was"
+        ],
+        "required": [
+          "Mara",
+          "stable"
+        ]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

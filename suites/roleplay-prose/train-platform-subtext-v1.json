@@ -1,0 +1,61 @@
+{
+  "id": "roleplay-prose.train-platform-subtext-v1",
+  "version": "0.2.0",
+  "name": "Train platform \u2014 dialogue and subtext (anti-slop prompt)",
+  "description": "Long-form roleplay continuation focused on dialogue, subtext, restraint, and prose that avoids generic melodrama. Variant v1 adds explicit anti-cliche/style-control instructions.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: character-driven prose with natural dialogue and subtext. Avoid theatrical declarations. The characters should not say exactly what they mean. No bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nLenox and Vale were partners in a quiet smuggling operation until Vale sold a route map to buy his sister's way out of prison. Lenox survived the ambush that followed, barely. Six months later, they run into each other by chance on a foggy train platform at dawn. A delayed northbound train is idling. Neither of them wants the station guards to notice them.\n\nUser's latest message:\nI recognize him by the old brass lighter before I recognize his face. He is leaning against the newspaper kiosk like he belongs there. I keep my voice low when I say, 'That coat's new.'\n\nContinue from Vale's point of view in third person limited. Keep the betrayal present, but let it sit under the surface rather than turning into exposition.\n\nAdditional style constraints for this variant:\n- Prefer plain, specific prose over dramatic intensity.\n- Do not use stock physical reactions (spine shivers, breath catching, heart hammering, eyes widening).\n- Do not write phrases shaped like \"not a cleansing thing; it was...\" or \"the silence was...\".\n- Avoid abstract atmosphere labels such as palpable, thick, electric, heavy with tension, destiny, fate, ghosts, ache, precipice, or secrets buried.\n- Let emotion appear through small choices, timing, objects, and what the character refuses to say.\n- Keep sentences varied; leave some lines quiet.\n"
+  },
+  "scoring": {
+    "scorers": [
+      "latency",
+      "heuristic-text"
+    ],
+    "thresholds": {
+      "heuristic-text": 0.86
+    },
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down his spine",
+          "heart skipped a beat",
+          "breath he didn't know he was holding",
+          "little did he know",
+          "something he couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "smirked",
+          "chuckled darkly",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met her gaze",
+          "met his gaze",
+          "not a cleansing thing",
+          "ghost",
+          "ache",
+          "precipice",
+          "secrets buried",
+          "heavy with tension",
+          "electric",
+          "spine",
+          "breath hitching",
+          "heart hammer",
+          "the silence was"
+        ],
+        "required": [
+          "Vale",
+          "Lenox"
+        ]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

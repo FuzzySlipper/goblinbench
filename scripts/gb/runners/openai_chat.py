@@ -71,9 +71,25 @@ class OpenAiChatRunner:
         request_body = {
             "model": model,
             "messages": messages,
-            "temperature": _config_double(candidate, "temperature", 0.7),
             "max_tokens": _config_int(candidate, "max_tokens", 4096),
         }
+        reasoning_effort = _config_string(candidate, "reasoning_effort")
+        if reasoning_effort:
+            request_body["reasoning_effort"] = reasoning_effort
+        if not reasoning_effort or _config_bool(candidate, "include_temperature_with_reasoning_effort", False):
+            request_body["temperature"] = _config_double(candidate, "temperature", 0.7)
+        chat_template_kwargs = candidate.config.get("chat_template_kwargs")
+        if isinstance(chat_template_kwargs, dict):
+            request_body["chat_template_kwargs"] = chat_template_kwargs
+        # Some OpenAI-compatible local servers expose provider/model-specific
+        # knobs at the top level (for example llama.cpp/Lemonade
+        # chat_template_kwargs to disable/enable thinking mode). Keep the generic
+        # chat runner extensible without adding one-off fields for every backend.
+        # request_overrides is applied last so experiments can still override any
+        # first-class convenience field above.
+        overrides = candidate.config.get("request_overrides")
+        if isinstance(overrides, dict):
+            request_body.update(overrides)
         request_json = json.dumps(request_body)
 
         trace.append(TraceEvent(
@@ -240,6 +256,25 @@ def _config_int(candidate: CandidateConfig, key: str, default: int) -> int:
         except (TypeError, ValueError):
             pass
     return default
+
+
+def _config_bool(candidate: CandidateConfig, key: str, default: bool) -> bool:
+    v = candidate.config.get(key)
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return bool(v)
+    if isinstance(v, str):
+        return v.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return default
+
+
+def _config_string(candidate: CandidateConfig, key: str) -> str | None:
+    v = candidate.config.get(key)
+    if v is None:
+        return None
+    s = str(v).strip()
+    return s or None
 
 
 def _extract_model_text(raw_api_response: str) -> str | None:

@@ -107,6 +107,27 @@ def ingest_fixture(paths: DbPaths) -> None:
         conn.close()
 
 
+def test_extract_candidate_output_metadata_for_openai_envelope() -> None:
+    gb_qual = load_cli_module("gb-qual-report.py", "gb_qual_report_metadata_test")
+    raw = json.dumps({
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"content": "Visible prose.", "reasoning_content": "hidden thinking"},
+        }],
+        "usage": {"prompt_tokens": 11, "completion_tokens": 22, "total_tokens": 33},
+    })
+
+    assert gb_qual.extract_candidate_output_text(raw) == "Visible prose."
+    assert gb_qual.extract_candidate_output_metadata(raw) == {
+        "finish_reason": "stop",
+        "reasoning_chars": len("hidden thinking"),
+        "content_chars": len("Visible prose."),
+        "prompt_tokens": 11,
+        "completion_tokens": 22,
+        "total_tokens": 33,
+    }
+
+
 def test_qual_report_dry_run_writes_prompt_artifacts(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_repo: DbPaths) -> None:
     gb_qual = load_cli_module("gb-qual-report.py", "gb_qual_report_dry_run_test")
     patch_cli_paths(monkeypatch, fake_repo, gb_qual)

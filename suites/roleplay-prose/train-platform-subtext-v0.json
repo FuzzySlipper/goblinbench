@@ -1,0 +1,42 @@
+{
+  "id": "roleplay-prose.train-platform-subtext-v0",
+  "version": "0.1.0",
+  "name": "Train platform — dialogue and subtext",
+  "description": "Long-form roleplay continuation focused on dialogue, subtext, restraint, and prose that avoids generic melodrama.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: character-driven prose with natural dialogue and subtext. Avoid theatrical declarations. The characters should not say exactly what they mean. No bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nLenox and Vale were partners in a quiet smuggling operation until Vale sold a route map to buy his sister's way out of prison. Lenox survived the ambush that followed, barely. Six months later, they run into each other by chance on a foggy train platform at dawn. A delayed northbound train is idling. Neither of them wants the station guards to notice them.\n\nUser's latest message:\nI recognize him by the old brass lighter before I recognize his face. He is leaning against the newspaper kiosk like he belongs there. I keep my voice low when I say, 'That coat's new.'\n\nContinue from Vale's point of view in third person limited. Keep the betrayal present, but let it sit under the surface rather than turning into exposition."
+  },
+  "scoring": {
+    "scorers": ["latency", "heuristic-text"],
+    "thresholds": {"heuristic-text": 0.86},
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down his spine",
+          "heart skipped a beat",
+          "breath he didn't know he was holding",
+          "little did he know",
+          "something he couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "smirked",
+          "chuckled darkly",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met her gaze",
+          "met his gaze"
+        ],
+        "required": ["Vale", "Lenox"]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

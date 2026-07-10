@@ -1,0 +1,42 @@
+{
+  "id": "roleplay-prose.orbital-maintenance-v0",
+  "version": "0.1.0",
+  "name": "Orbital maintenance tunnel — movement and tension",
+  "description": "Long-form roleplay continuation focused on spatially clear action prose, tension, and avoiding purple generic phrases.",
+  "suite": "roleplay-prose",
+  "input": {
+    "prompt": "You are continuing a SFW collaborative roleplay scene. Write only the next assistant roleplay reply, not a full story and not analysis.\n\nStyle target: clean, vivid action prose with clear spatial relationships and no cinematic cliche pileup. Keep the prose grounded in what the viewpoint character can notice. No bullet lists, no headings, no OOC notes. Aim for 500-750 words.\n\nScene context:\nJuno is a maintenance tech on an old orbital city. During a station-wide evacuation drill that has gone wrong, she has crawled into a service duct to manually reopen an oxygen valve for a sealed residential ring. Her ex, Saye, is on comms from the control room. They are both pretending the breakup is irrelevant. The duct is narrow, hot, and vibrating as pressure shifts through the pipes.\n\nUser's latest message:\nThe schematic on my wrist display jumps, then freezes. I slap the casing once, harder than I meant to. 'Tell me you still have my position,' I say into the comm. Ahead of me, something metal bends with a sound like a spoon being crushed.\n\nContinue from Juno's point of view in first person. Keep the action legible; let the relationship tension leak in through timing and word choice."
+  },
+  "scoring": {
+    "scorers": ["latency", "heuristic-text"],
+    "thresholds": {"heuristic-text": 0.86},
+    "parameters": {
+      "heuristic-text": {
+        "forbidden": [
+          "shiver down my spine",
+          "heart skipped a beat",
+          "breath I didn't know I was holding",
+          "little did I know",
+          "something I couldn't quite place",
+          "the air was thick with",
+          "silence was deafening",
+          "palpable tension",
+          "adrenaline surged",
+          "time seemed to slow",
+          "for what felt like an eternity",
+          "as if on cue",
+          "destiny",
+          "fate had other plans",
+          "eyes widening",
+          "voice barely above a whisper",
+          "without realizing it",
+          "couldn't help but",
+          "met his gaze",
+          "met her gaze"
+        ],
+        "required": ["Juno", "Saye"]
+      }
+    }
+  },
+  "timeout_seconds": 420
+}

@@ -1,0 +1,138 @@
+[
+  {
+    "id": "denrouter-deepseek-pro-roleplay",
+    "name": "denrouter deepseek-pro roleplay",
+    "kind": "OpenAiModel",
+    "model": "deepseek-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-deepseek-flash-roleplay",
+    "name": "denrouter deepseek-flash roleplay",
+    "kind": "OpenAiModel",
+    "model": "deepseek-flash",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-glm-5-2-roleplay-thinking-high",
+    "name": "denrouter glm-5.2 roleplay thinking high",
+    "kind": "OpenAiModel",
+    "model": "glm-5.2",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "max_tokens": 8192,
+      "reasoning_effort": "high"
+    }
+  },
+  {
+    "id": "denrouter-grok-roleplay",
+    "name": "denrouter grok roleplay",
+    "kind": "OpenAiModel",
+    "model": "grok",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-kimi-roleplay-thinking-high",
+    "name": "denrouter kimi roleplay thinking high",
+    "kind": "OpenAiModel",
+    "model": "kimi",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 1.0,
+      "max_tokens": 8192,
+      "reasoning_effort": "high",
+      "include_temperature_with_reasoning_effort": true
+    }
+  },
+  {
+    "id": "denrouter-kimi-code-roleplay-thinking-high",
+    "name": "denrouter kimi-code roleplay thinking high",
+    "kind": "OpenAiModel",
+    "model": "kimi-code",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 1.0,
+      "max_tokens": 8192,
+      "reasoning_effort": "high",
+      "include_temperature_with_reasoning_effort": true
+    }
+  },
+  {
+    "id": "denrouter-longcat-2-0-roleplay",
+    "name": "denrouter longcat-2.0 roleplay",
+    "kind": "OpenAiModel",
+    "model": "longcat-2.0",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-mimo-pro-roleplay",
+    "name": "denrouter mimo-pro roleplay",
+    "kind": "OpenAiModel",
+    "model": "mimo-pro",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-qwen-max-roleplay",
+    "name": "denrouter qwen-max roleplay",
+    "kind": "OpenAiModel",
+    "model": "qwen-max",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-qwenplus-roleplay",
+    "name": "denrouter qwenplus roleplay",
+    "kind": "OpenAiModel",
+    "model": "qwenplus",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 4096
+    }
+  },
+  {
+    "id": "denrouter-stepfun-roleplay",
+    "name": "denrouter stepfun roleplay",
+    "kind": "OpenAiModel",
+    "model": "stepfun",
+    "provider": "den-router",
+    "base_url": "http://127.0.0.1:18082/v1",
+    "config": {
+      "temperature": 0.85,
+      "max_tokens": 8192
+    }
+  }
+]

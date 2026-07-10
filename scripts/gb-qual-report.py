@@ -181,6 +181,66 @@ def fetch_artifact_text(conn: Any, repo_root: Path, candidate_result_id: int, na
     return None
 
 
+def extract_candidate_output_text(raw_artifact: str) -> str:
+    """Return human-facing model text from common GoblinBench output artifacts."""
+    try:
+        doc = json.loads(raw_artifact)
+    except (json.JSONDecodeError, ValueError):
+        return raw_artifact
+    if isinstance(doc, dict):
+        # OpenAI-compatible chat envelope written by OpenAiChatRunner.
+        choices = doc.get("choices")
+        if isinstance(choices, list) and choices:
+            first = choices[0] if isinstance(choices[0], dict) else {}
+            msg = first.get("message") if isinstance(first, dict) else None
+            if isinstance(msg, dict):
+                content = msg.get("content")
+                if isinstance(content, str) and content.strip():
+                    return content
+                reasoning = msg.get("reasoning_content")
+                if isinstance(reasoning, str) and reasoning.strip():
+                    return f"[reasoning_content only; no assistant content emitted]\n{reasoning}"
+        # Fuzzy/decision style artifacts.
+        for key in ("final_response", "text", "content"):
+            value = doc.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+    return raw_artifact
+
+
+def extract_candidate_output_metadata(raw_artifact: str | None) -> dict[str, Any]:
+    """Return optional response metadata useful for prose/reasoning comparisons."""
+    if not raw_artifact:
+        return {}
+    try:
+        doc = json.loads(raw_artifact)
+    except (json.JSONDecodeError, ValueError):
+        return {}
+    if not isinstance(doc, dict):
+        return {}
+    meta: dict[str, Any] = {}
+    choices = doc.get("choices")
+    if isinstance(choices, list) and choices:
+        first = choices[0] if isinstance(choices[0], dict) else {}
+        if isinstance(first, dict):
+            if first.get("finish_reason") is not None:
+                meta["finish_reason"] = first.get("finish_reason")
+            msg = first.get("message")
+            if isinstance(msg, dict):
+                reasoning = msg.get("reasoning_content")
+                if isinstance(reasoning, str):
+                    meta["reasoning_chars"] = len(reasoning)
+                content = msg.get("content")
+                if isinstance(content, str):
+                    meta["content_chars"] = len(content)
+    usage = doc.get("usage")
+    if isinstance(usage, dict):
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            if usage.get(key) is not None:
+                meta[key] = usage.get(key)
+    return meta
+
+
 def load_scenario_prompt(repo_root: Path, suite: str | None, scenario_id: str) -> str:
     if not suite:
         return ""
@@ -224,9 +284,12 @@ def make_output_records(
     records: list[dict[str, Any]] = []
     for idx, cell in enumerate(cells):
         label = label_for(idx) if blind else (cell.get("model") or cell.get("candidate_id") or label_for(idx))
-        output = fetch_artifact_text(conn, repo_root, int(cell["id"]), "output.json")
-        if output is None:
+        raw_artifact = fetch_artifact_text(conn, repo_root, int(cell["id"]), "output.json")
+        metadata = extract_candidate_output_metadata(raw_artifact)
+        if raw_artifact is None:
             output = cell.get("primary_summary") or cell.get("error") or "(no output artifact stored)"
+        else:
+            output = extract_candidate_output_text(raw_artifact)
         truncated_output, truncated = truncate_text(output, max_output_chars)
         records.append({
             "label": label,
@@ -242,6 +305,7 @@ def make_output_records(
             "output_chars": len(output),
             "truncated": truncated,
             "artifact_directory": cell.get("artifact_directory"),
+            "response_metadata": metadata,
         })
     return records
 
@@ -514,18 +578,35 @@ def render_report(
         lines.extend([
             "### Candidate outputs",
             "",
-            "| label | model | provider | run | status | chars | artifact | excerpt |",
-            "|---|---|---|---|---|---:|---|---|",
+            "| label | model | provider | run | status | output chars | reasoning chars | finish | artifact | excerpt |",
+            "|---|---|---|---|---|---:|---:|---|---|---|",
         ])
         for rec in records:
             status = "success" if rec["success"] else f"error: {rec.get('error') or 'unknown'}"
             excerpt, _ = truncate_text(rec["output"].replace("\n", " "), 260)
             artifact = rec.get("artifact_directory") or ""
+            response_meta_obj = rec.get("response_metadata")
+            response_meta: dict[str, Any] = response_meta_obj if isinstance(response_meta_obj, dict) else {}
+            reasoning_chars = response_meta.get("reasoning_chars", "")
+            finish_reason = response_meta.get("finish_reason", "")
             lines.append(
                 f"| {md_escape_table(rec['label'])} | {md_escape_table(rec.get('model') or rec.get('candidate_id'))} | "
                 f"{md_escape_table(rec.get('provider'))} | `{md_escape_table(rec.get('run_id'))}` | {md_escape_table(status)} | "
-                f"{rec.get('output_chars') or 0} | `{md_escape_table(artifact)}` | {md_escape_table(excerpt)} |"
+                f"{rec.get('output_chars') or 0} | {reasoning_chars} | {md_escape_table(finish_reason)} | "
+                f"`{md_escape_table(artifact)}` | {md_escape_table(excerpt)} |"
             )
+        lines.extend(["", "<details>", "<summary>Full candidate outputs</summary>", ""])
+        for rec in records:
+            model = rec.get("model") or rec.get("candidate_id") or ""
+            lines.extend([
+                f"#### Candidate {rec['label']} — {model}",
+                "",
+                "```text",
+                str(rec.get("output") or ""),
+                "```",
+                "",
+            ])
+        lines.extend(["</details>", ""])
     lines.extend([
         "",
         "---",
