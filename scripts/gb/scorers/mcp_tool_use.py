@@ -178,9 +178,10 @@ class McpToolUseScorer:
 
         threshold = scenario.scoring.threshold(self.id, 0.8) if scenario.scoring else 0.8
         passed = score >= threshold
+        outcome_class = "pass" if passed else ("near-pass" if score >= threshold * 0.75 else "hard-fail")
         counts = f"calls {matched}/{len(expected_calls)}; arguments {arg_matches}/{len(expected_calls)}; final {final_matches}/{len(final_contains)}"
         cap_note = f"; capped at {score:.2f} ({'; '.join(score_cap_reasons)})" if score_cap_reasons else ""
-        summary = f"{'PASS' if passed else 'FAIL'}: mcp-tool-use: {counts}; score {score:.2f}{cap_note}"
+        summary = f"{'PASS' if passed else 'FAIL'} [{outcome_class}]: mcp-tool-use: {counts}; score {score:.2f}{cap_note}"
         return self._result(
             score=score, passed=passed, summary=summary,
             explanation=(
@@ -194,13 +195,13 @@ class McpToolUseScorer:
             no_calls_violated=no_calls_violated, optional=optional_metrics,
             recovery=recovery_metrics, clarification=clarification_metrics,
             forbidden_arg=forbidden_arg_metrics, artifact=artifact_metrics,
-            raw_score=raw_score, score_cap_reasons=score_cap_reasons,
+            raw_score=raw_score, score_cap_reasons=score_cap_reasons, outcome_class=outcome_class,
         )
 
     def _result(self, *, score, passed, summary, explanation, expected_calls, tool_calls,
                 bypass_attempts, final_contains, final_response, forbidden_tool_used,
                 bypass_violated, no_calls_violated, optional, recovery, clarification,
-                forbidden_arg, artifact, raw_score=None, score_cap_reasons=None) -> ScoreResult:
+                forbidden_arg, artifact, raw_score=None, score_cap_reasons=None, outcome_class=None) -> ScoreResult:
         matched = _count_matched(expected_calls, tool_calls)
         arg_matches = _count_arg_matches(expected_calls, tool_calls)
         final_matches = sum(1 for s in final_contains if s.lower() in final_response.lower())
@@ -213,6 +214,7 @@ class McpToolUseScorer:
                 "raw_score": score if raw_score is None else raw_score,
                 "score_cap": None if raw_score is None or raw_score == score else score,
                 "score_cap_reasons": list(score_cap_reasons or []),
+                "outcome_class": outcome_class or ("pass" if passed else "hard-fail"),
                 "matched_call_count": matched,
                 "argument_match_count": arg_matches,
                 "actual_call_count": len(tool_calls),

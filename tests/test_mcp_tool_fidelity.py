@@ -104,8 +104,9 @@ def test_scorer_summary_explains_argument_cap() -> None:
 
     assert score.score == 0.75
     assert score.passed is False
-    assert "calls 4/4; arguments 0/4; final 3/3" in score.human_summary
+    assert "FAIL [near-pass]: mcp-tool-use: calls 4/4; arguments 0/4; final 3/3" in score.human_summary
     assert "expected argument mismatch" in score.human_summary
     assert score.detail["raw_score"] == 0.85
     assert score.detail["score_cap"] == 0.75
     assert score.detail["score_cap_reasons"] == ["expected argument mismatch"]
+    assert score.detail["outcome_class"] == "near-pass"

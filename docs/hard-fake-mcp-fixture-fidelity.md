@@ -10,7 +10,7 @@ The hard fake-MCP suite previously had a fidelity gap: generic `{ "type": "objec
 - Both the direct OpenAI fake-tool runner and the stdio/HTTP fake server validate scripted arguments **before** consuming or returning a scripted result.
 - Invalid calls receive a structured retryable validation failure and leave the intended scripted step available for recovery.
 - Repeated calls consume distinct scripted steps, making fixture state observable.
-- Scorer output exposes raw score, score caps, and cap reasons such as expected-argument mismatch, optional-parameter violation, recovery failure, and required artifact absence.
+- Scorer output exposes raw score, score caps, cap reasons, and an explicit `pass` / `near-pass` / `hard-fail` outcome class.
 
 ## Safe free-text effects
 
