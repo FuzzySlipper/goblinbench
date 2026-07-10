@@ -50,7 +50,7 @@ systemd-run --user --scope --collect --quiet \
     --suite coding-smoke --candidates candidates.codex-app-server-smoke.json'
 ```
 
-Result: `run-20260710-164602-88d4b13d` completed successfully in 50,921 ms. It created only `src/main.py` in the copied `e2e-pi-mock` fixture, with `turn_status=completed`. The protocol artifact was 124 KiB; the Codex service memory peak was 85.7 MiB. No OOM event occurred.
+Result: `run-20260710-165700-a2959c57` completed successfully in 25,186 ms. It created only `src/main.py` in the copied `e2e-pi-mock` fixture, with `turn_status=completed`; the copied fixture's `coding-tests` scorer ran pytest and passed **2/2** tests (score 1.0). No OOM event occurred.
 
 ## Current limitations
 

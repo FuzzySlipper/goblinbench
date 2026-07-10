@@ -38,18 +38,29 @@ def resolve_scenario(scenario_id: str) -> dict | None:
     The convention is <suite>.<name> → suites/<suite>/<name>.json.
     """
     dot = scenario_id.find(".")
-    if dot < 0:
-        return None
-    suite = scenario_id[:dot]
-    name = scenario_id[dot + 1:]
-    candidates = [
-        SUITES_DIR / suite / f"{name}.json",
-        SUITES_DIR / suite / f"{scenario_id}.json",
-    ]
+    candidates: list[pathlib.Path] = []
+    if dot >= 0:
+        suite = scenario_id[:dot]
+        name = scenario_id[dot + 1:]
+        candidates = [
+            SUITES_DIR / suite / f"{name}.json",
+            SUITES_DIR / suite / f"{scenario_id}.json",
+        ]
     for path in candidates:
         if path.exists():
             with open(path) as f:
                 return json.load(f)
+
+    # Older coding scenarios have IDs without a ``suite.name`` prefix. Search
+    # by declared ID so script scorers still attach to environment-realized rows.
+    for path in SUITES_DIR.rglob("*.json"):
+        try:
+            with open(path) as f:
+                scenario = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if scenario.get("id") == scenario_id:
+            return scenario
     return None
 
 
