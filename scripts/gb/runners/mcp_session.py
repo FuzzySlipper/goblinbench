@@ -113,7 +113,9 @@ class OpenAiMcpSessionRunner:
                         call_id = _openai.extract_tool_call_id(tool_call)
                         tool_name = _openai.extract_tool_name(tool_call)
                         arguments = _openai.extract_tool_arguments(tool_call)
-                        result = _openai.execute_fake_tool(tool_name, scripted_calls, used_indexes)
+                        result = _openai.execute_fake_tool(
+                            tool_name, arguments, scripted_calls, used_indexes
+                        )
                         record = {
                             "tool": tool_name,
                             "arguments": arguments,

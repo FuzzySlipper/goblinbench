@@ -52,15 +52,50 @@ def record(trace_path: str | None, event: dict[str, Any]) -> None:
         f.write(json.dumps({"ts": time.time(), **event}, sort_keys=True) + "\n")
 
 
-def call_tool(scenario: dict[str, Any], name: str, arguments: dict[str, Any], trace_path: str | None) -> dict[str, Any]:
+def call_tool(
+    scenario: dict[str, Any], name: str, arguments: dict[str, Any], trace_path: str | None,
+    used_indexes: set[int] | None = None,
+) -> dict[str, Any]:
+    """Run one stateful canned call without handing out results for bad args."""
+    used_indexes = used_indexes if used_indexes is not None else set()
     tool_names = {t.get("name") for t in tools(scenario)}
     if name not in tool_names:
         result = {"ok": False, "error": f"unknown fake tool: {name}"}
     else:
-        matching = [c for c in canned_calls(scenario) if c.get("tool") == name]
-        result = dict(matching[0].get("result", {"ok": True}) if matching else {"ok": True, "note": "no canned result"})
+        known = False
+        result: dict[str, Any] | None = None
+        for index, call in enumerate(canned_calls(scenario)):
+            if call.get("tool") != name:
+                continue
+            known = True
+            if index in used_indexes:
+                continue
+            expected = call.get("arguments")
+            if isinstance(expected, dict) and not _arguments_match(expected, arguments):
+                result = {
+                    "ok": False,
+                    "error": f"validation failed for fake tool: {name}",
+                    "retryable": True,
+                }
+            else:
+                used_indexes.add(index)
+                value = call.get("result", {"ok": True})
+                result = dict(value) if isinstance(value, dict) else {"result": value}
+            break
+        if result is None:
+            result = {"ok": True, "note": "tool called more times than canned results were provided"} if known else {"ok": True, "note": "no canned result"}
     record(trace_path, {"event": "tools/call", "tool": name, "arguments": arguments, "result": result})
     return result
+
+
+def _arguments_match(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
+    return all(key in actual and _argument_value_matches(value, actual[key]) for key, value in expected.items())
+
+
+def _argument_value_matches(expected: Any, actual: Any) -> bool:
+    if expected == "$any_nonempty_string":
+        return isinstance(actual, str) and bool(actual.strip())
+    return expected == actual
 
 
 def rpc_response(req_id: Any, result: Any = None, error: Any = None) -> dict[str, Any]:
@@ -72,7 +107,10 @@ def rpc_response(req_id: Any, result: Any = None, error: Any = None) -> dict[str
     return response
 
 
-def handle_rpc(scenario: dict[str, Any], request: dict[str, Any], trace_path: str | None) -> dict[str, Any]:
+def handle_rpc(
+    scenario: dict[str, Any], request: dict[str, Any], trace_path: str | None,
+    used_indexes: set[int] | None = None,
+) -> dict[str, Any]:
     method = request.get("method")
     params = request.get("params") or {}
     req_id = request.get("id")
@@ -86,23 +124,29 @@ def handle_rpc(scenario: dict[str, Any], request: dict[str, Any], trace_path: st
         arguments = params.get("arguments") or {}
         if not isinstance(arguments, dict):
             arguments = {"_raw": arguments}
-        return rpc_response(req_id, {"content": [{"type": "text", "text": json.dumps(call_tool(scenario, name, arguments, trace_path))}]})
+        return rpc_response(
+            req_id,
+            {"content": [{"type": "text", "text": json.dumps(call_tool(scenario, name, arguments, trace_path, used_indexes))}]},
+        )
     return rpc_response(req_id, error={"code": -32601, "message": f"unsupported fake method: {method}"})
 
 
 def run_stdio(scenario: dict[str, Any], trace_path: str | None) -> None:
+    used_indexes: set[int] = set()
     for line in sys.stdin:
         line = line.strip()
         if not line:
             continue
         try:
             req = json.loads(line)
-            print(json.dumps(handle_rpc(scenario, req, trace_path)), flush=True)
+            print(json.dumps(handle_rpc(scenario, req, trace_path, used_indexes)), flush=True)
         except Exception as exc:  # fixture diagnostics, not production protocol rigor
             print(json.dumps(rpc_response(None, error={"code": -32000, "message": str(exc)})), flush=True)
 
 
 def run_http(scenario: dict[str, Any], trace_path: str | None, port: int) -> None:
+    used_indexes: set[int] = set()
+
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802
             if self.path != "/mcp":
@@ -113,7 +157,7 @@ def run_http(scenario: dict[str, Any], trace_path: str | None, port: int) -> Non
             body = self.rfile.read(length).decode("utf-8")
             try:
                 req = json.loads(body)
-                res = handle_rpc(scenario, req, trace_path)
+                res = handle_rpc(scenario, req, trace_path, used_indexes)
                 payload = json.dumps(res).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

@@ -308,24 +308,42 @@ def to_openai_tool(tool: dict[str, Any]) -> dict[str, Any]:
 
 def execute_fake_tool(
     tool_name: str,
+    arguments: dict[str, Any],
     scripted_calls: list[dict[str, Any]],
     used_indexes: set[int],
 ) -> Any:
-    """Port of C# ExecuteFakeTool: return the next unused scripted result for a tool.
+    """Execute the next matching canned tool step without leaking hidden results.
 
-    - First unused scripted call matching tool_name → its .result (or {"ok": true}).
-    - Known but exhausted tool → {"ok": true, "note": "called more times than provided"}.
-    - Unknown tool → {"ok": false, "error": "unknown or unscripted fake tool"}.
+    A scripted result is only exposed when every scripted argument is present
+    with the expected value. Invalid calls leave the step available so the
+    candidate can recover after receiving a realistic validation failure.
     """
     known_names = {str(c.get("tool")) for c in scripted_calls if c.get("tool")}
     for i, call in enumerate(scripted_calls):
-        if i in used_indexes:
+        if i in used_indexes or str(call.get("tool")) != tool_name:
             continue
-        if str(call.get("tool")) == tool_name:
-            used_indexes.add(i)
-            if "result" in call:
-                return call["result"]
-            return {"ok": True}
+        expected = call.get("arguments")
+        if isinstance(expected, dict) and not _fake_tool_arguments_match(expected, arguments):
+            return {
+                "ok": False,
+                "error": f"validation failed for fake tool: {tool_name}",
+                "retryable": True,
+            }
+        used_indexes.add(i)
+        if "result" in call:
+            return call["result"]
+        return {"ok": True}
     if tool_name not in known_names:
         return {"ok": False, "error": f"unknown or unscripted fake tool: {tool_name}"}
     return {"ok": True, "note": "tool called more times than canned results were provided"}
+
+
+def _fake_tool_arguments_match(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
+    """Match scenario-owned argument values without freezing free-text safe effects."""
+    return all(key in actual and _fake_tool_value_matches(value, actual[key]) for key, value in expected.items())
+
+
+def _fake_tool_value_matches(expected: Any, actual: Any) -> bool:
+    if expected == "$any_nonempty_string":
+        return isinstance(actual, str) and bool(actual.strip())
+    return expected == actual

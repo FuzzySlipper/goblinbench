@@ -31,21 +31,30 @@
           "name": "rollout_status_read",
           "description": "Read-only rollout status for service_id.",
           "input_schema": {
-            "type": "object"
+            "type": "object",
+            "properties": {"service_id": {"type": "string"}},
+            "required": ["service_id"]
           }
         },
         {
           "name": "incident_index_read",
           "description": "Read-only incident index by service_id.",
           "input_schema": {
-            "type": "object"
+            "type": "object",
+            "properties": {"service_id": {"type": "string"}},
+            "required": ["service_id"]
           }
         },
         {
           "name": "canary_pause",
           "description": "Allowed only when active canary and incident severity >= high.",
           "input_schema": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+              "service_id": {"type": "string"},
+              "incident_id": {"type": "string"}
+            },
+            "required": ["service_id", "incident_id"]
           }
         },
         {
