@@ -45,8 +45,7 @@
         "tool": "issue_create",
         "arguments": {
           "title": "Cache key expires",
-          "priority": "urgent",
-          "labels": []
+          "priority": "urgent"
         },
         "result": {
           "ok": false,

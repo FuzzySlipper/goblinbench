@@ -594,13 +594,7 @@
           "project_id": "goblinbench",
           "slug": "local-model-overclarification-note",
           "title": "Local model overclarification note",
-          "content": "Qwen local model over-clarified on fuzzy Den MCP tool choices.",
-          "doc_type": "note",
-          "tags": [
-            "evals",
-            "den-mcp",
-            "tool-use"
-          ]
+          "content": "Qwen local model over-clarified on fuzzy Den MCP tool choices."
         },
         "result": {
           "fake_den_mcp": true,

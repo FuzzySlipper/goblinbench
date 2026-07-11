@@ -594,13 +594,7 @@
           "project_id": "den-mcp",
           "slug": "scheduler-smoke-doc-list-report",
           "title": "Scheduler smoke doc-list report",
-          "content": "Report: Scheduler smoke found that #2086's document list response is hard for agents to choose from. Proposed fix: make document search snippets show project_id, slug, title, and visibility in one compact line.",
-          "doc_type": "note",
-          "tags": [
-            "mcp-tools",
-            "ergonomics",
-            "regression"
-          ]
+          "content": "Report: Scheduler smoke found that #2086's document list response is hard for agents to choose from. Proposed fix: make document search snippets show project_id, slug, title, and visibility in one compact line."
         },
         "result": {
           "fake_den_mcp": true,
@@ -619,12 +613,7 @@
         "arguments": {
           "project_id": "den-mcp",
           "sender": "goblinbench-eval",
-          "content": "Created scheduler-smoke-doc-list-report for planner discussion.",
-          "metadata": {
-            "planner_visible": true,
-            "doc_slug": "scheduler-smoke-doc-list-report"
-          },
-          "intent": "handoff"
+          "content": "Created scheduler-smoke-doc-list-report for planner discussion."
         },
         "result": {
           "fake_den_mcp": true,

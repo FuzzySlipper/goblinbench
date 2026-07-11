@@ -592,8 +592,7 @@
         "tool": "mcp_den_search_documents",
         "arguments": {
           "project_id": "goblinbench",
-          "query": "fake Den MCP catalog generator",
-          "verbose": false
+          "query": "fake Den MCP catalog generator"
         },
         "result": {
           "fake_den_mcp": true,
@@ -612,8 +611,7 @@
         "tool": "mcp_den_get_document",
         "arguments": {
           "project_id": "goblinbench",
-          "slug": "fake-den-mcp-catalog-generator",
-          "verbose": true
+          "slug": "fake-den-mcp-catalog-generator"
         },
         "result": {
           "fake_den_mcp": true,

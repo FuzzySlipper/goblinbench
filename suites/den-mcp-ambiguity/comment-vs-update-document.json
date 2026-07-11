@@ -594,8 +594,7 @@
           "project_id": "goblinbench",
           "slug": "fake-den-mcp-catalog-generator",
           "author_identity": "goblinbench-eval",
-          "body_markdown": "Next run should compare qwen local and deepseek.",
-          "comment_kind": "comment"
+          "body_markdown": "Next run should compare qwen local and deepseek."
         },
         "result": {
           "fake_den_mcp": true,

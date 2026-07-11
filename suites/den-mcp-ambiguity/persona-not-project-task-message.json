@@ -591,8 +591,7 @@
       {
         "tool": "mcp_den_get_task",
         "arguments": {
-          "task_id": 2086,
-          "verbose": true
+          "task_id": 2086
         },
         "result": {
           "fake_den_mcp": true,
@@ -612,8 +611,7 @@
           "project_id": "den-mcp",
           "sender": "goblinbench-eval",
           "task_id": 2086,
-          "content": "Planner: task 2086 still needs reviewer look.",
-          "intent": "handoff"
+          "content": "Planner: task 2086 still needs reviewer look."
         },
         "result": {
           "fake_den_mcp": true,

@@ -73,6 +73,36 @@ def test_safe_draft_fixture_accepts_nonempty_agent_authored_note() -> None:
     assert len(used) == 1
 
 
+def test_direct_fake_executor_rejects_advertised_but_unscripted_decoy() -> None:
+    scenario = _invoice_scenario()
+    used: set[int] = set()
+
+    result = _openai.execute_fake_tool(
+        "approval_request_send",
+        {"invoice_id": "inv-202"},
+        scenario["input"]["scripted_tool_calls"],
+        used,
+        scenario["input"]["fake_mcp"]["tools"],
+    )
+
+    assert result == {
+        "ok": False,
+        "error": "unavailable fake tool: approval_request_send",
+        "retryable": False,
+    }
+    assert used == set()
+
+    fake_server = _load_fake_server()
+    server_result = fake_server.call_tool(
+        scenario,
+        "approval_request_send",
+        {"invoice_id": "inv-202"},
+        None,
+        set(),
+    )
+    assert server_result == result
+
+
 def test_hard_invoice_schema_exposes_scripted_required_fields() -> None:
     scenario = _invoice_scenario()
     tools = {tool["name"]: tool["input_schema"] for tool in scenario["input"]["fake_mcp"]["tools"]}

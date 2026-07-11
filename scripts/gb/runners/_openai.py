@@ -311,14 +311,24 @@ def execute_fake_tool(
     arguments: dict[str, Any],
     scripted_calls: list[dict[str, Any]],
     used_indexes: set[int],
+    tool_specs: list[dict[str, Any]] | None = None,
 ) -> Any:
-    """Execute the next matching canned tool step without leaking hidden results.
+    """Execute a scenario tool against one shared contract.
 
-    A scripted result is only exposed when every scripted argument is present
-    with the expected value. Invalid calls leave the step available so the
-    candidate can recover after receiving a realistic validation failure.
+    Tool schema validation occurs before canned-result matching. A tool that is
+    advertised but intentionally has no fixture behavior is explicitly
+    unavailable; it never receives a misleading synthetic success.
     """
-    known_names = {str(c.get("tool")) for c in scripted_calls if c.get("tool")}
+    tool_specs = tool_specs or []
+    known_tools = {str(t.get("name")) for t in tool_specs if isinstance(t, dict) and t.get("name")}
+    if tool_specs and tool_name not in known_tools:
+        return {"ok": False, "error": f"unknown fake tool: {tool_name}", "retryable": False}
+
+    schema_error = validate_fake_tool_arguments(tool_name, arguments, tool_specs)
+    if schema_error:
+        return {"ok": False, "error": f"validation failed for fake tool: {tool_name}: {schema_error}", "retryable": True}
+
+    known_scripted_names = {str(c.get("tool")) for c in scripted_calls if c.get("tool")}
     for i, call in enumerate(scripted_calls):
         if i in used_indexes or str(call.get("tool")) != tool_name:
             continue
@@ -333,9 +343,63 @@ def execute_fake_tool(
         if "result" in call:
             return call["result"]
         return {"ok": True}
-    if tool_name not in known_names:
-        return {"ok": False, "error": f"unknown or unscripted fake tool: {tool_name}"}
-    return {"ok": True, "note": "tool called more times than canned results were provided"}
+    if tool_name in known_scripted_names:
+        return {"ok": True, "note": "tool called more times than canned results were provided"}
+    if tool_name in known_tools:
+        return {"ok": False, "error": f"unavailable fake tool: {tool_name}", "retryable": False}
+    return {"ok": False, "error": f"unknown or unscripted fake tool: {tool_name}", "retryable": False}
+
+
+def validate_fake_tool_arguments(
+    tool_name: str, arguments: dict[str, Any], tool_specs: list[dict[str, Any]]
+) -> str | None:
+    """Validate the portable JSON-Schema subset used by GoblinBench fixtures."""
+    if not tool_specs:
+        return None
+    tool = next((t for t in tool_specs if isinstance(t, dict) and t.get("name") == tool_name), None)
+    if tool is None:
+        return "unknown tool"
+    schema = tool.get("input_schema")
+    if not isinstance(schema, dict):
+        return None
+    if schema.get("type") == "object" and not isinstance(arguments, dict):
+        return "arguments must be an object"
+    required = schema.get("required", [])
+    if isinstance(required, list):
+        missing = [str(key) for key in required if key not in arguments]
+        if missing:
+            return f"missing required field(s): {', '.join(missing)}"
+    properties = schema.get("properties", {})
+    if isinstance(properties, dict):
+        if schema.get("additionalProperties") is False:
+            unexpected = sorted(str(key) for key in arguments if key not in properties)
+            if unexpected:
+                return f"unexpected field(s): {', '.join(unexpected)}"
+        for key, value in arguments.items():
+            prop = properties.get(key)
+            if not isinstance(prop, dict):
+                continue
+            expected_type = prop.get("type")
+            if expected_type and not _json_schema_type_matches(str(expected_type), value):
+                return f"field '{key}' must be {expected_type}"
+            choices = prop.get("enum")
+            if isinstance(choices, list) and value not in choices:
+                return f"field '{key}' must be one of {choices}"
+            if isinstance(value, str) and isinstance(prop.get("minLength"), int) and len(value) < prop["minLength"]:
+                return f"field '{key}' must have at least {prop['minLength']} character(s)"
+    return None
+
+
+def _json_schema_type_matches(expected_type: str, value: Any) -> bool:
+    return {
+        "string": isinstance(value, str),
+        "boolean": isinstance(value, bool),
+        "object": isinstance(value, dict),
+        "array": isinstance(value, list),
+        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+        "integer": isinstance(value, int) and not isinstance(value, bool),
+        "null": value is None,
+    }.get(expected_type, True)
 
 
 def _fake_tool_arguments_match(expected: dict[str, Any], actual: dict[str, Any]) -> bool:

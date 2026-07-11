@@ -133,9 +133,7 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
             "project_id": "den-mcp",
             "slug": "scheduler-smoke-doc-list-report",
             "title": "Scheduler smoke doc-list report",
-            "content": report,
-            "doc_type": "note",
-            "tags": ["mcp-tools", "ergonomics", "regression"]
+            "content": report
         }, {
             "ok": True,
             "document": {"project_id": "den-mcp", "slug": "scheduler-smoke-doc-list-report", "visibility": "normal"},
@@ -144,9 +142,7 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
         call("mcp_den_send_message", {
             "project_id": "den-mcp",
             "sender": "goblinbench-eval",
-            "content": "Created scheduler-smoke-doc-list-report for planner discussion.",
-            "metadata": {"planner_visible": True, "doc_slug": "scheduler-smoke-doc-list-report"},
-            "intent": "handoff"
+            "content": "Created scheduler-smoke-doc-list-report for planner discussion."
         }, {
             "ok": True,
             "message_id": 42001,
@@ -186,9 +182,7 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
             "project_id": "goblinbench",
             "slug": "local-model-overclarification-note",
             "title": "Local model overclarification note",
-            "content": "Qwen local model over-clarified on fuzzy Den MCP tool choices.",
-            "doc_type": "note",
-            "tags": ["evals", "den-mcp", "tool-use"]
+            "content": "Qwen local model over-clarified on fuzzy Den MCP tool choices."
         }, {"ok": True, "document": {"project_id": "goblinbench", "slug": "local-model-overclarification-note"}, "artifact_ref": "den://goblinbench/documents/local-model-overclarification-note"})],
         {
             "expected_calls": [{"tool": "mcp_den_store_document", "argument_contains": {"project_id": "goblinbench", "slug": "local-model-overclarification-note"}}],
@@ -209,8 +203,8 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
         "Tell planner that den-mcp task 2086 still needs a reviewer look. Use the task thread; don't create a new project or document.",
         tools_by_name,
         [
-            call("mcp_den_get_task", {"task_id": 2086, "verbose": True}, {"ok": True, "task": {"id": 2086, "project_id": "den-mcp", "status": "review", "title": "Document MCP list/search response ergonomics"}}),
-            call("mcp_den_send_message", {"project_id": "den-mcp", "sender": "goblinbench-eval", "task_id": 2086, "content": "Planner: task 2086 still needs reviewer look.", "intent": "handoff"}, {"ok": True, "message_id": 42002, "project_id": "den-mcp", "task_id": 2086})
+            call("mcp_den_get_task", {"task_id": 2086}, {"ok": True, "task": {"id": 2086, "project_id": "den-mcp", "status": "review", "title": "Document MCP list/search response ergonomics"}}),
+            call("mcp_den_send_message", {"project_id": "den-mcp", "sender": "goblinbench-eval", "task_id": 2086, "content": "Planner: task 2086 still needs reviewer look."}, {"ok": True, "message_id": 42002, "project_id": "den-mcp", "task_id": 2086})
         ],
         {
             "expected_calls": [
@@ -234,8 +228,8 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
         "Find the fake Den MCP catalog generator doc in GoblinBench and summarize what command refreshes the live catalog.",
         tools_by_name,
         [
-            call("mcp_den_search_documents", {"project_id": "goblinbench", "query": "fake Den MCP catalog generator", "verbose": False}, {"ok": True, "results": [{"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "title": "Fake Den MCP Catalog Generator"}]}),
-            call("mcp_den_get_document", {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "verbose": True}, {"ok": True, "document": {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "content": "Refresh with python scripts/generate-fake-den-mcp-catalog.py --mcp-url http://192.168.1.10:5199/mcp --name-prefix mcp_den_ ..."}})
+            call("mcp_den_search_documents", {"project_id": "goblinbench", "query": "fake Den MCP catalog generator"}, {"ok": True, "results": [{"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "title": "Fake Den MCP Catalog Generator"}]}),
+            call("mcp_den_get_document", {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator"}, {"ok": True, "document": {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "content": "Refresh with python scripts/generate-fake-den-mcp-catalog.py --mcp-url http://192.168.1.10:5199/mcp --name-prefix mcp_den_ ..."}})
         ],
         {
             "expected_calls": [
@@ -258,7 +252,7 @@ def scenarios(tools_by_name: dict[str, JSON], variant: str = "baseline") -> Iter
         "The user asks for discussion/comment evidence on an existing doc; model should not overwrite the doc.",
         "On the GoblinBench fake-den-mcp-catalog-generator doc, add a discussion comment saying the next run should compare qwen local and deepseek. Don't rewrite the doc body.",
         tools_by_name,
-        [call("mcp_den_comment_on_document", {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "author_identity": "goblinbench-eval", "body_markdown": "Next run should compare qwen local and deepseek.", "comment_kind": "comment"}, {"ok": True, "comment_id": 43001, "thread_id": 44001, "project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator"})],
+        [call("mcp_den_comment_on_document", {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "author_identity": "goblinbench-eval", "body_markdown": "Next run should compare qwen local and deepseek."}, {"ok": True, "comment_id": 43001, "thread_id": 44001, "project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator"})],
         {
             "expected_calls": [{"tool": "mcp_den_comment_on_document", "argument_contains": {"project_id": "goblinbench", "slug": "fake-den-mcp-catalog-generator", "qwen": "qwen"}}],
             "forbidden_tools": ["mcp_den_store_document", "mcp_den_update_document_visibility", "mcp_den_send_message"],

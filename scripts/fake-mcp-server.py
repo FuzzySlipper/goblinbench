@@ -25,6 +25,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from gb.runners import _openai
+
 
 def load_scenario(path: str) -> dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
@@ -58,44 +60,16 @@ def call_tool(
 ) -> dict[str, Any]:
     """Run one stateful canned call without handing out results for bad args."""
     used_indexes = used_indexes if used_indexes is not None else set()
-    tool_names = {t.get("name") for t in tools(scenario)}
-    if name not in tool_names:
-        result = {"ok": False, "error": f"unknown fake tool: {name}"}
-    else:
-        known = False
-        result: dict[str, Any] | None = None
-        for index, call in enumerate(canned_calls(scenario)):
-            if call.get("tool") != name:
-                continue
-            known = True
-            if index in used_indexes:
-                continue
-            expected = call.get("arguments")
-            if isinstance(expected, dict) and not _arguments_match(expected, arguments):
-                result = {
-                    "ok": False,
-                    "error": f"validation failed for fake tool: {name}",
-                    "retryable": True,
-                }
-            else:
-                used_indexes.add(index)
-                value = call.get("result", {"ok": True})
-                result = dict(value) if isinstance(value, dict) else {"result": value}
-            break
-        if result is None:
-            result = {"ok": True, "note": "tool called more times than canned results were provided"} if known else {"ok": True, "note": "no canned result"}
+    result = _openai.execute_fake_tool(
+        name,
+        arguments,
+        canned_calls(scenario),
+        used_indexes,
+        tools(scenario),
+    )
     record(trace_path, {"event": "tools/call", "tool": name, "arguments": arguments, "result": result})
     return result
 
-
-def _arguments_match(expected: dict[str, Any], actual: dict[str, Any]) -> bool:
-    return all(key in actual and _argument_value_matches(value, actual[key]) for key, value in expected.items())
-
-
-def _argument_value_matches(expected: Any, actual: Any) -> bool:
-    if expected == "$any_nonempty_string":
-        return isinstance(actual, str) and bool(actual.strip())
-    return expected == actual
 
 
 def rpc_response(req_id: Any, result: Any = None, error: Any = None) -> dict[str, Any]:
