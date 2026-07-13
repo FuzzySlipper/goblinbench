@@ -1,0 +1,44 @@
+[
+  {
+    "id": "codex-direct-gpt-5-6-luna-medium",
+    "name": "Codex app-server direct — GPT-5.6 Luna (medium)",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-luna",
+    "provider": "codex-app-server",
+    "config": {
+      "runner": "codex-app-server",
+      "socket_path": "/run/user/1001/codex-app-server/app-server.sock",
+      "reasoning_effort": "medium",
+      "turn_start_ack_timeout_seconds": 15,
+      "approval_policy": "never",
+      "network_access": false,
+      "environment": {
+        "name": "codex-app-server-direct",
+        "cost": {
+          "classification": "opaque-subscription",
+          "amount": null,
+          "currency": null,
+          "basis": "Codex subscription; no per-run charge exposed"
+        }
+      }
+    }
+  },
+  {
+    "id": "codex-via-rusty-crew-gpt-5-6-luna-medium",
+    "name": "Codex via Rusty Crew debug — GPT-5.6 Luna (medium)",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-luna",
+    "provider": "rusty-crew",
+    "profile": "tester",
+    "config": {
+      "runner": "rusty-crew",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "runtime_id": "rv-live-codex-5516",
+      "profile_id": "tester",
+      "reasoning_effort": "medium",
+      "poll_interval_seconds": 0.25
+    }
+  }
+]
