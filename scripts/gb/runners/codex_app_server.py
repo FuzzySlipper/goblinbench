@@ -25,6 +25,7 @@ from ..environment import snapshot_sha256
 from ..fsutil import SKIP_DIRS_AGENT, compute_unified_diff, copy_directory, snapshot_directory
 from ..models import CandidateConfig, CandidateResult, ModelIdentity, Scenario, TraceEvent
 from ..serialize import dumps, now_iso
+from .locality import CommandLocalityTracker, task_with_locality_contract
 
 MAX_INLINE_RAW_RESPONSE_CHARS = 32_768
 DEFAULT_SOCKET_PATH = "/run/user/1001/codex-app-server/app-server.sock"
@@ -71,14 +72,14 @@ class EventCapture:
         self.event_count += 1
         if self._handle is None or self.truncated:
             return
-        encoded = (dumps(event) + "\n").encode("utf-8")
+        encoded = (dumps(event, indent=None) + "\n").encode("utf-8")
         if self.bytes_written + len(encoded) > self.max_bytes:
             marker = dumps({
                 "direction": "runner",
                 "event": "event artifact truncated",
                 "max_bytes": self.max_bytes,
                 "events_seen": self.event_count,
-            }) + "\n"
+            }, indent=None) + "\n"
             self._handle.write(marker)
             self._handle.flush()
             self.truncated = True
@@ -120,6 +121,7 @@ class CodexAppServerConfig:
     approval_policy: str
     network_access: bool
     model_provider: str | None
+    sandbox_mode: str
     turn_start_ack_timeout_seconds: float
 
     @classmethod
@@ -136,6 +138,11 @@ class CodexAppServerConfig:
         )
         if turn_start_ack_timeout_seconds <= 0:
             raise ValueError("candidate.config.turn_start_ack_timeout_seconds must be positive.")
+        sandbox_mode = str(cfg.get("sandbox") or "workspace-write")
+        if sandbox_mode not in {"workspace-write", "danger-full-access"}:
+            raise ValueError(
+                "candidate.config.sandbox must be 'workspace-write' or 'danger-full-access'."
+            )
         return cls(
             socket_path=socket_path,
             task=str(cfg.get("task") or ""),
@@ -143,6 +150,7 @@ class CodexAppServerConfig:
             approval_policy=str(cfg.get("approval_policy") or "never"),
             network_access=bool(cfg.get("network_access", False)),
             model_provider=str(cfg.get("model_provider")) if cfg.get("model_provider") else None,
+            sandbox_mode=sandbox_mode,
             turn_start_ack_timeout_seconds=turn_start_ack_timeout_seconds,
         )
 
@@ -193,6 +201,9 @@ class CodexAppServerRunner:
 
             fixture_dest = os.path.join(context.candidate_directory(candidate.id), "fixture")
             copy_directory(fixture_source, fixture_dest, SKIP_DIRS_AGENT)
+            fixture_abs = os.path.abspath(fixture_dest)
+            task = task_with_locality_contract(task, fixture_abs)
+            locality = CommandLocalityTracker(fixture_abs)
             before = snapshot_directory(fixture_dest, SKIP_DIRS_AGENT)
             workspace_hash = snapshot_sha256(before)
             trace.append(TraceEvent(now_iso(), "codex_app_server.fixture.copied", {
@@ -212,10 +223,12 @@ class CodexAppServerRunner:
             server_version: str | None = None
             resolved_model = candidate.model
             resolved_provider = cfg.model_provider or "openai"
+            resolved_effort: str | None = None
 
             with CodexAppServerClient(cfg.socket_path) as client:
                 initialized = client.request("initialize", {
                     "clientInfo": {"name": "goblinbench", "version": "0.1"},
+                    "capabilities": {"experimentalApi": True},
                 }, deadline, events)
                 server_version = _version_from_initialize(initialized)
                 trace.append(TraceEvent(now_iso(), "codex_app_server.initialized", {
@@ -225,12 +238,15 @@ class CodexAppServerRunner:
                 client.notify("initialized", {})
 
                 thread_params: dict[str, Any] = {
-                    "cwd": os.path.abspath(fixture_dest),
+                    "cwd": fixture_abs,
+                    "runtimeWorkspaceRoots": [fixture_abs],
                     "model": candidate.model,
-                    "sandbox": "workspace-write",
+                    "sandbox": cfg.sandbox_mode,
                     "approvalPolicy": cfg.approval_policy,
                     "ephemeral": True,
                 }
+                if cfg.effort:
+                    thread_params["config"] = {"model_reasoning_effort": cfg.effort}
                 if cfg.model_provider:
                     thread_params["modelProvider"] = cfg.model_provider
                 thread_start_deadline = min(deadline, time.monotonic() + cfg.turn_start_ack_timeout_seconds)
@@ -238,6 +254,13 @@ class CodexAppServerRunner:
                 thread_dict = _as_dict(thread)
                 resolved_model = str(thread_dict.get("model") or resolved_model or "unknown")
                 resolved_provider = str(thread_dict.get("modelProvider") or resolved_provider)
+                if thread_dict.get("reasoningEffort") is not None:
+                    resolved_effort = str(thread_dict.get("reasoningEffort"))
+                if cfg.effort and resolved_effort != cfg.effort:
+                    raise RuntimeError(
+                        "Codex thread/start did not resolve the requested reasoning effort: "
+                        f"requested={cfg.effort!r}, resolved={resolved_effort!r}"
+                    )
                 native_thread = _as_dict(thread_dict.get("thread"))
                 server_version = str(native_thread.get("cliVersion") or server_version or "") or None
                 thread_id = _result_id(thread, "thread")
@@ -247,11 +270,10 @@ class CodexAppServerRunner:
                 turn_params: dict[str, Any] = {
                     "threadId": thread_id,
                     "input": [{"type": "text", "text": task}],
-                    "sandboxPolicy": {
-                        "type": "workspaceWrite",
-                        "networkAccess": cfg.network_access,
-                        "writableRoots": [os.path.abspath(fixture_dest)],
-                    },
+                    "cwd": fixture_abs,
+                    "runtimeWorkspaceRoots": [fixture_abs],
+                    "approvalPolicy": cfg.approval_policy,
+                    "sandboxPolicy": _sandbox_policy(cfg, fixture_abs),
                 }
                 if cfg.effort:
                     turn_params["effort"] = cfg.effort
@@ -298,6 +320,9 @@ class CodexAppServerRunner:
                     _collect_agent_text(method, params, assistant_text)
                     _collect_usage(method, params, usage)
                     _collect_activity(params, tool_item_ids, command_item_ids)
+                    item = _as_dict(params.get("item"))
+                    if str(item.get("type") or "") == "commandExecution":
+                        locality.observe(item, method)
                     if method == "turn/completed":
                         completed_turn = _as_dict(params.get("turn")) or params
                         completed_id = _result_id(completed_turn, "turn")
@@ -313,10 +338,13 @@ class CodexAppServerRunner:
             duration_ms = int((time.perf_counter() - started) * 1000)
             produced_changes = bool(files_changed)
             completed = turn_status == "completed" and not timed_out
+            locality_evidence = locality.evidence()
             if timed_out:
                 error = f"Codex turn timed out after {timeout_seconds:g}s."
             elif not completed:
                 error = f"Codex turn completed with status {turn_status!r}."
+            elif not locality.passed:
+                error = f"Codex benchmark locality check failed: {locality_evidence['violations']}"
             elif not produced_changes:
                 error = "Codex turn completed but produced no fixture file changes."
             else:
@@ -335,7 +363,7 @@ class CodexAppServerRunner:
                     base_url=f"unix://{cfg.socket_path}",
                     display_name=f"codex-app-server:{candidate.model}",
                 ),
-                success=completed and produced_changes,
+                success=completed and produced_changes and locality.passed,
                 error=error,
                 duration_ms=duration_ms,
                 raw_response=_truncate(raw_response),
@@ -350,7 +378,10 @@ class CodexAppServerRunner:
                     "socket_path": cfg.socket_path,
                     "transport": "websocket-over-unix",
                     "requested_model": candidate.model,
-                    "reasoning_effort": cfg.effort,
+                    "requested_reasoning_effort": cfg.effort,
+                    "reasoning_effort": resolved_effort,
+                    "sandbox": cfg.sandbox_mode,
+                    "locality": locality_evidence,
                     "timed_out": timed_out,
                 },
                 trace=trace,
@@ -363,7 +394,8 @@ class CodexAppServerRunner:
                         "resolved": resolved_model,
                         "provider_requested": candidate.provider,
                         "provider_resolved": resolved_provider,
-                        "reasoning_effort": cfg.effort,
+                        "requested_reasoning_effort": cfg.effort,
+                        "reasoning_effort": resolved_effort,
                     },
                     "substrate": {
                         "kind": "codex-app-server",
@@ -372,9 +404,14 @@ class CodexAppServerRunner:
                         "transport": "websocket-over-unix",
                         "socket_path": cfg.socket_path,
                     },
-                    "harness": {"workspace_sha256": workspace_hash},
+                    "harness": {
+                        "workspace_sha256": workspace_hash,
+                        "locality": locality_evidence,
+                        "event_artifact_truncated": events.truncated,
+                        "sandbox": cfg.sandbox_mode,
+                    },
                     "execution": {
-                        "runner_status": "completed" if completed and produced_changes else "failed",
+                        "runner_status": "completed" if completed and produced_changes and locality.passed else "failed",
                         "substrate_status": turn_status,
                         "terminal_status": turn_status,
                         "retries": 0,
@@ -592,6 +629,16 @@ def _collect_agent_text(method: str, params: dict[str, Any], text: BoundedTextCa
             value = item.get("text") or item.get("content")
             if isinstance(value, str) and value and not text.parts:
                 text.append(value)
+
+
+def _sandbox_policy(cfg: CodexAppServerConfig, fixture_dir: str) -> dict[str, Any]:
+    if cfg.sandbox_mode == "danger-full-access":
+        return {"type": "dangerFullAccess"}
+    return {
+        "type": "workspaceWrite",
+        "networkAccess": cfg.network_access,
+        "writableRoots": [fixture_dir],
+    }
 
 
 def _collect_usage(method: str, params: dict[str, Any], target: dict[str, Any]) -> None:

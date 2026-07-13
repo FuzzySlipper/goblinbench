@@ -56,12 +56,21 @@ class FakeCrewClient:
                 return {"events": []}
             return {"events": [
                 {
-                    "eventId": "delta", "runtimeId": "debug-runtime", "sequenceId": 1,
+                    "eventId": "pwd", "runtimeId": "debug-runtime", "sequenceId": 1,
+                    "kind": "command_activity", "nativeThreadId": "thread-1", "nativeTurnId": "turn-1",
+                    "itemId": "command-1", "payload": {
+                        "nativeMethod": "item/completed", "command": "/bin/bash -lc pwd",
+                        "cwd": FakeCrewClient.fixture_dir, "output": FakeCrewClient.fixture_dir + "\n",
+                        "status": "completed",
+                    },
+                },
+                {
+                    "eventId": "delta", "runtimeId": "debug-runtime", "sequenceId": 2,
                     "kind": "assistant_text_delta", "nativeThreadId": "thread-1", "nativeTurnId": "turn-1",
                     "payload": {"nativeMethod": "item/agentMessage/delta", "text": "Done."},
                 },
                 {
-                    "eventId": "usage", "runtimeId": "debug-runtime", "sequenceId": 2,
+                    "eventId": "usage", "runtimeId": "debug-runtime", "sequenceId": 3,
                     "kind": "usage", "nativeThreadId": "thread-1", "nativeTurnId": "turn-1",
                     "payload": {"nativeMethod": "thread/tokenUsage/updated", "usage": {
                         "total": {"inputTokens": 100, "cachedInputTokens": 20, "outputTokens": 8,
@@ -70,7 +79,7 @@ class FakeCrewClient:
                     }},
                 },
                 {
-                    "eventId": "terminal", "runtimeId": "debug-runtime", "sequenceId": 3,
+                    "eventId": "terminal", "runtimeId": "debug-runtime", "sequenceId": 4,
                     "kind": "turn_lifecycle", "nativeThreadId": "thread-1", "nativeTurnId": "turn-1",
                     "payload": {"nativeMethod": "turn/completed", "status": "completed"},
                 },
@@ -172,6 +181,9 @@ def test_rusty_crew_runner_uses_supported_session_surfaces_and_standard_contract
     assert result.environment["lane"] == "environment-realized"
     assert result.environment["usage"]["total_tokens"] == 108
     assert result.environment["cost"]["classification"] == "opaque-subscription"
+    assert result.environment["harness"]["locality"]["passed"] is True
+    assert result.environment["harness"]["sandbox"] == "danger-full-access"
+    assert result.environment["model"]["requested_reasoning_effort"] == "medium"
     assert Path(result.artifact_directory or "", "rusty-crew-events.jsonl").is_file()
     assert not (source / "fixed.txt").exists()
 
@@ -179,3 +191,5 @@ def test_rusty_crew_runner_uses_supported_session_surfaces_and_standard_contract
     assert any(method == "POST" and path == "/v1/external-agent-sessions" for method, path, _ in calls)
     assert any(method == "POST" and path.endswith("/messages") for method, path, _ in calls)
     assert all("sqlite" not in path and "database" not in path for _, path, _ in calls)
+    delivered = next(body for method, path, body in calls if method == "POST" and path.endswith("/messages"))
+    assert delivered["body"].startswith("GoblinBench execution-isolation contract:")

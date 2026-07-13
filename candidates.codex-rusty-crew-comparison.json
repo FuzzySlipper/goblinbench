@@ -9,6 +9,7 @@
       "runner": "codex-app-server",
       "socket_path": "/run/user/1001/codex-app-server/app-server.sock",
       "reasoning_effort": "medium",
+      "sandbox": "danger-full-access",
       "turn_start_ack_timeout_seconds": 15,
       "approval_policy": "never",
       "network_access": false,

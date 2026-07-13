@@ -23,6 +23,7 @@ from ..environment import json_sha256, snapshot_sha256
 from ..fsutil import SKIP_DIRS_AGENT, compute_unified_diff, copy_directory, snapshot_directory
 from ..models import CandidateConfig, CandidateResult, ModelIdentity, Scenario, TraceEvent
 from ..serialize import dumps, now_iso
+from .locality import CommandLocalityTracker, task_with_locality_contract
 
 DEFAULT_DEBUG_BASE_URL = "http://127.0.0.1:9348"
 DEFAULT_DEBUG_SERVICE_UNIT = "rusty-crew-debug.service"
@@ -166,6 +167,9 @@ class RustyCrewRunner:
                 return fail(f"Fixture directory not found: {fixture_source}")
             fixture_dest = os.path.join(context.candidate_directory(candidate.id), "fixture")
             copy_directory(fixture_source, fixture_dest, SKIP_DIRS_AGENT)
+            fixture_abs = os.path.abspath(fixture_dest)
+            task = task_with_locality_contract(task, fixture_abs)
+            locality = CommandLocalityTracker(fixture_abs)
             before = snapshot_directory(fixture_dest, SKIP_DIRS_AGENT)
             workspace_hash = snapshot_sha256(before)
             trace.append(TraceEvent(now_iso(), "rusty_crew.fixture.copied", {
@@ -203,7 +207,7 @@ class RustyCrewRunner:
                 "idempotencyKey": f"{identity}:create",
                 "runtimeId": cfg.runtime_id,
                 "profileId": cfg.profile_id,
-                "cwd": os.path.abspath(fixture_dest),
+                "cwd": fixture_abs,
                 "label": f"GoblinBench {scenario.id} / {candidate.id}",
             }, _remaining(deadline))
             creation_state = _dict(creation.get("creation"))
@@ -240,6 +244,11 @@ class RustyCrewRunner:
             resolved_model = str(settings.get("model") or resolved_model or candidate.model or "unknown")
             resolved_provider = str(settings.get("modelProvider") or "openai")
             resolved_effort = settings.get("effort")
+            if cfg.effort and resolved_effort != cfg.effort:
+                raise RustyCrewApiError(
+                    "Rusty Crew did not resolve the requested reasoning effort: "
+                    f"requested={cfg.effort!r}, resolved={resolved_effort!r}"
+                )
 
             delivery = client.post(f"/v1/external-bindings/{_quote(binding_id)}/messages", {
                 "deliveryId": f"{identity}:delivery",
@@ -258,7 +267,13 @@ class RustyCrewRunner:
                 client, cfg.runtime_id, cursor, native_thread_id, native_turn_id,
                 deadline, cfg.poll_interval_seconds,
             )
-            _write_jsonl_bounded(artifact_dir / "rusty-crew-events.jsonl", events)
+            events_truncated = _write_jsonl_bounded(artifact_dir / "rusty-crew-events.jsonl", events)
+            for event in events:
+                if event.get("kind") != "command_activity":
+                    continue
+                command = dict(_dict(event.get("payload")))
+                command["itemId"] = event.get("itemId")
+                locality.observe(command, str(command.get("nativeMethod") or ""))
             assistant_text = _assistant_text(events)
             (artifact_dir / "rusty-crew-response.txt").write_text(assistant_text, encoding="utf-8")
 
@@ -271,9 +286,12 @@ class RustyCrewRunner:
             produced_changes = bool(diff.files_changed)
             usage = _usage(events)
             tool_calls, command_cycles = _activity_counts(events)
+            locality_evidence = locality.evidence()
 
             if not completed:
                 error = f"Rusty Crew external turn completed with phase {terminal_phase!r}."
+            elif not locality.passed:
+                error = f"Rusty Crew benchmark locality check failed: {locality_evidence['violations']}"
             elif not produced_changes:
                 error = "Rusty Crew external turn completed but produced no fixture file changes."
             else:
@@ -286,6 +304,7 @@ class RustyCrewRunner:
                     "resolved": resolved_model,
                     "provider_requested": candidate.provider,
                     "provider_resolved": resolved_provider,
+                    "requested_reasoning_effort": cfg.effort,
                     "reasoning_effort": resolved_effort,
                 },
                 "substrate": {
@@ -308,9 +327,14 @@ class RustyCrewRunner:
                     "tool_catalog_sha256": tool_hash,
                     "local_tool_profile_id": profile.get("localToolProfileId"),
                 },
-                "harness": {"workspace_sha256": workspace_hash},
+                "harness": {
+                    "workspace_sha256": workspace_hash,
+                    "locality": locality_evidence,
+                    "event_artifact_truncated": events_truncated,
+                    "sandbox": "danger-full-access",
+                },
                 "execution": {
-                    "runner_status": "completed" if completed and produced_changes else "failed",
+                    "runner_status": "completed" if completed and produced_changes and locality.passed else "failed",
                     "substrate_status": terminal_phase,
                     "terminal_status": terminal_phase,
                     "retries": 0,
@@ -349,7 +373,7 @@ class RustyCrewRunner:
                     base_url=cfg.base_url,
                     display_name=f"rusty-crew:{cfg.profile_id}:{resolved_model}",
                 ),
-                success=completed and produced_changes,
+                success=completed and produced_changes and locality.passed,
                 error=error,
                 duration_ms=duration_ms,
                 raw_response=assistant_text[:MAX_RESPONSE_CHARS],
@@ -367,7 +391,9 @@ class RustyCrewRunner:
                     "turn_status": terminal_phase,
                     "requested_model": candidate.model,
                     "resolved_model": resolved_model,
+                    "requested_reasoning_effort": cfg.effort,
                     "reasoning_effort": resolved_effort,
+                    "locality": locality_evidence,
                     "timed_out": False,
                 },
                 trace=trace,
@@ -533,7 +559,7 @@ def _activity_counts(events: list[dict[str, Any]]) -> tuple[int, int]:
     return len(tool_ids), len(command_ids)
 
 
-def _write_jsonl_bounded(path: Path, events: list[dict[str, Any]]) -> None:
+def _write_jsonl_bounded(path: Path, events: list[dict[str, Any]]) -> bool:
     written = 0
     with path.open("w", encoding="utf-8") as handle:
         for event in events:
@@ -541,9 +567,10 @@ def _write_jsonl_bounded(path: Path, events: list[dict[str, Any]]) -> None:
             size = len(line.encode("utf-8"))
             if written + size > MAX_EVENT_ARTIFACT_BYTES:
                 handle.write(dumps({"event": "truncated", "max_bytes": MAX_EVENT_ARTIFACT_BYTES}, indent=None) + "\n")
-                break
+                return True
             handle.write(line)
             written += size
+    return False
 
 
 def _remaining(deadline: float) -> float:

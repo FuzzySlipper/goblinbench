@@ -111,6 +111,15 @@ def filter_candidates_by_id(
     return [c for c in candidates if c.id.lower() in wanted]
 
 
+def order_candidates(candidates: list[CandidateConfig], order: str) -> list[CandidateConfig]:
+    """Return the configured order or its explicit reverse for order-effect checks."""
+    if order == "configured":
+        return list(candidates)
+    if order == "reverse":
+        return list(reversed(candidates))
+    raise ValueError(f"unsupported candidate order: {order}")
+
+
 def _scenario_context(base: RunContext, scenario_id: str) -> RunContext:
     return RunContext(
         run_id=base.run_id,
@@ -186,6 +195,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scenario")
     parser.add_argument("--candidates", help="path to candidates.json (default: repo candidates.json)")
     parser.add_argument("--candidate", action="append", default=[], help="candidate id (repeatable / comma-sep)")
+    parser.add_argument(
+        "--candidate-order", choices=("configured", "reverse"), default="configured",
+        help="candidate execution order (use reverse to expose order effects)",
+    )
     parser.add_argument("--skip-scenario", "--exclude-scenario", dest="skip_scenario", action="append", default=[],
                         help="scenario id to skip (repeatable / comma-sep)")
     args = parser.parse_args(argv)
@@ -237,11 +250,17 @@ def main(argv: list[str] | None = None) -> int:
     print()
 
     # Load + filter candidates.
-    candidates = filter_candidates_by_id(load_candidates(candidates_file), args.candidate)
+    candidates = order_candidates(
+        filter_candidates_by_id(load_candidates(candidates_file), args.candidate),
+        args.candidate_order,
+    )
     if not candidates:
         print("Error: no candidates matched --candidate filter.", file=sys.stderr)
         return 1
-    print(f"Candidates: {len(candidates)} (from {os.path.basename(candidates_file)})")
+    print(
+        f"Candidates: {len(candidates)} (from {os.path.basename(candidates_file)}; "
+        f"order={args.candidate_order})"
+    )
     for c in candidates:
         print(f"  - {c.id} ({c.kind.value})")
     print()
@@ -254,6 +273,10 @@ def main(argv: list[str] | None = None) -> int:
         runs_root=runs_root,
         repo_root=repo_root,
         label=f"CLI run {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        metadata={
+            "candidate_order": args.candidate_order,
+            "candidate_ids": [candidate.id for candidate in candidates],
+        },
     )
     os.makedirs(run_dir, exist_ok=True)
 
@@ -264,6 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         run_id=run_id,
         started_at=base_context.started_at,
         label=base_context.label,
+        metadata=dict(base_context.metadata),
     )
 
     for scenario in scenarios:

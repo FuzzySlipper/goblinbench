@@ -48,11 +48,25 @@ class FakeCodexClient:
             return {"serverInfo": {"version": "test"}}
         if method == "thread/start":
             self.fixture_dir = params["cwd"]
-            return {"thread": {"id": "thread-1"}}
+            return {
+                "thread": {"id": "thread-1"},
+                "model": params["model"],
+                "modelProvider": "openai",
+                "reasoningEffort": params["config"]["model_reasoning_effort"],
+            }
         if method == "turn/start":
             fixture = Path(self.fixture_dir)
             (fixture / "fixed.txt").write_text("fixed by fake Codex\n", encoding="utf-8")
+            command = "/bin/bash -lc pwd"
             self.events = [
+                {"method": "item/started", "params": {"item": {
+                    "id": "command-1", "type": "commandExecution", "command": command,
+                    "cwd": self.fixture_dir, "status": "inProgress",
+                }}},
+                {"method": "item/completed", "params": {"item": {
+                    "id": "command-1", "type": "commandExecution", "command": command,
+                    "cwd": self.fixture_dir, "status": "completed", "output": self.fixture_dir + "\n",
+                }}},
                 {"method": "item/agentMessage/delta", "params": {"delta": "I fixed it."}},
                 {"method": "turn/completed", "params": {"turn": {"id": "turn-1", "status": "completed"}}},
             ]
@@ -138,7 +152,10 @@ def test_codex_runner_uses_fixture_copy_and_returns_standard_coding_contract(mon
     candidate = CandidateConfig(
         id="codex-candidate", name="Codex Test", kind=CandidateKind.CodingAgent,
         model="gpt-5.6-terra", provider="codex-app-server",
-        config={"runner": "codex-app-server", "socket_path": str(socket_path), "reasoning_effort": "medium"},
+        config={
+            "runner": "codex-app-server", "socket_path": str(socket_path),
+            "reasoning_effort": "medium", "sandbox": "danger-full-access",
+        },
     )
 
     result = CodexAppServerRunner().run(scenario, candidate, context, timeout=30)
@@ -150,20 +167,26 @@ def test_codex_runner_uses_fixture_copy_and_returns_standard_coding_contract(mon
     assert (source / "fixed.txt").exists() is False
     assert result.output["turn_status"] == "completed"
     assert result.output["transport"] == "websocket-over-unix"
+    assert result.output["locality"]["passed"] is True
+    assert result.output["reasoning_effort"] == "medium"
     artifact_dir = Path(result.artifact_directory or "")
     assert (artifact_dir / "agent.patch").is_file()
     assert (artifact_dir / "codex-events.jsonl").is_file()
 
     client = FakeCodexClient.instances[0]
     assert [name for name, _ in client.requests] == ["initialize", "thread/start", "turn/start"]
+    assert client.requests[0][1]["capabilities"] == {"experimentalApi": True}
     assert client.notifications == [("initialized", {})]
     thread_params = client.requests[1][1]
     assert thread_params["ephemeral"] is True
     assert thread_params["approvalPolicy"] == "never"
+    assert thread_params["sandbox"] == "danger-full-access"
+    assert thread_params["runtimeWorkspaceRoots"] == [result.output["fixture_dir"]]
+    assert thread_params["config"] == {"model_reasoning_effort": "medium"}
     turn_params = client.requests[2][1]
     assert turn_params["effort"] == "medium"
-    assert turn_params["sandboxPolicy"] == {
-        "type": "workspaceWrite",
-        "networkAccess": False,
-        "writableRoots": [result.output["fixture_dir"]],
-    }
+    assert turn_params["cwd"] == result.output["fixture_dir"]
+    assert turn_params["runtimeWorkspaceRoots"] == [result.output["fixture_dir"]]
+    assert turn_params["input"][0]["text"].startswith("GoblinBench execution-isolation contract:")
+    assert turn_params["approvalPolicy"] == "never"
+    assert turn_params["sandboxPolicy"] == {"type": "dangerFullAccess"}

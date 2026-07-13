@@ -13,10 +13,11 @@
 
 ## Isolation and artifacts
 
-For each candidate/scenario run, the runner copies the declared fixture into the candidate artifact tree and makes that host path the Codex thread CWD and sole declared writable root. It records:
+For each candidate/scenario run, the runner copies the declared fixture into the candidate artifact tree. The absolute copied-fixture path is sent as both `cwd` and `runtimeWorkspaceRoots` on `thread/start` **and** `turn/start`; under the default `workspace-write` sandbox it is also the sole declared writable root. The runner prepends a symmetric execution-isolation contract requiring the first command to be standalone `pwd`. A cell fails unless the completed command output exactly matches the copied fixture and every command CWD exposed by the protocol remains under it. It records:
 
 - copied fixture path and final workspace diff;
-- requested model, effort, thread ID, turn ID, status, duration, and timeout state;
+- requested and app-server-resolved model/effort, thread ID, turn ID, status,
+  duration, and timeout state;
 - bounded raw protocol evidence in `artifacts/codex-events.jsonl`;
 - bounded agent text in `artifacts/codex-response.txt`;
 - `artifacts/agent.patch`;
@@ -24,7 +25,17 @@ For each candidate/scenario run, the runner copies the declared fixture into the
   model/provider, app-server version, token usage, workspace hash, and activity
   counts exposed by the protocol.
 
+Requested reasoning effort is supplied in the thread configuration as well as
+the turn override. The runner requires `thread/start.reasoningEffort` to equal
+the request before benchmark work begins, preventing a default-effort thread
+from being mislabeled as the comparison effort.
+
 The app-server is not restarted or reconfigured by benchmark runs.
+
+The direct runner defaults to `workspace-write`. Direct-versus-Crew candidate
+matrices explicitly select `danger-full-access`, matching Rusty Crew's current
+external-turn sandbox policy; the locality preflight remains mandatory and is
+the comparison harness's fail-closed guard against a wrong working directory.
 
 ## Resource-safety contract
 
