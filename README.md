@@ -143,6 +143,7 @@ python3 scripts/gb-report.py --suite coding --view grid \
   --out /tmp/grid.html
 python3 scripts/gb-report.py --runs <run-id> --view failures --out /tmp/failures.html
 python3 scripts/gb-report.py --model glm52 --view cell --out /tmp/cell.html
+python3 scripts/gb-report.py --runs <run-id> --view environment --out /tmp/environments.html
 ```
 
 ## CLI reference
@@ -151,7 +152,7 @@ python3 scripts/gb-report.py --model glm52 --view cell --out /tmp/cell.html
 |---|---|
 | `scripts/gb-run.py` | **Run scenarios against candidates.** Writes `runs/<id>/` + ingests into the store. |
 | `scripts/gb-store.py` | **Manage the canonical store.** `status` / `list` / `get` / `import` / `delete` / `label` / `prune` / `vacuum`. See [`docs/storage-and-reporting.md`](docs/storage-and-reporting.md). |
-| `scripts/gb-report.py` | **Generate static HTML reports.** Views: `grid` (model×scenario), `failures` (triage), `cell` (deep-dive). Narrative slot for LLM prose. |
+| `scripts/gb-report.py` | **Generate static HTML reports.** Views: `grid` (candidate×scenario, lane-separated), `failures` (triage), `cell` (deep-dive), `environment` (provenance/cost comparison). Narrative slot for LLM prose. |
 | `scripts/gb-score.py` | **Post-run scorer pipeline.** Runs the `scripts/scorers/*.py` plugins (coding-tests, structure-metrics, maintainability-metrics) and merges results back into `run.json`. Auto-invoked by `gb-run.py`. |
 | `scripts/gb-results.py` | Legacy query CLI over the old `goblinbench-results.sqlite` index. Still works for ad-hoc SQL-style queries; `gb-store` is the maintained path going forward. |
 

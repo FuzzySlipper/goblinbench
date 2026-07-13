@@ -55,6 +55,9 @@ def build_filters(args: argparse.Namespace) -> tuple[str, list]:
     if args.provider:
         where.append("cr.provider = ?")
         params.append(args.provider)
+    if args.lane:
+        where.append("cr.lane = ?")
+        params.append(args.lane)
     if args.passing_only:
         where.append("cr.primary_passed = 1")
     if args.failing_only:
@@ -69,7 +72,8 @@ def fetch_cells(conn, args: argparse.Namespace) -> list[dict]:
                cr.candidate_id, cr.candidate_name, cr.candidate_kind, cr.model, cr.provider,
                cr.base_url, cr.display_name, cr.success, cr.error, cr.duration_ms,
                cr.artifact_directory, cr.primary_scorer_id, cr.primary_score, cr.primary_passed,
-               cr.primary_summary, cr.primary_explanation, cr.failure_categories_json
+               cr.primary_summary, cr.primary_explanation, cr.lane, cr.environment_name,
+               cr.cost_classification, cr.environment_json, cr.failure_categories_json
         FROM candidate_results cr
         {where_sql}
         ORDER BY cr.run_id DESC, cr.suite, cr.scenario_id, cr.model
@@ -110,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scenario")
     parser.add_argument("--model", help="model OR candidate_id")
     parser.add_argument("--provider")
+    parser.add_argument("--lane", choices=("model-core", "environment-realized"))
     parser.add_argument("--passing-only", action="store_true")
     parser.add_argument("--failing-only", action="store_true")
     parser.add_argument("--limit", type=int, default=500, help="max cells (default 500)")
@@ -138,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     ctx = ViewContext(
         conn=conn, cells=cells,
         filters={k: v for k, v in vars(args).items()
-                 if k in ("runs", "suite", "scenario", "model", "provider") and v},
+                 if k in ("runs", "suite", "scenario", "model", "provider", "lane") and v},
         repo_root=str(paths.repo_root),
         embed=args.embed,
     )

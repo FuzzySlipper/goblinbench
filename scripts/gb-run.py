@@ -39,6 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from gb import discovery  # noqa: E402
 from gb.context import RunContext  # noqa: E402
+from gb.environment import finalize_environment, refresh_environment_outcomes  # noqa: E402
 from gb.models import (  # noqa: E402
     CandidateConfig,
     CandidateKind,
@@ -147,6 +148,16 @@ def _run_candidate(
                     error=str(ex),
                 )
             )
+
+    result.environment = finalize_environment(
+        candidate, scenario, getattr(runner, "name", type(runner).__name__), result
+    )
+    environment_path = os.path.join(
+        context.candidate_artifacts_directory(candidate.id), "environment.json"
+    )
+    os.makedirs(os.path.dirname(environment_path), exist_ok=True)
+    with open(environment_path, "w", encoding="utf-8") as f:
+        f.write(dumps(result.environment))
 
     # Write scores.json artifact.
     scores_path = context.candidate_scores_path(candidate.id)
@@ -329,6 +340,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {ex}")
         else:
             del run_result_dump  # not used further; run.json on disk is authoritative
+
+    # Post-processors can add or replace scorer results. Refresh the stable
+    # environment outcome only after that pipeline so run.json, the artifact,
+    # and the canonical store all retain the same scored truth.
+    with open(run_json_path, "r", encoding="utf-8") as f:
+        scored_run = json.load(f)
+    environment_artifacts = refresh_environment_outcomes(scored_run)
+    with open(run_json_path, "w", encoding="utf-8") as f:
+        f.write(dumps(scored_run))
+    for artifact_directory, environment in environment_artifacts:
+        artifact_path = os.path.join(artifact_directory, "environment.json")
+        os.makedirs(os.path.dirname(artifact_path), exist_ok=True)
+        with open(artifact_path, "w", encoding="utf-8") as f:
+            f.write(dumps(environment))
 
     # Ingest the finished run into the canonical SQLite store (inline artifacts
     # + scores + representative samples). The DB is the durable record; the

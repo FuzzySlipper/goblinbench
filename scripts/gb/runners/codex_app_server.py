@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from ..context import RunContext
+from ..environment import snapshot_sha256
 from ..fsutil import SKIP_DIRS_AGENT, compute_unified_diff, copy_directory, snapshot_directory
 from ..models import CandidateConfig, CandidateResult, ModelIdentity, Scenario, TraceEvent
 from ..serialize import dumps, now_iso
@@ -193,6 +194,7 @@ class CodexAppServerRunner:
             fixture_dest = os.path.join(context.candidate_directory(candidate.id), "fixture")
             copy_directory(fixture_source, fixture_dest, SKIP_DIRS_AGENT)
             before = snapshot_directory(fixture_dest, SKIP_DIRS_AGENT)
+            workspace_hash = snapshot_sha256(before)
             trace.append(TraceEvent(now_iso(), "codex_app_server.fixture.copied", {
                 "source": fixture_source, "destination": fixture_dest,
             }))
@@ -204,11 +206,18 @@ class CodexAppServerRunner:
             turn_id = ""
             turn_status = "failed"
             timed_out = False
+            usage: dict[str, Any] = {}
+            tool_item_ids: set[str] = set()
+            command_item_ids: set[str] = set()
+            server_version: str | None = None
+            resolved_model = candidate.model
+            resolved_provider = cfg.model_provider or "openai"
 
             with CodexAppServerClient(cfg.socket_path) as client:
                 initialized = client.request("initialize", {
                     "clientInfo": {"name": "goblinbench", "version": "0.1"},
                 }, deadline, events)
+                server_version = _version_from_initialize(initialized)
                 trace.append(TraceEvent(now_iso(), "codex_app_server.initialized", {
                     "socket_path": cfg.socket_path,
                     "server": initialized,
@@ -226,6 +235,11 @@ class CodexAppServerRunner:
                     thread_params["modelProvider"] = cfg.model_provider
                 thread_start_deadline = min(deadline, time.monotonic() + cfg.turn_start_ack_timeout_seconds)
                 thread = client.request("thread/start", thread_params, thread_start_deadline, events)
+                thread_dict = _as_dict(thread)
+                resolved_model = str(thread_dict.get("model") or resolved_model or "unknown")
+                resolved_provider = str(thread_dict.get("modelProvider") or resolved_provider)
+                native_thread = _as_dict(thread_dict.get("thread"))
+                server_version = str(native_thread.get("cliVersion") or server_version or "") or None
                 thread_id = _result_id(thread, "thread")
                 if not thread_id:
                     raise RuntimeError(f"Codex thread/start did not return a thread id: {thread}")
@@ -282,6 +296,8 @@ class CodexAppServerRunner:
                     method = str(message.get("method") or "")
                     params = _as_dict(message.get("params"))
                     _collect_agent_text(method, params, assistant_text)
+                    _collect_usage(method, params, usage)
+                    _collect_activity(params, tool_item_ids, command_item_ids)
                     if method == "turn/completed":
                         completed_turn = _as_dict(params.get("turn")) or params
                         completed_id = _result_id(completed_turn, "turn")
@@ -314,8 +330,8 @@ class CodexAppServerRunner:
                 candidate_name=candidate.name,
                 candidate_kind=candidate.kind,
                 model_identity=ModelIdentity(
-                    model=candidate.model,
-                    provider=candidate.provider or self.name,
+                    model=resolved_model,
+                    provider=resolved_provider,
                     base_url=f"unix://{cfg.socket_path}",
                     display_name=f"codex-app-server:{candidate.model}",
                 ),
@@ -339,6 +355,35 @@ class CodexAppServerRunner:
                 },
                 trace=trace,
                 artifact_directory=artifact_dir,
+                environment={
+                    "lane": "environment-realized",
+                    "name": "codex-app-server-direct",
+                    "model": {
+                        "requested": candidate.model,
+                        "resolved": resolved_model,
+                        "provider_requested": candidate.provider,
+                        "provider_resolved": resolved_provider,
+                        "reasoning_effort": cfg.effort,
+                    },
+                    "substrate": {
+                        "kind": "codex-app-server",
+                        "name": "codex-app-server-direct",
+                        "version": server_version,
+                        "transport": "websocket-over-unix",
+                        "socket_path": cfg.socket_path,
+                    },
+                    "harness": {"workspace_sha256": workspace_hash},
+                    "execution": {
+                        "runner_status": "completed" if completed and produced_changes else "failed",
+                        "substrate_status": turn_status,
+                        "terminal_status": turn_status,
+                        "retries": 0,
+                        "tool_calls": len(tool_item_ids),
+                        "command_cycles": len(command_item_ids),
+                    },
+                    "usage": _normalized_usage(usage),
+                    "identifiers": {"native_thread_id": thread_id, "native_turn_id": turn_id},
+                },
             )
         except Exception as exc:  # runner boundary: preserve a bounded, non-secret failure artifact
             events.record({"direction": "runner", "event": "runner failure", "error": str(exc)})
@@ -547,6 +592,55 @@ def _collect_agent_text(method: str, params: dict[str, Any], text: BoundedTextCa
             value = item.get("text") or item.get("content")
             if isinstance(value, str) and value and not text.parts:
                 text.append(value)
+
+
+def _collect_usage(method: str, params: dict[str, Any], target: dict[str, Any]) -> None:
+    if method != "thread/tokenUsage/updated":
+        return
+    token_usage = _as_dict(params.get("tokenUsage"))
+    total = _as_dict(token_usage.get("total"))
+    if total:
+        target.clear()
+        target.update(total)
+        target["modelContextWindow"] = token_usage.get("modelContextWindow")
+
+
+def _collect_activity(
+    params: dict[str, Any], tool_item_ids: set[str], command_item_ids: set[str]
+) -> None:
+    item = _as_dict(params.get("item"))
+    item_id = item.get("id")
+    item_type = str(item.get("type") or "")
+    if not isinstance(item_id, str) or not item_id:
+        return
+    if item_type == "commandExecution":
+        command_item_ids.add(item_id)
+    elif item_type in {"dynamicToolCall", "mcpToolCall", "webSearch", "imageView", "collabToolCall"}:
+        tool_item_ids.add(item_id)
+
+
+def _normalized_usage(value: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "input_tokens": value.get("inputTokens"),
+        "cached_input_tokens": value.get("cachedInputTokens"),
+        "output_tokens": value.get("outputTokens"),
+        "reasoning_output_tokens": value.get("reasoningOutputTokens"),
+        "total_tokens": value.get("totalTokens"),
+        "model_context_window": value.get("modelContextWindow"),
+    }
+
+
+def _version_from_initialize(value: Any) -> str | None:
+    initialized = _as_dict(value)
+    server = _as_dict(initialized.get("serverInfo"))
+    version = server.get("version") or initialized.get("version")
+    if isinstance(version, str) and version:
+        return version
+    user_agent = initialized.get("userAgent")
+    if isinstance(user_agent, str) and "/" in user_agent:
+        candidate = user_agent.split("/", 1)[1].split(" ", 1)[0]
+        return candidate or None
+    return None
 
 
 def _result_id(value: Any, kind: str) -> str:

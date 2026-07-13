@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
-from . import ViewContext, ViewResult, fetch_artifact_bytes, fetch_samples, register
+from . import ViewContext, ViewResult, environment_for_cell, fetch_artifact_bytes, fetch_samples, register
 from ..envelope import esc
 
 
@@ -20,41 +20,50 @@ def render(ctx: ViewContext) -> ViewResult:
     if not cells:
         return ViewResult(title="Grid (no data)", html="<p>No cells matched the filters.</p>")
 
-    # Group: model → scenario → cell.
-    models: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    # Group by lane and candidate. The candidate identity is intentional: two
+    # environments running the same model must never overwrite/merge each other.
+    lanes: dict[str, dict[str, dict[str, dict[str, Any]]]] = defaultdict(lambda: defaultdict(dict))
     scenarios_seen: list[str] = []
     seen_scen: set[str] = set()
     for c in cells:
-        model = c.get("model") or c.get("candidate_id") or "?"
+        lane = c.get("lane") or "model-core"
+        candidate_key = c.get("candidate_id") or c.get("display_name") or c.get("model") or "?"
         sid = c.get("scenario_id") or "?"
-        models[model][sid] = c
+        lanes[lane][candidate_key][sid] = c
         if sid not in seen_scen:
             seen_scen.add(sid)
             scenarios_seen.append(sid)
 
-    # Header: model + aggregate + one column per scenario.
+    # Header: environment/candidate + aggregate + one column per scenario.
     scen_headers = "".join(f"<th>{esc(_short_scenario(s))}</th>" for s in scenarios_seen)
-    rows: list[str] = []
-    for model in sorted(models, key=lambda m: _model_sort_key(models[m])):
-        model_cells = models[model]
-        total = len(model_cells)
-        passed = sum(1 for c in model_cells.values() if (c.get("primary_passed") or 0))
-        rate = f"{100*passed/total:.0f}%" if total else "—"
-        scen_cells = "".join(_render_grid_cell(ctx, model_cells.get(s)) for s in scenarios_seen)
-        rows.append(
-            f"<tr><td><b>{esc(model)}</b><br><span class='muted'>{esc(model_cells[next(iter(model_cells))].get('provider') or '')}</span></td>"
-            f"<td class='num'><b>{rate}</b><br><span class='muted'>{passed}/{total}</span></td>"
-            f"{scen_cells}</tr>"
+    sections: list[str] = []
+    for lane in ("model-core", "environment-realized"):
+        candidates = lanes.get(lane)
+        if not candidates:
+            continue
+        rows: list[str] = []
+        for candidate_key in sorted(candidates, key=lambda key: _model_sort_key(candidates[key])):
+            model_cells = candidates[candidate_key]
+            first = model_cells[next(iter(model_cells))]
+            total = len(model_cells)
+            passed = sum(1 for c in model_cells.values() if (c.get("primary_passed") or 0))
+            rate = f"{100*passed/total:.0f}%" if total else "—"
+            scen_cells = "".join(_render_grid_cell(ctx, model_cells.get(s)) for s in scenarios_seen)
+            rows.append(
+                f"<tr><td><b>{esc(candidate_key)}</b><br>"
+                f"<span class='muted'>{esc(first.get('environment_name') or '')} · "
+                f"{esc(first.get('model') or '')}</span></td>"
+                f"<td class='num'><b>{rate}</b><br><span class='muted'>{passed}/{total}</span></td>"
+                f"{scen_cells}</tr>"
+            )
+        sections.append(
+            f"<h3>{esc(lane)}</h3><table><thead><tr><th>candidate / environment / model</th>"
+            f"<th class='num'>pass</th>{scen_headers}</thead><tbody>{''.join(rows)}</tbody></table>"
         )
 
     html = f"""
-<h2>Model × scenario grid</h2>
-<table>
-<thead><tr><th>model</th><th class="num">pass</th>{scen_headers}</thead>
-<tbody>
-{''.join(rows)}
-</tbody>
-</table>
+<h2>Lane-aware candidate × scenario grid</h2>
+{''.join(sections)}
 <p class="muted">Click a cell for score breakdown and embedded artifacts. Green = pass, red = fail, — = no result.</p>
 """
     return ViewResult(title="Grid comparison", html=html)
@@ -83,6 +92,11 @@ def _render_cell_details(ctx: ViewContext, cell: dict[str, Any]) -> str:
     parts: list[str] = []
     summary = cell.get("primary_summary") or cell.get("error") or "(no summary)"
     parts.append(f"<div class='muted'>{esc(summary)}</div>")
+    env = environment_for_cell(cell)
+    parts.append(
+        f"<div class='muted'>lane: {esc(env.get('lane'))} · environment: {esc(env.get('name'))} · "
+        f"cost: {esc((env.get('cost') or {}).get('classification'))}</div>"
+    )
     if cell.get("failure_categories_json"):
         import json
         cats = json.loads(cell["failure_categories_json"])

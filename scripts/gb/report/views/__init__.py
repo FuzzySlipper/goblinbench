@@ -82,6 +82,21 @@ def fetch_samples(ctx: ViewContext, cr_id: int, kind: str | None = None) -> list
     )]
 
 
+def environment_for_cell(cell: dict[str, Any]) -> dict[str, Any]:
+    """Parse the stable environment envelope, including legacy fallbacks."""
+    import json
+    try:
+        value = json.loads(cell.get("environment_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        value = {}
+    if not isinstance(value, dict):
+        value = {}
+    value.setdefault("lane", cell.get("lane") or "model-core")
+    value.setdefault("name", cell.get("environment_name") or "legacy-unclassified")
+    value.setdefault("cost", {"classification": cell.get("cost_classification") or "unavailable"})
+    return value
+
+
 # Registry populated in __init__ after view modules are imported.
 VIEW_REGISTRY: dict[str, dict[str, Any]] = {}
 
@@ -91,9 +106,9 @@ def register(view_id: str, name: str, description: str, render: Callable[[ViewCo
 
 
 # Import view modules for their side-effects (they call register() at import).
-from . import grid_view, failures_view, cell_view  # noqa: E402,F401  (registration side-effect)
+from . import grid_view, failures_view, cell_view, environment_view  # noqa: E402,F401  (registration side-effect)
 
 __all__ = [
     "ViewContext", "ViewResult", "VIEW_REGISTRY", "register",
-    "fetch_artifact_bytes", "fetch_samples", "open_db",
+    "fetch_artifact_bytes", "fetch_samples", "environment_for_cell", "open_db",
 ]

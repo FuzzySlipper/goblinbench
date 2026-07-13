@@ -114,6 +114,18 @@ def test_repo_root_detection_no_longer_requires_dotnet_src() -> None:
     assert not (root / "src").exists()
 
 
+def test_storage_v3_migration_adds_environment_columns_to_existing_table() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("CREATE TABLE candidate_results (id INTEGER PRIMARY KEY)")
+        gb_store_core._migrate_schema(conn)
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(candidate_results)")}
+        assert {"lane", "environment_name", "cost_classification", "environment_json"} <= columns
+    finally:
+        conn.close()
+
+
 def test_ingest_run_is_idempotent_and_inlines_clickthrough_artifacts(fake_repo: DbPaths) -> None:
     run_json = write_run(fake_repo.repo_root)
     conn = open_db(fake_repo.db_path)
@@ -205,6 +217,47 @@ def test_report_generates_html_from_store(monkeypatch: pytest.MonkeyPatch, tmp_p
     assert "scripted" in html
     assert 'name="viewport"' in html
     assert "Swipe table" in html
+
+
+def test_store_and_environment_report_preserve_lane_provenance(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_repo: DbPaths,
+) -> None:
+    gb_report_cli = load_cli_module("gb-report.py", "gb_report_cli_for_environment_test")
+    patch_cli_paths(monkeypatch, fake_repo, gb_report_cli)
+    run_json = write_run(fake_repo.repo_root)
+    run = json.loads(run_json.read_text(encoding="utf-8"))
+    result = run["results"][0]["candidate_results"][0]
+    result["environment"] = {
+        "schema_version": "1",
+        "lane": "environment-realized",
+        "name": "rusty-crew-debug",
+        "profile": {"id": "tester", "tool_catalog_sha256": "abc"},
+        "usage": {"input_tokens": 100, "output_tokens": 10, "total_tokens": 110},
+        "cost": {"classification": "opaque-subscription", "amount": None, "currency": None, "basis": "subscription"},
+    }
+    run_json.write_text(json.dumps(run), encoding="utf-8")
+    conn = open_db(fake_repo.db_path)
+    try:
+        ingest_run(conn, run_json, fake_repo.repo_root)
+        row = conn.execute(
+            "SELECT lane, environment_name, cost_classification, environment_json FROM candidate_results"
+        ).fetchone()
+        assert row["lane"] == "environment-realized"
+        assert row["environment_name"] == "rusty-crew-debug"
+        assert row["cost_classification"] == "opaque-subscription"
+        assert json.loads(row["environment_json"])["profile"]["id"] == "tester"
+    finally:
+        conn.close()
+
+    out = tmp_path / "environment.html"
+    assert gb_report_cli.main([
+        "--runs", "run-test-001", "--lane", "environment-realized",
+        "--view", "environment", "--out", str(out),
+    ]) == 0
+    html = out.read_text(encoding="utf-8")
+    assert "rusty-crew-debug / tester" in html
+    assert "110 total" in html
+    assert "opaque-subscription" in html
 
 
 def test_report_returns_error_when_filter_matches_no_cells(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fake_repo: DbPaths, capsys: pytest.CaptureFixture[str]) -> None:

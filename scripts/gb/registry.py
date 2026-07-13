@@ -17,6 +17,7 @@ from .models import CandidateConfig, CandidateResult, Scenario, ScoreResult
 from .runners import (
     CodingAgentRunner,
     CodexAppServerRunner,
+    RustyCrewRunner,
     CodingScriptedRunner,
     FakeFuzzyScriptedRunner,
     FakeMcpScriptedRunner,
@@ -66,6 +67,7 @@ def default_runners() -> list[CandidateRunner]:
         OpenAiMcpSessionRunner(),
         VisionCandidateRunner(),
         CodexAppServerRunner(),
+        RustyCrewRunner(),
         CodingAgentRunner(),
         OpenAiChatRunner(),
         NoOpRunner(),

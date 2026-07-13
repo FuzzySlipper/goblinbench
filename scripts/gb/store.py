@@ -51,9 +51,14 @@ INLINE_ARTIFACT_NAMES = {
     "stdout.log": "text/plain",
     "stderr.log": "text/plain",
     "agent.patch": "text/x-diff",
+    "environment.json": "application/json",
+    "rusty-crew-events.jsonl": "application/x-ndjson",
+    "rusty-crew-response.txt": "text/plain",
+    "codex-events.jsonl": "application/x-ndjson",
+    "codex-response.txt": "text/plain",
 }
 
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -114,6 +119,10 @@ CREATE TABLE IF NOT EXISTS candidate_results (
     primary_passed INTEGER,
     primary_summary TEXT,
     primary_explanation TEXT,
+    lane TEXT NOT NULL DEFAULT 'model-core',
+    environment_name TEXT,
+    cost_classification TEXT NOT NULL DEFAULT 'unavailable',
+    environment_json TEXT NOT NULL DEFAULT '{}',
     failure_categories_json TEXT NOT NULL DEFAULT '[]'
 );
 
@@ -224,13 +233,29 @@ def open_db(db_path: Path | str) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.executescript(SCHEMA_SQL)
+    _migrate_schema(conn)
     conn.execute(
         "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) "
-        "ON CONFLICT(key) DO NOTHING",
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         (SCHEMA_VERSION,),
     )
     conn.commit()
     return conn
+
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    """Add storage-v3 provenance columns to existing canonical databases."""
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(candidate_results)")}
+    additions = {
+        "lane": "TEXT NOT NULL DEFAULT 'model-core'",
+        "environment_name": "TEXT",
+        "cost_classification": "TEXT NOT NULL DEFAULT 'unavailable'",
+        "environment_json": "TEXT NOT NULL DEFAULT '{}'",
+    }
+    for name, declaration in additions.items():
+        if name not in columns:
+            conn.execute(f"ALTER TABLE candidate_results ADD COLUMN {name} {declaration}")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_candidate_results_lane ON candidate_results(lane)")
 
 
 # ── Ingestion ──────────────────────────────────────────────────────────────
@@ -331,6 +356,7 @@ def ingest_run(conn: sqlite3.Connection, run_json_path: Path, repo_root: Path) -
             primary = primary_score(scores, bool(cr.get("success", False)))
             failure_categories = collect_failure_categories(cr, scores)
             artifact_dir = cr.get("artifact_directory") or cr.get("artifactDirectory")
+            environment = _environment_envelope(cr)
             if artifact_dir:
                 try:
                     artifact_dir = os.path.relpath(artifact_dir, repo_root) if os.path.isabs(artifact_dir) else artifact_dir
@@ -344,8 +370,9 @@ def ingest_run(conn: sqlite3.Connection, run_json_path: Path, repo_root: Path) -
                     candidate_id, candidate_name, candidate_kind, model, provider, base_url,
                     display_name, success, error, duration_ms, artifact_directory,
                     primary_scorer_id, primary_score, primary_passed, primary_summary,
-                    primary_explanation, failure_categories_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    primary_explanation, lane, environment_name, cost_classification,
+                    environment_json, failure_categories_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     run_id, scenario_id, scenario_version, suite, scenario_name,
@@ -365,6 +392,10 @@ def ingest_run(conn: sqlite3.Connection, run_json_path: Path, repo_root: Path) -
                     _bool_int(primary.get("passed")) if primary else None,
                     primary.get("human_summary") if primary else None,
                     primary.get("explanation") if primary else None,
+                    environment["lane"],
+                    environment.get("name"),
+                    environment.get("cost", {}).get("classification", "unavailable"),
+                    json.dumps(environment),
                     json.dumps(failure_categories),
                 ),
             )
@@ -386,6 +417,20 @@ def ingest_run(conn: sqlite3.Connection, run_json_path: Path, repo_root: Path) -
 
     conn.commit()
     return run_id, cell_count
+
+
+def _environment_envelope(candidate_result: dict[str, Any]) -> dict[str, Any]:
+    value = candidate_result.get("environment")
+    if isinstance(value, dict) and value:
+        return value
+    # Legacy rows predate storage v3. They remain queryable and are explicitly
+    # labeled instead of being silently merged with environment-realized runs.
+    return {
+        "schema_version": "1",
+        "lane": "model-core",
+        "name": "legacy-unclassified",
+        "cost": {"classification": "unavailable", "amount": None, "currency": None, "basis": None},
+    }
 
 
 def _ingest_scores(conn: sqlite3.Connection, cr_id: int, scores: list[dict[str, Any]]) -> None:

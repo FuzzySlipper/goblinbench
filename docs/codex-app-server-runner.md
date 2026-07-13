@@ -19,7 +19,10 @@ For each candidate/scenario run, the runner copies the declared fixture into the
 - requested model, effort, thread ID, turn ID, status, duration, and timeout state;
 - bounded raw protocol evidence in `artifacts/codex-events.jsonl`;
 - bounded agent text in `artifacts/codex-response.txt`;
-- `artifacts/agent.patch`.
+- `artifacts/agent.patch`;
+- the stable `artifacts/environment.json` envelope, including exact resolved
+  model/provider, app-server version, token usage, workspace hash, and activity
+  counts exposed by the protocol.
 
 The app-server is not restarted or reconfigured by benchmark runs.
 
@@ -54,6 +57,10 @@ Result: `run-20260710-165700-a2959c57` completed successfully in 25,186 ms. It c
 
 ## Current limitations
 
-- The raw server event schema is preserved but not yet normalized into a stable cross-agent provenance envelope; that is task #5544.
 - A real turn can still fail for service/model reasons; the runner deliberately reports that separately from the fixture diff and test outcome.
 - The smoke fixture currently verifies filesystem mutation and standard runner artifacts. Broader coding-scorer coverage belongs in subsequent coding-scenario work.
+
+For a direct-versus-Rusty-Crew run using the same requested Codex model, see
+[`rusty-crew-runner.md`](rusty-crew-runner.md). The raw server events remain
+available for diagnosis while the environment envelope is the stable reporting
+surface.

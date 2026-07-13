@@ -244,20 +244,22 @@ def cmd_get(args: argparse.Namespace) -> int:
         cells = conn.execute(
             """
             SELECT cr.scenario_id, cr.candidate_id, cr.model, cr.success, cr.primary_passed,
-                   cr.primary_score, cr.primary_scorer_id, cr.failure_categories_json
+                   cr.primary_score, cr.primary_scorer_id, cr.lane, cr.environment_name,
+                   cr.failure_categories_json
             FROM candidate_results cr WHERE cr.run_id = ?
             ORDER BY cr.scenario_id, cr.candidate_id
             """,
             (args.run_id,),
         ).fetchall()
         print(f"\ncells ({len(cells)}):")
-        print(f"  {'scenario':42s} {'candidate':28s} {'pass':>4s} {'score':>6s}  summary")
+        print(f"  {'scenario':42s} {'candidate':28s} {'lane':20s} {'pass':>4s} {'score':>6s}  summary")
         for c in cells:
             status = "✓" if c["primary_passed"] else ("✗" if c["primary_passed"] == 0 else "—")
             score = f"{c['primary_score']:.2f}" if c["primary_score"] is not None else "—"
             cats = ",".join(json.loads(c["failure_categories_json"] or "[]"))
             summ = (c["primary_scorer_id"] or "") + (f" ({cats})" if cats else "")
-            print(f"  {(c['scenario_id'] or '?'):42s} {(c['candidate_id'] or '?'):28s} {status:>4s} {score:>6s}  {summ}")
+            print(f"  {(c['scenario_id'] or '?'):42s} {(c['candidate_id'] or '?'):28s} "
+                  f"{(c['lane'] or '?'):20s} {status:>4s} {score:>6s}  {summ}")
     finally:
         conn.close()
     return 0

@@ -246,6 +246,7 @@ class CandidateResult:
     trace: list[TraceEvent] = field(default_factory=list)
     scores: list[ScoreResult] = field(default_factory=list)
     artifact_directory: str | None = None
+    environment: dict[str, Any] = field(default_factory=dict)
 
     def json_dict(self) -> dict[str, Any]:
         return {
@@ -262,6 +263,7 @@ class CandidateResult:
             "trace": self.trace,
             "scores": self.scores,
             "artifact_directory": self.artifact_directory,
+            "environment": self.environment,
         }
 
 

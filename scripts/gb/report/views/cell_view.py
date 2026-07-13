@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from . import ViewContext, ViewResult, fetch_artifact_bytes, fetch_samples, register
+from . import ViewContext, ViewResult, environment_for_cell, fetch_artifact_bytes, fetch_samples, register
 from ..envelope import esc
 
 
@@ -38,6 +38,10 @@ def render(ctx: ViewContext) -> ViewResult:
     if cell.get("error"):
         parts.append(f"<div class='cats'>error: {esc(cell['error'])}</div>")
 
+    environment = environment_for_cell(cell)
+    parts.append("<h3>Environment provenance</h3>")
+    parts.append(f"<pre>{esc(json.dumps(environment, indent=2, ensure_ascii=False))}</pre>")
+
     # Every scorer row, full detail.
     scorer_rows = [dict(r) for r in ctx.conn.execute(
         "SELECT scorer_id, scorer_name, scoring_kind, score, passed, threshold, "
@@ -52,7 +56,7 @@ def render(ctx: ViewContext) -> ViewResult:
     # All artifacts the cell produced.
     parts.append("<h3>Artifacts</h3>")
     any_art = False
-    for name in ("agent.patch", "patch", "output.json", "stdout.log", "stderr.log", "scores.json", "trace.jsonl"):
+    for name in ("agent.patch", "patch", "environment.json", "output.json", "stdout.log", "stderr.log", "scores.json", "trace.jsonl"):
         data = fetch_artifact_bytes(ctx, cr_id, name)
         if data is None:
             continue
