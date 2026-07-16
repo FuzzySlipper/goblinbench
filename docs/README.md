@@ -7,5 +7,5 @@
   comparison lanes, usage, and honest cost classifications.
 - [Codex app-server runner](codex-app-server-runner.md) — direct app-server coding
   agent execution.
-- [Rusty Crew runner](rusty-crew-runner.md) — debug-service-only external-agent
+- [Rusty Crew runners](rusty-crew-runner.md) — debug-service-only external Codex and native-brain adapters
   execution and direct-versus-Crew comparison.

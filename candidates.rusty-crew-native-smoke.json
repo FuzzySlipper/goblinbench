@@ -1,0 +1,19 @@
+[
+  {
+    "id": "rusty-crew-native-deepseek-flash",
+    "name": "Rusty Crew native — DeepSeek Flash",
+    "kind": "CodingAgent",
+    "model": "deepseek-flash",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "deepseek-flash",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  }
+]

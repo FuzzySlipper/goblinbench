@@ -1,4 +1,16 @@
-# Rusty Crew external-agent runner
+# Rusty Crew runners
+
+GoblinBench has two deliberately distinct Rusty Crew harness families:
+
+- `rusty-crew` drives Crew's external Codex app-server runtime;
+- `rusty-crew-native` drives Crew's Rust-owned `responses` or
+  `chat_completions` brain selected by a model-provider alias.
+
+Both are restricted to `rusty-crew-debug.service` by default. Results retain
+the harness family and provider protocol; they must not be merged into one
+unlabelled "Rusty Crew" lane.
+
+## External Codex runner
 
 The `rusty-crew` runner is an environment-realized `CodingAgent` adapter. It
 lets GoblinBench compare a Codex app-server turn driven directly with the same
@@ -90,3 +102,48 @@ the selected order and the exact ordered candidate IDs.
   per-run subscription charge.
 - Tool/command-cycle counts are populated only where the durable event schema
   exposes unambiguous events; unknown values remain unknown rather than zero.
+
+## Native-brain runner
+
+`rusty-crew-native` creates a disposable profile/session for every cell using
+`POST /v1/admin/control/profiles`, sends one message through the stable chat
+API, replays durable events, captures bounded tool debug details while their
+debug TTL is active, and hard-deletes the profile in cleanup. No Crew database
+or runtime config file is accessed directly.
+
+The provider alias is authoritative. Its registered protocol selects Crew's
+native brain, so the same runner supports both Responses-compatible and Chat
+Completions-compatible providers:
+
+```json
+{
+  "kind": "CodingAgent",
+  "model": "deepseek-flash",
+  "provider": "rusty-crew-native",
+  "config": {
+    "runner": "rusty-crew-native",
+    "provider_alias": "deepseek-flash",
+    "local_tool_profile_id": "full_agent"
+  }
+}
+```
+
+Run the checked-in isolated smoke with:
+
+```bash
+python3 scripts/gb-run.py \
+  --scenario e2e-pi-mock \
+  --candidates candidates.rusty-crew-native-smoke.json
+```
+
+Artifacts include `rusty-crew-native-events.jsonl`,
+`rusty-crew-native-tool-details.jsonl`, `rusty-crew-native-response.txt`, and
+`agent.patch`. Environment provenance records the provider alias/revision,
+protocol, brain module/strategy/backend, profile/tool identity, session and wake
+IDs, cleanup status, and the explicit harness family.
+
+Crew task `#5846` tracks creation-time `resourceLimits.workdir` support. Until
+that lands, native cells use absolute fixture paths and GoblinBench rejects a
+cell unless the captured tool details prove the required fixture probe and
+terminal/file locality contract. Exact token usage and attributable cost remain
+unknown because the native chat event contract does not currently expose them.

@@ -54,6 +54,9 @@ INLINE_ARTIFACT_NAMES = {
     "environment.json": "application/json",
     "rusty-crew-events.jsonl": "application/x-ndjson",
     "rusty-crew-response.txt": "text/plain",
+    "rusty-crew-native-events.jsonl": "application/x-ndjson",
+    "rusty-crew-native-tool-details.jsonl": "application/x-ndjson",
+    "rusty-crew-native-response.txt": "text/plain",
     "codex-events.jsonl": "application/x-ndjson",
     "codex-response.txt": "text/plain",
 }

@@ -1,0 +1,31 @@
+{
+  "providers": {
+    "lemonade-lan": {
+      "name": "Lemonade LAN (local GGUF)",
+      "baseUrl": "http://192.168.1.23:13305/v1",
+      "api": "openai-completions",
+      "apiKey": "local-no-key-needed",
+      "compat": { "supportsDeveloperRole": false },
+      "models": [
+        {
+          "id": "Qwen3.6-35B-A3B-GGUF",
+          "name": "Qwen 3.6 35B (A3B active, MoE)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 8192,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        },
+        {
+          "id": "Gemma-4-26B-A4B-it-GGUF",
+          "name": "Gemma 4 26B (A4B active, MoE)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 8192,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}

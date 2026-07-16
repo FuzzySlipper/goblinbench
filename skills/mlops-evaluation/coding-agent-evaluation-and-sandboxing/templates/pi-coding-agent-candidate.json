@@ -1,0 +1,20 @@
+{
+  "id": "pi-coding-<candidate-name>",
+  "name": "Pi Coding Agent — <short description>",
+  "kind": "CodingAgent",
+  "model": "<model-id-from-models.json>",
+  "provider": "<provider-name-from-models.json>",
+  "cli_args": [
+    "--print",
+    "--no-session",
+    "--provider", "<provider-name-from-models.json>",
+    "--model", "<model-id-from-models.json>"
+  ],
+  "config": {
+    "agent_resolved": "/<abs-path>/.sandbox-runtime/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+    "sandbox_root": "/<abs-path>/.sandbox-runtime",
+    "node_resolved": "/usr/bin/node",
+    "agent_dir": "/<abs-path>/.sandbox-runtime/agent",
+    "api_key_env": "<env-var-with-cloud-key, omit for local>"
+  }
+}

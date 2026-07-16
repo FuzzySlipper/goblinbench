@@ -88,16 +88,30 @@ class RustyCrewClient:
     def get(self, path: str, timeout: float) -> Any:
         return self._request("GET", path, None, timeout)
 
-    def post(self, path: str, body: dict[str, Any], timeout: float) -> Any:
-        return self._request("POST", path, body, timeout)
+    def post(
+        self,
+        path: str,
+        body: dict[str, Any],
+        timeout: float,
+        headers: dict[str, str] | None = None,
+    ) -> Any:
+        return self._request("POST", path, body, timeout, headers)
 
-    def _request(self, method: str, path: str, body: dict[str, Any] | None, timeout: float) -> Any:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        body: dict[str, Any] | None,
+        timeout: float,
+        extra_headers: dict[str, str] | None = None,
+    ) -> Any:
         data = json.dumps(body).encode("utf-8") if body is not None else None
         headers = {"Accept": "application/json"}
         if body is not None:
             headers["Content-Type"] = "application/json"
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
+        headers.update(extra_headers or {})
         request = urllib.request.Request(self.base_url + path, data=data, headers=headers, method=method)
         try:
             with urllib.request.urlopen(request, timeout=max(0.1, timeout)) as response:
