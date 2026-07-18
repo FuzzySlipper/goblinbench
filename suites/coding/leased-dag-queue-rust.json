@@ -1,0 +1,46 @@
+{
+  "id": "coding.leased-dag-queue-rust",
+  "version": "1.0.0",
+  "name": "Leased DAG Queue — Rust concurrency and state-machine hard probe",
+  "description": "A difficult Rust systems fixture covering atomic DAG admission, lease ownership, stale tokens, retries, cancellation, and transitive terminal-state propagation.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "leased-dag-queue-rust",
+    "task": "# Leased DAG Queue\n\nFinish the in-memory leased DAG queue in this Rust crate. The public API and deterministic tests define the compatibility surface; keep those signatures intact. This is a state-machine and ownership task, not a CRUD exercise.\n\nRequired behavior:\n\n- `enqueue_batch` is atomic. It accepts dependency references anywhere in the same batch, rejects missing dependencies and cycles without changing records/events/counters, rejects duplicate ids, and supports exact idempotent replay. Reusing an idempotency key for a different specification is a conflict.\n- `claim` selects only dependency-ready work. Sort by descending priority then stable admission order. A live lease is exclusive; an expired lease can be reclaimed with a new monotonically increasing fencing token and incremented attempt number.\n- Every mutating lease operation must validate the current fencing token. Heartbeats extend from the supplied observed time, not from the old expiry.\n- Retryable failure uses bounded exponential backoff from the failure time. Attempt exhaustion or a non-retryable failure dead-letters the job and blocks transitive dependants.\n- Cancellation marks a non-terminal job and its transitive dependants cancelled, without touching unrelated jobs. Terminal transitions cannot be repeated.\n- Emit the existing event types exactly once per successful transition. Preserve deterministic behavior and avoid wall-clock or thread sleeps.\n\nUse the existing `graph`, `policy`, `queue`, and `types` seams where they fit. Do not solve the exercise by weakening or deleting tests. A maintainable solution should make atomic admission, fencing validation, and dependency propagation independently understandable.\n\nRun:\n\n```bash\ncargo test --no-fail-fast\n```"
+  },
+  "scoring": {
+    "scorers": ["coding-tests", "architecture-quality", "structure-metrics", "maintainability-metrics", "latency"],
+    "parameters": {
+      "coding-tests": {"timeout_seconds": 180},
+      "structure-metrics": {"scan_dir": "src"},
+      "maintainability-metrics": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "central_paths": ["src/queue.rs"],
+        "setup_paths": ["src/queue.rs"],
+        "handler_paths": ["src/queue.rs"]
+      },
+      "architecture-quality": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "gold_path": ".goblinbench/architecture.md",
+        "central_paths": ["src/queue.rs"],
+        "setup_paths": ["src/queue.rs"],
+        "handler_paths": ["src/queue.rs"],
+        "dependency_rules": [
+          {"from": "src/graph.rs", "forbid": ["queue", "policy"]},
+          {"from": "src/policy.rs", "forbid": ["queue", "graph"]}
+        ],
+        "gates": {
+          "min_changed_files": 3,
+          "max_central_changed_mass_share": 0.72,
+          "max_handler_function_lines": 85,
+          "max_cross_file_duplication_ratio": 0.12
+        }
+      }
+    },
+    "thresholds": {"coding-tests": 1.0, "architecture-quality": 0.65}
+  },
+  "timeout_seconds": 1200,
+  "tags": ["hard", "frontier", "rust", "systems", "concurrency", "state-machine", "architecture-pressure", "rusty-crew-native"]
+}

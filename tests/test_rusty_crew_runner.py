@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import sys
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -129,6 +131,29 @@ def test_rusty_crew_config_refuses_non_debug_service() -> None:
 def test_debug_service_guard_refuses_production_unit_without_calling_systemctl() -> None:
     with pytest.raises(ValueError, match="rusty-crew-debug.service"):
         crew_module._verify_debug_service("rusty-crew.service")
+
+
+def test_client_returns_typed_domain_outcome_from_http_409(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = b'{"ok":true,"data":{"status":"rejected","reason_code":"session_busy"}}'
+
+    def rejected(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        raise urllib.error.HTTPError(
+            "http://127.0.0.1:9348/example",
+            409,
+            "Conflict",
+            {},
+            io.BytesIO(payload),
+        )
+
+    monkeypatch.setattr(crew_module.urllib.request, "urlopen", rejected)
+
+    result = crew_module.RustyCrewClient("http://127.0.0.1:9348").post(
+        "/example", {}, 1
+    )
+
+    assert result == {"status": "rejected", "reason_code": "session_busy"}
 
 
 def test_activity_counts_use_durable_crew_event_vocabulary() -> None:

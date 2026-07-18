@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/core-state",
+  "crates/protocol-door",
+  "crates/rule-door",
+  "crates/sim-replay",
+  "crates/render-projection",
+  "crates/protocol-codegen",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+

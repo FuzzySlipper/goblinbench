@@ -75,7 +75,9 @@ def finalize_environment(
             "runner_version": "python-v1",
             "scenario_id": scenario.id,
             "scenario_version": scenario.version,
+            "scenario_tags": list(scenario.tags),
             "fixture_case": scenario.input.get("fixture_case"),
+            "prompt_variant": scenario.input.get("prompt_variant"),
             "workspace_sha256": None,
         },
         "execution": {

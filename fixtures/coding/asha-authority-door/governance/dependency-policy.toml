@@ -1,0 +1,8 @@
+[rust]
+lanes = ["rust-state", "contract-steward", "rust-rule", "rust-sim", "rust-render"]
+
+[typescript]
+forbid_deep_imports = true
+forbid_policy_imports = ["@mini-asha/renderer-door"]
+forbid_renderer_imports = ["@mini-asha/policy-door"]
+

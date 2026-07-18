@@ -1,0 +1,10 @@
+[package]
+name = "sim-replay"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+core-state = { path = "../core-state" }
+protocol-door = { path = "../protocol-door" }
+rule-door = { path = "../rule-door" }
+

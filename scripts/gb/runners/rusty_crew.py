@@ -119,15 +119,22 @@ class RustyCrewClient:
                 status = response.getcode()
         except urllib.error.HTTPError as exc:
             raw = exc.read().decode("utf-8", errors="replace")
-            raise RustyCrewApiError(f"Rusty Crew HTTP {exc.code} {path}: {_error_message(raw)}") from exc
+            status = exc.code
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise RustyCrewApiError(f"Rusty Crew request failed {method} {path}: {exc}") from exc
-        if not 200 <= status < 300:
-            raise RustyCrewApiError(f"Rusty Crew HTTP {status} {path}: {_error_message(raw)}")
         try:
             envelope = json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise RustyCrewApiError(f"Rusty Crew returned non-JSON for {path}") from exc
+            raise RustyCrewApiError(
+                f"Rusty Crew HTTP {status} returned non-JSON for {path}"
+            ) from exc
+        # Several supported Crew control/chat routes use non-2xx status codes
+        # for typed domain outcomes while retaining an ``ok: true`` envelope.
+        # Return those outcomes so the runner can report the stable reason code.
+        if isinstance(envelope, dict) and envelope.get("ok") is True:
+            return envelope.get("data")
+        if not 200 <= status < 300:
+            raise RustyCrewApiError(f"Rusty Crew HTTP {status} {path}: {_error_message(raw)}")
         if not isinstance(envelope, dict) or envelope.get("ok") is not True:
             raise RustyCrewApiError(f"Rusty Crew error for {path}: {_error_message(raw)}")
         return envelope.get("data")

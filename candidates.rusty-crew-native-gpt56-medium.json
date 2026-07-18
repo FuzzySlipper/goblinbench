@@ -1,0 +1,59 @@
+[
+  {
+    "id": "rusty-crew-native-gpt-5-6-luna-reasoning-medium",
+    "name": "Rusty Crew native — GPT-5.6 Luna — reasoning medium",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-luna",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "gpt-5.6-luna",
+      "provider_protocol": "responses",
+      "reasoning_effort": "medium",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-gpt-5-6-terra-reasoning-medium",
+    "name": "Rusty Crew native — GPT-5.6 Terra — reasoning medium",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-terra",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "gpt-5.6-terra",
+      "provider_protocol": "responses",
+      "reasoning_effort": "medium",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-gpt-5-6-sol-reasoning-medium",
+    "name": "Rusty Crew native — GPT-5.6 Sol — reasoning medium",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-sol",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "gpt-5.6-sol",
+      "provider_protocol": "responses",
+      "reasoning_effort": "medium",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  }
+]

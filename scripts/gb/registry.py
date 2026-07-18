@@ -32,6 +32,7 @@ from .runners import (
 )
 from .runners.base import CandidateRunner
 from .scorers import (
+    CodebaseAnalysisGoldScorer,
     ExactDecisionScorer,
     FuzzyAgentBehaviorScorer,
     HeuristicTextScorer,
@@ -80,6 +81,7 @@ def default_scorers() -> list[Scorer]:
     # ORDER-DOES-NOT-MATTER for scorers (the main loop runs only those declared
     # by the scenario, resolved by id). Listed in rough usage frequency.
     return [
+        CodebaseAnalysisGoldScorer(),
         LatencyScorer(),
         SchemaComplianceScorer(),
         OrchestratorDecisionScorer(),

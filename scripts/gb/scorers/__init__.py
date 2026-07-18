@@ -1,4 +1,5 @@
 from .base import Scorer
+from .codebase_analysis_gold import CodebaseAnalysisGoldScorer
 from .exact_decision import ExactDecisionScorer
 from .fuzzy_agent_behavior import FuzzyAgentBehaviorScorer
 from .heuristic_text import HeuristicTextScorer
@@ -14,6 +15,7 @@ from .vision_correctness import VisionCorrectnessScorer
 
 __all__ = [
     "Scorer",
+    "CodebaseAnalysisGoldScorer",
     "LatencyScorer",
     "SchemaComplianceScorer",
     "RoleplayHeatBoundaryScorer",

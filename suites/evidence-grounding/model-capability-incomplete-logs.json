@@ -47,8 +47,22 @@
         "invent_leaderboard"
       ],
       "required_unknowns": [
-        "complete per-scenario failures",
-        "definitive best model"
+        [
+          "complete per-scenario failures",
+          "full per-scenario failure details",
+          "full failures and tool-call behavior",
+          "unshown scenario results and failure details",
+          "missing failure details"
+        ],
+        [
+          "definitive best model",
+          "best model",
+          "select a best model",
+          "name the best model",
+          "named best",
+          "established as best",
+          "a winner"
+        ]
       ],
       "forbidden_claims": [
         "full leaderboard",

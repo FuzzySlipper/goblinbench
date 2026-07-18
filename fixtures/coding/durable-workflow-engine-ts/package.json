@@ -1,0 +1,15 @@
+{
+  "name": "durable-workflow-engine-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Non-frontend TypeScript architecture-pressure fixture for GoblinBench",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

@@ -1,0 +1,36 @@
+[crate."crates/core-state"]
+lane = "rust-state"
+may_depend_on = []
+
+[crate."crates/protocol-door"]
+lane = "contract-steward"
+may_depend_on = []
+
+[crate."crates/rule-door"]
+lane = "rust-rule"
+may_depend_on = ["core-state", "protocol-door"]
+
+[crate."crates/sim-replay"]
+lane = "rust-sim"
+may_depend_on = ["core-state", "protocol-door", "rule-door"]
+
+[crate."crates/render-projection"]
+lane = "rust-render"
+may_depend_on = ["core-state", "protocol-door"]
+
+[crate."crates/protocol-codegen"]
+lane = "contract-steward"
+may_depend_on = ["protocol-door"]
+
+[package."ts/packages/contracts"]
+lane = "contract-steward"
+may_import = []
+
+[package."ts/packages/policy-door"]
+lane = "ts-policy"
+may_import = ["@mini-asha/contracts"]
+
+[package."ts/packages/renderer-door"]
+lane = "ts-renderer"
+may_import = ["@mini-asha/contracts"]
+

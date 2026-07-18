@@ -1,0 +1,8 @@
+[package]
+name = "protocol-codegen"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+protocol-door = { path = "../protocol-door" }
+

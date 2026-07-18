@@ -1,0 +1,46 @@
+{
+  "id": "coding.framed-replica-rust",
+  "version": "1.0.0",
+  "name": "Framed Replica — Rust streaming protocol and transaction hard probe",
+  "description": "A difficult Rust protocol repair fixture covering incremental buffer ownership, corruption recovery, allocation bounds, ordered replay, and atomic transaction state.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "framed-replica-rust",
+    "task": "# Framed Transactional Replica\n\nFinish the incremental wire decoder and transactional replica in this Rust crate. Keep the public API and wire encoder compatible with the tests. The important work is safe partial-buffer ownership and correct state-machine transitions.\n\nWire contract:\n\n- A frame is `GB` magic, version byte, big-endian sequence (`u64`), big-endian payload length (`u32`), operation payload, and big-endian FNV checksum (`u32`) over version through payload.\n- `FrameDecoder::push` accepts arbitrary chunks: a byte at a time, several frames at once, noise before magic, or an incomplete tail. It emits every complete frame and retains only the incomplete suffix.\n- Reject an unsupported version, oversized declared payload, checksum mismatch, or malformed operation without unbounded allocation. Resynchronize at the next magic prefix so a bad frame does not consume a following good one. Track discarded noise bytes accurately.\n\nReplica contract:\n\n- Sequences begin at 1. Already-applied sequences are idempotent duplicates. Gaps are rejected without advancing; a corrected/missing frame may be supplied later. Decode errors also do not advance.\n- Begin opens one transaction id. Put/delete stage changes. Commit publishes the whole staged transaction atomically. Abort discards it. Invalid transaction transitions do not advance sequence or damage existing staged state.\n- Values may contain arbitrary bytes and keys may contain delimiters.\n\nUse the decoder/replica/wire boundaries rather than combining all parsing and application into one function. Do not weaken tests or change the encoder to hide decoder bugs.\n\nRun:\n\n```bash\ncargo test --no-fail-fast\n```"
+  },
+  "scoring": {
+    "scorers": ["coding-tests", "architecture-quality", "structure-metrics", "maintainability-metrics", "latency"],
+    "parameters": {
+      "coding-tests": {"timeout_seconds": 180},
+      "structure-metrics": {"scan_dir": "src"},
+      "maintainability-metrics": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "central_paths": ["src/decoder.rs", "src/replica.rs"],
+        "setup_paths": ["src/replica.rs"],
+        "handler_paths": ["src/decoder.rs", "src/replica.rs"]
+      },
+      "architecture-quality": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "gold_path": ".goblinbench/architecture.md",
+        "central_paths": ["src/decoder.rs", "src/replica.rs"],
+        "setup_paths": ["src/replica.rs"],
+        "handler_paths": ["src/decoder.rs", "src/replica.rs"],
+        "dependency_rules": [
+          {"from": "src/wire.rs", "forbid": ["decoder", "replica"]},
+          {"from": "src/decoder.rs", "forbid": ["replica"]}
+        ],
+        "gates": {
+          "min_changed_files": 2,
+          "max_central_changed_mass_share": 0.86,
+          "max_handler_function_lines": 100,
+          "max_cross_file_duplication_ratio": 0.12
+        }
+      }
+    },
+    "thresholds": {"coding-tests": 1.0, "architecture-quality": 0.65}
+  },
+  "timeout_seconds": 1200,
+  "tags": ["hard", "frontier", "rust", "systems", "streaming", "protocol", "state-machine", "architecture-pressure", "rusty-crew-native"]
+}

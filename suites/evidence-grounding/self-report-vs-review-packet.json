@@ -48,8 +48,19 @@
         "invent_review_packet"
       ],
       "required_unknowns": [
-        "verified completion state",
-        "review verdict"
+        [
+          "verified completion state",
+          "verified completion",
+          "completion cannot be verified",
+          "cannot be verified as complete"
+        ],
+        [
+          "review verdict",
+          "review outcome",
+          "independent review",
+          "independently reviewed",
+          "passed review"
+        ]
       ],
       "forbidden_claims": [
         "verified complete",

@@ -1,0 +1,30 @@
+{
+  "id": "codebase-analysis.den-core-v1",
+  "version": "1.0.0",
+  "name": "Den Core synthetic architecture analysis",
+  "description": "Read-only 72 KB codebase packet with 12 planted architectural, correctness, concurrency, contract, and operational issues plus four valid decoys.",
+  "suite": "codebase-analysis",
+  "tags": ["architecture-analysis", "hard", "read-only", "rusty-crew-native", "frontier-core"],
+  "input": {
+    "fixture_case": "den-core-v1",
+    "candidate_files": ["repo-packet.md"],
+    "analysis_file": "repo-packet.md",
+    "prompt": "Act as a senior software architect. Inspect repo-packet.md using the available local tools and identify the most important concrete architectural, correctness, concurrency, contract, operational, security, and maintainability problems. This is a read-only review: do not modify any file. For every evidence.path, use the embedded source path printed in its `## src/...`, `## tests/...`, or `## docs/...` heading; do not use `repo-packet.md` as the evidence path. Cite line ranges and short source quotes. Distinguish genuine issues from intentional compatibility or normal framework patterns. Return ONLY one JSON object with a findings array. Each finding must contain title, category, severity (critical|high|medium|low|info), confidence (0..1), evidence (an array of {path, lines, quote}), diagnosis, impact, fix, and fix_scope. Return no more than 16 findings and keep the complete JSON under 24000 characters."
+  },
+  "scoring": {
+    "scorers": ["codebase-analysis-gold", "latency"],
+    "parameters": {
+      "codebase-analysis-gold": {
+        "fixture_case": "den-core-v1",
+        "gold_ledger": "gold-ledger.json",
+        "decoys": "decoys.json",
+        "signals": "scoring-signals.json",
+        "analysis_file": "repo-packet.md",
+        "max_findings": 16
+      },
+      "latency": {"max_budget_ms": 600000}
+    },
+    "thresholds": {"codebase-analysis-gold": 0.45}
+  },
+  "timeout_seconds": 600
+}

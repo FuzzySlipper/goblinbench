@@ -1,0 +1,111 @@
+{
+  "issues": {
+    "contract-paging-mismatch": {
+      "signal_groups": [
+        ["nextcursor", "next cursor"],
+        ["offset/limit", "offset", "pagenumber", "page number"]
+      ]
+    },
+    "worker-release-before-completion": {
+      "signal_groups": [
+        ["releaseworkerasync", "release worker", "releaseassignmentasync"],
+        ["writecompletionpacketasync", "completion packet"],
+        ["before", "ordering", "durably"]
+      ]
+    },
+    "stale-review-verdict": {
+      "signal_groups": [
+        ["getcachedverdict", "cached verdict", "verdict cache"],
+        ["reviewedhead", "reviewed head", "current head"],
+        ["isreviewstillvalid", "stale"]
+      ]
+    },
+    "hardcoded-lan-ip": {
+      "signal_groups": [
+        ["192.168.1.10", "hardcoded ip"],
+        ["llm", "openai-compatible", "baseaddress"]
+      ]
+    },
+    "exception-in-background-loop": {
+      "signal_groups": [
+        ["runbackgroundloopasync", "background loop"],
+        ["try/catch", "try catch", "unhandled exception"],
+        ["dequeuebatchasync", "task.run"]
+      ]
+    },
+    "core-mcp-boundary-leak": {
+      "signal_groups": [
+        ["mcptoolprofile", "mcp tool profile"],
+        ["projecttask", "core domain", "domain model"],
+        ["layering", "boundary leak"]
+      ]
+    },
+    "health-check-ignores-db": {
+      "signal_groups": [
+        ["/health", "health endpoint", "health check"],
+        ["database", "db probe", "db connectivity", "sqlite", "select 1"],
+        ["always returns", "unconditionally", "readiness"]
+      ]
+    },
+    "tool-schema-description-mismatch": {
+      "signal_groups": [
+        ["projectid", "project_id"],
+        ["taskid", "task_id"],
+        ["schema", "handler", "parameter"]
+      ]
+    },
+    "singleton-cache-no-lock": {
+      "signal_groups": [
+        ["seedcacheasync", "seed cache"],
+        ["concurrentdictionary", "concurrent dictionary"],
+        ["race", "synchronization", "semaphore"]
+      ]
+    },
+    "documentation-contradiction": {
+      "signal_groups": [
+        ["/api/documents/{id}", "/api/documents/by-id/{id}", "by-id"],
+        ["api-contract.md", "documentation", "documentroutes"]
+      ]
+    },
+    "missing-404-test": {
+      "signal_groups": [
+        ["getbyidasync", "get by id"],
+        ["404", "not found"],
+        ["null", "results.notfound"]
+      ]
+    },
+    "assignment-release-null-state": {
+      "signal_groups": [
+        ["releaseassignmentasync", "release assignment"],
+        ["already released", "null", "no assignment"],
+        ["succeed", "idempotent", "state"]
+      ]
+    }
+  },
+  "decoys": {
+    "prewarm-cache-on-startup": {
+      "signal_groups": [
+        ["databaseinitializer"],
+        ["pre-load", "prewarm", "reference data", "static dictionary", "cache warm"]
+      ]
+    },
+    "lan-default-with-env-override": {
+      "signal_groups": [
+        ["localhost:5000"],
+        ["aspnetcore_urls", "binding", "listen url", "kestrel"]
+      ]
+    },
+    "compat-route-kept": {
+      "signal_groups": [
+        ["/api/items"],
+        ["compat route", "legacy route", "backward compatibility", "deprecation"]
+      ]
+    },
+    "deprecated-field-retained": {
+      "signal_groups": [
+        ["legacysenderid", "legacy sender"],
+        ["wire compatibility", "obsolete", "deprecated", "historical messages"]
+      ]
+    }
+  }
+}

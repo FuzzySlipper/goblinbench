@@ -192,7 +192,14 @@ def _run_candidate(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="gb-run", description="GoblinBench runner (Python port)")
     parser.add_argument("--suite")
-    parser.add_argument("--scenario")
+    parser.add_argument(
+        "--scenario", action="append", default=[],
+        help="scenario id (repeatable / comma-sep)",
+    )
+    parser.add_argument(
+        "--tag", action="append", default=[],
+        help="require scenario tag (repeatable / comma-sep; all supplied tags must match)",
+    )
     parser.add_argument("--candidates", help="path to candidates.json (default: repo candidates.json)")
     parser.add_argument("--candidate", action="append", default=[], help="candidate id (repeatable / comma-sep)")
     parser.add_argument(
@@ -201,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--skip-scenario", "--exclude-scenario", dest="skip_scenario", action="append", default=[],
                         help="scenario id to skip (repeatable / comma-sep)")
+    parser.add_argument("--label", help="descriptive label stored with the run")
     args = parser.parse_args(argv)
 
     print("=== GoblinBench Runner (Python) ===")
@@ -222,8 +230,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Runs:     {runs_root}")
     if args.suite:
         print(f"Filter:   --suite {args.suite}")
-    if args.scenario:
-        print(f"Filter:   --scenario {args.scenario}")
+    scenario_filters = expand_filters(args.scenario)
+    tag_filters = expand_filters(args.tag)
+    if scenario_filters:
+        print(f"Filter:   --scenario {','.join(scenario_filters)}")
+    if tag_filters:
+        print(f"Filter:   --tag {','.join(tag_filters)}")
     if args.candidate:
         print(f"Filter:   --candidate {','.join(expand_filters(args.candidate))}")
     if args.skip_scenario:
@@ -236,7 +248,8 @@ def main(argv: list[str] | None = None) -> int:
     scenarios = discovery.filter_scenarios(
         all_scenarios,
         suite=args.suite,
-        scenario_id=args.scenario,
+        scenario_ids=scenario_filters,
+        tags=tag_filters,
         skip=expand_filters(args.skip_scenario),
     )
     print(f"{len(scenarios)} found (of {len(all_scenarios)} total)")
@@ -272,10 +285,11 @@ def main(argv: list[str] | None = None) -> int:
         run_directory=run_dir,
         runs_root=runs_root,
         repo_root=repo_root,
-        label=f"CLI run {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        label=args.label or f"CLI run {time.strftime('%Y-%m-%d %H:%M:%S')}",
         metadata={
             "candidate_order": args.candidate_order,
             "candidate_ids": [candidate.id for candidate in candidates],
+            "selected_scenario_ids": scenario_filters,
         },
     )
     os.makedirs(run_dir, exist_ok=True)

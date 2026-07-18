@@ -51,7 +51,12 @@
         "repository"
       ],
       "required_unknowns": [
-        "target repository"
+        [
+          "target repository",
+          "which repository",
+          "repository ownership",
+          "repository should receive"
+        ]
       ],
       "forbidden_claims": [
         "implemented",

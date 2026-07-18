@@ -1,0 +1,49 @@
+{
+  "id": "coding.durable-workflow-engine-typescript",
+  "version": "1.0.0",
+  "name": "Durable Workflow Engine — TypeScript backend architecture hard probe",
+  "description": "An extended non-frontend TypeScript domain and persistence benchmark with graph validation, shared-state lease fencing, retries, cancellation, snapshots, and ordered outbox events.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "durable-workflow-engine-ts",
+    "prompt_variant": "baseline",
+    "task": "# Durable Workflow Engine\n\nImplement the unfinished backend workflow engine in this TypeScript library. There is no UI, HTTP handler, browser, or frontend framework. Keep the exported API compatible and make the deterministic tests pass.\n\nBehavioral contract:\n\n- Validate definitions before persistence: stable diagnostics for duplicate task ids, missing dependencies, cycles, empty resources, non-positive attempt budgets, and negative retry delays. Invalid submission writes neither repository state nor events.\n- Exact `(idempotency key, definition)` replay returns the original workflow without another event. Key reuse for a different definition conflicts. Multiple engine instances may share the same repository and outbox.\n- Claim only dependency-ready tasks supported by the worker's resource capabilities. Use workflow creation order then task declaration order. A live lease is exclusive; expiry permits reclaim with a repository-owned monotonically increasing fencing token and incremented attempt.\n- Heartbeat, complete, and fail require the current lease token. Heartbeat extends from observed time. Retryable failures use exponential backoff; exhaustion and non-retryable failures fail the task, block transitive dependants, and fail the workflow.\n- Completing all tasks succeeds the workflow. Cancellation is idempotent, retains completed tasks, cancels remaining work, and emits one terminal event.\n- Every successful transition emits the expected outbox event exactly once with a global gapless sequence. Snapshot and outbox reads must be detached from internal mutable state.\n\nDo not weaken tests. Use the existing validation, repository, policy, outbox, and engine seams where they are useful. The implementation should remain a coherent backend/domain library under shared-state and future-change pressure.\n\nRun:\n\n```bash\nnpm test\n```"
+  },
+  "scoring": {
+    "scorers": ["coding-tests", "architecture-quality", "structure-metrics", "maintainability-metrics", "latency"],
+    "parameters": {
+      "coding-tests": {"timeout_seconds": 240},
+      "structure-metrics": {"scan_dir": "src"},
+      "maintainability-metrics": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "central_paths": ["src/engine.ts", "src/repository.ts"],
+        "setup_paths": ["src/engine.ts"],
+        "handler_paths": ["src/engine.ts"]
+      },
+      "architecture-quality": {
+        "source_root": "src",
+        "baseline_path": ".goblinbench/maintainability-baseline.json",
+        "gold_path": ".goblinbench/architecture.md",
+        "central_paths": ["src/engine.ts", "src/repository.ts"],
+        "setup_paths": ["src/engine.ts"],
+        "handler_paths": ["src/engine.ts"],
+        "dependency_rules": [
+          {"from": "src/validation.ts", "forbid": ["engine", "repository", "outbox"]},
+          {"from": "src/policy.ts", "forbid": ["engine", "repository", "outbox"]},
+          {"from": "src/repository.ts", "forbid": ["engine", "outbox"]},
+          {"from": "src/outbox.ts", "forbid": ["engine", "repository"]}
+        ],
+        "gates": {
+          "min_changed_files": 4,
+          "max_central_changed_mass_share": 0.72,
+          "max_handler_function_lines": 90,
+          "max_cross_file_duplication_ratio": 0.1
+        }
+      }
+    },
+    "thresholds": {"coding-tests": 1.0, "architecture-quality": 0.65}
+  },
+  "timeout_seconds": 1500,
+  "tags": ["hard", "frontier", "typescript", "backend", "domain", "architecture-pressure", "style-probe", "rusty-crew-native", "prompt-variant-baseline"]
+}

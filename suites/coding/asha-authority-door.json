@@ -1,0 +1,38 @@
+{
+  "id": "coding.asha-authority-door",
+  "version": "1.0.0",
+  "name": "Mini ASHA authoritative door — governed cross-language coding probe",
+  "description": "A mixed Rust and TypeScript engine feature that measures authority placement, event application, replay determinism, generated contracts, dependency ownership, policy restraint, and projection boundaries.",
+  "suite": "coding",
+  "input": {
+    "fixture_case": "asha-authority-door",
+    "task": "# Authoritative door transition\n\nImplement the unfinished energy-gated door feature in this synthetic Mini ASHA workspace. This is a cross-language engine architecture task, not merely a test-fixing exercise.\n\nRead `AGENTS.md` and every document it marks as required before editing. Preserve the declared crate/package ownership cells and generated-contract workflow.\n\nThe completed flow must:\n\n- let TypeScript policy express a desired open/close intent from its generated read-only policy view without duplicating Rust acceptance rules;\n- validate entity/capability presence, revision fencing, cooldown, desired state, and energy in the Rust door Rule;\n- create a complete accepted DomainEvent before mutation and apply it atomically;\n- spend energy only when opening, use explicit observed ticks, and fail closed on overflow or corrupt/out-of-order events;\n- replay accepted events into authority-equivalent state with a deterministic stable hash;\n- derive renderer projection data from Rust authority;\n- generate TypeScript border declarations from the Rust protocol source; and\n- keep TypeScript policy and rendering consumers behind root contract imports with no authority mutation.\n\nDo not modify or weaken guidance, governance, CI, manifests, or tests. Do not add framework/plugin/ECS machinery. Use the existing narrow ownership cells and boring explicit code.\n\nIterate with:\n\n```bash\n./harness/ci/check-fast.sh\n```\n\nFinish with:\n\n```bash\n./harness/ci/check-all.sh\n```"
+  },
+  "scoring": {
+    "scorers": ["asha-governance", "latency"],
+    "parameters": {
+      "asha-governance": {
+        "timeout_seconds": 900,
+        "guidance_snapshot": "synthetic-mini-asha-v1",
+        "source_revision": "asha-engine@5453e8de9224edf5315b72f2d71b473c6d9f8671"
+      }
+    },
+    "thresholds": {
+      "asha-governance": 0.8
+    }
+  },
+  "timeout_seconds": 1800,
+  "tags": [
+    "hard",
+    "frontier",
+    "rust",
+    "typescript",
+    "mixed-language",
+    "authority",
+    "replay",
+    "generated-contracts",
+    "architecture-pressure",
+    "rusty-crew-native"
+  ]
+}
+

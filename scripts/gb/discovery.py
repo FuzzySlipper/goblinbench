@@ -90,16 +90,25 @@ def filter_scenarios(
     scenarios: Iterable[Scenario],
     *,
     suite: str | None,
-    scenario_id: str | None,
-    skip: list[str] | None,
+    scenario_id: str | None = None,
+    scenario_ids: list[str] | None = None,
+    tags: list[str] | None = None,
+    skip: list[str] | None = None,
 ) -> list[Scenario]:
-    """Apply the same --suite / --scenario / --skip-scenario filters as C#."""
+    """Apply suite, exact-id, required-tag, and skip filters."""
     skip_lower = {s.lower() for s in (skip or [])}
+    wanted_ids = {s.lower() for s in (scenario_ids or [])}
+    required_tags = {tag.lower() for tag in (tags or [])}
+    if scenario_id:
+        wanted_ids.add(scenario_id.lower())
     out: list[Scenario] = []
     for s in scenarios:
         if suite and s.suite.lower() != suite.lower():
             continue
-        if scenario_id and s.id.lower() != scenario_id.lower():
+        if wanted_ids and s.id.lower() not in wanted_ids:
+            continue
+        scenario_tags = {tag.lower() for tag in s.tags}
+        if required_tags and not required_tags.issubset(scenario_tags):
             continue
         if skip_lower and s.id.lower() in skip_lower:
             continue

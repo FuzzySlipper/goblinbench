@@ -84,6 +84,7 @@ class Scenario:
     name: str = ""
     description: str = ""
     suite: str = ""
+    tags: list[str] = field(default_factory=list)
     input: dict[str, Any] = field(default_factory=dict)
     fixture: FixtureConfig | None = None
     scoring: ScoringConfig | None = None
@@ -117,6 +118,7 @@ class Scenario:
             name=raw.get("name") or "",
             description=raw.get("description") or "",
             suite=raw.get("suite") or "",
+            tags=[str(value) for value in (raw.get("tags") or [])],
             input=dict(raw.get("input") or {}),
             fixture=fixture,
             scoring=scoring,
