@@ -83,10 +83,66 @@ def test_protected_guidance_tampering_zeroes_score(tmp_path: pathlib.Path) -> No
     ]
 
 
+def test_completion_residue_has_a_small_separate_penalty(tmp_path: pathlib.Path) -> None:
+    scorer = load_scorer()
+    workspace = reference_workspace(tmp_path)
+    rule = workspace / "crates/rule-door/src/lib.rs"
+    rule.write_text(
+        rule.read_text().replace(
+            "    ApplyRejected(DoorApplyError),\n",
+            "    ApplyRejected(DoorApplyError),\n    NotImplemented,\n",
+        )
+    )
+
+    result = scorer.score_fixture(workspace, threshold=0.8)
+    gates = {gate["id"]: gate for gate in result["detail"]["gates"]}
+
+    assert result["score"] == 0.975
+    assert gates["completion-hygiene"]["passed"] is False
+    assert gates["guidance-reviewability"]["passed"] is True
+
+
+def test_dense_source_and_completion_residue_are_scored_independently(
+    tmp_path: pathlib.Path,
+) -> None:
+    scorer = load_scorer()
+    workspace = reference_workspace(tmp_path)
+    rule = workspace / "crates/rule-door/src/lib.rs"
+    rule.write_text(
+        rule.read_text().replace(
+            "    ApplyRejected(DoorApplyError),\n",
+            "    ApplyRejected(DoorApplyError),\n    NotImplemented,\n",
+        )
+    )
+    renderer = workspace / "ts/packages/renderer-door/src/index.ts"
+    renderer.write_text(
+        renderer.read_text().replace(
+            "  const openness = Math.max(0, Math.min(1000, projection.opennessMilli)) / 1000;\n"
+            "  return {\n"
+            "    entityId: projection.entityId,\n"
+            "    openness,\n"
+            "    stateLabel: projection.position,\n"
+            "    revision: projection.revision,\n"
+            "  };",
+            "  return { entityId: projection.entityId, openness: Math.max(0, "
+            "Math.min(1000, projection.opennessMilli)) / 1000, stateLabel: "
+            "projection.position, revision: projection.revision };",
+        )
+    )
+
+    result = scorer.score_fixture(workspace, threshold=0.8)
+    gates = {gate["id"]: gate for gate in result["detail"]["gates"]}
+
+    assert result["score"] == 0.96
+    assert gates["completion-hygiene"]["passed"] is False
+    assert gates["guidance-reviewability"]["passed"] is False
+
+
 def test_scenario_declares_mixed_language_governance_scorer() -> None:
     scenario = json.loads((REPO / "suites/coding/asha-authority-door.json").read_text())
 
     assert scenario["input"]["fixture_case"] == "asha-authority-door"
+    assert scenario["version"] == "1.1.0"
     assert scenario["scoring"]["scorers"][0] == "asha-governance"
     assert scenario["scoring"]["thresholds"]["asha-governance"] == 0.8
     assert {"rust", "typescript", "mixed-language", "generated-contracts"}.issubset(

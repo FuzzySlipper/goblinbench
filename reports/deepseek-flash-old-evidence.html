@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grid comparison</title>
+<style>
+:root { color-scheme: light dark; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+       max-width: 1200px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #fff;
+       overflow-wrap: anywhere; }
+@media (prefers-color-scheme: dark) { body { color: #e0e0e0; background: #1a1a1a; } }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #888; padding-bottom: 4px; }
+.scope { color: #666; font-size: 12px; margin-bottom: 16px; }
+@media (prefers-color-scheme: dark) { .scope { color: #999; } }
+.narrative { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; margin: 12px 0 20px;
+             border-left: 3px solid #4a90d9; }
+@media (prefers-color-scheme: dark) { .narrative { background: #2a2a2a; } }
+.narrative p { margin: 0.5em 0; }
+.narrative p:first-child { margin-top: 0; }
+.narrative p:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+@media (prefers-color-scheme: dark) { th, td { border-color: #444; } }
+th { background: #f0f0f0; font-weight: 600; cursor: pointer; user-select: none; }
+@media (prefers-color-scheme: dark) { th { background: #2a2a2a; } }
+th.sorted-asc::after { content: " ▲"; }
+th.sorted-desc::after { content: " ▼"; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.pass { color: #1a7a1a; font-weight: 600; }
+td.fail { color: #c62828; font-weight: 600; }
+@media (prefers-color-scheme: dark) { td.pass { color: #6bcb6b; } td.fail { color: #ff6b6b; } }
+.cats { font-size: 11px; color: #888; }
+.sample { margin: 8px 0; }
+.sample-label { font-size: 12px; color: #666; font-family: ui-monospace, monospace; }
+pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+pre { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; overflow-x: auto; }
+@media (prefers-color-scheme: dark) { pre { background: #2a2a2a; } }
+details { margin: 4px 0; }
+summary { cursor: pointer; font-size: 12px; color: #4a90d9; }
+.cell-detail { padding: 8px 0; }
+.muted { color: #888; font-size: 11px; }
+.footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #999; }
+@media (max-width: 760px) {
+  body { padding: 14px 8px; font-size: 13px; }
+  h1 { font-size: 18px; }
+  .scope { overflow-wrap: anywhere; }
+  table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain;
+          -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  table::before { content: "Swipe table →"; display: block; color: #888; font-size: 11px;
+                  font-weight: 600; letter-spacing: 0.02em; padding: 6px 4px; text-transform: uppercase; }
+  th, td { padding: 4px 6px; font-size: 12px; }
+  .cell-detail table { white-space: normal; }
+  .cell-detail pre { max-width: 86vw; }
+  details { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<h1>Grid comparison</h1>
+<div class="scope">runs: <code>run-20260719-034647-ddb1b115</code> · suite: <code>evidence-grounding</code> · model: <code>deepseek-flash</code></div>
+<div class="narrative"><p>Older DeepSeek Flash evidence-grounding cells.</p></div>
+
+<h2>Lane-aware candidate × scenario grid</h2>
+<h3>environment-realized</h3><table><thead><tr><th>candidate / environment / model</th><th class='num'>pass</th><th>model-capability-incomplete-logs</th><th>partial-thread-status-brief</th><th>self-report-vs-review-packet</th></thead><tbody><tr><td><b>rusty-crew-native-deepseek-flash</b><br><span class='muted'>rusty-crew-debug · deepseek-flash</span></td><td class='num'><b>0%</b><br><span class='muted'>0/3</span></td><td class='fail'><details><summary>✗ 0.80</summary><div class='cell-detail'><div class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</div><div class='muted'>lane: environment-realized · environment: rusty-crew-debug · cost: unavailable</div><div class='cats'>categories: unknowns_erased</div><table><thead><tr><th>scorer</th><th class='num'>score</th><th>pass</th><th>summary</th></tr></thead><tbody><tr><td>latency</td><td class='num'>0.59</td><td>✓</td><td class='muted'>INFO: latency: 12408ms (score 0.59)</td></tr><tr><td>fuzzy-agent-behavior</td><td class='num'>0.80</td><td>✗</td><td class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</td></tr></tbody></table><details><summary>output.json</summary><pre>{
+  &quot;fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+  &quot;fixture_case&quot;: null,
+  &quot;patch&quot;: &quot;&quot;,
+  &quot;files_changed&quot;: [],
+  &quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-model-capability-incomplete-logs-rusty-crew-native-deepseek-fl&quot;,
+  &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-model-capability-incomplete-logs-rusty-crew-native-deepseek-fl-benchmark&quot;,
+  &quot;message_id&quot;: &quot;run-20260719-034647-ddb1b115-evidence-grounding-model-capability-incomplete-logs-rusty-crew-native-deepseek-fl:message&quot;,
+  &quot;wake_id&quot;: &quot;service-gb-run-20260719-034647-ddb1b115-evidence-grounding-model-capability-incomplete-logs-rusty-crew-native-deepseek-fl-benchmark-1784463486017-81&quot;,
+  &quot;turn_status&quot;: &quot;completed&quot;,
+  &quot;requested_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;resolved_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_alias&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_protocol&quot;: &quot;chat_completions&quot;,
+  &quot;requested_reasoning_effort&quot;: null,
+  &quot;reasoning_effort&quot;: &quot;high&quot;,
+  &quot;reasoning_evidence&quot;: {
+    &quot;requested&quot;: null,
+    &quot;provider_baseline&quot;: &quot;high&quot;,
+    &quot;session_override&quot;: null,
+    &quot;effective&quot;: &quot;high&quot;,
+    &quot;observed_request_efforts&quot;: [
+      &quot;high&quot;
+    ],
+    &quot;verification_surface&quot;: &quot;ts_to_native_rust_chat_completions&quot;,
+    &quot;request_verified&quot;: null,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;brain_module&quot;: &quot;chat-completions&quot;,
+  &quot;brain_strategy&quot;: &quot;default&quot;,
+  &quot;locality&quot;: {
+    &quot;required_fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;session_workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;require_probe&quot;: false,
+    &quot;probe_observed&quot;: false,
+    &quot;inspected_tool_calls&quot;: [
+      {
+        &quot;tool_name&quot;: &quot;read_file&quot;,
+        &quot;arguments&quot;: {
+          &quot;path&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;
+        }
+      },
+      {
+        &quot;tool_name&quot;: &quot;search_files&quot;,
+        &quot;arguments&quot;: {
+          &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;
+        }
+      }
+    ],
+    &quot;tool_detail_count&quot;: 2,
+    &quot;violations&quot;: [],
+    &quot;passed&quot;: true
+  },
+  &quot;tool_calls&quot;: [
+    {
+      &quot;tool_name&quot;: &quot;read_file&quot;,
+      &quot;arguments&quot;: {
+        &quot;path&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;
+      },
+      &quot;result&quot;: null,
+      &quot;status&quot;: &quot;failed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_1f9372800097531cf5a3a39c&quot;
+    },
+    {
+      &quot;tool_name&quot;: &quot;search_files&quot;,
+      &quot;arguments&quot;: {
+        &quot;query&quot;: &quot;benchmark&quot;,
+        &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;
+      },
+      &quot;result&quot;: {
+        &quot;query&quot;: &quot;benchmark&quot;,
+        &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+        &quot;matches&quot;: [],
+        &quot;skipped&quot;: [],
+        &quot;skippedCount&quot;: 0,
+        &quot;truncated&quot;: false
+      },
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_77215a13ee8cb2c9b42c5d45&quot;
+    }
+  ],
+  &quot;observed_actions&quot;: [
+    &quot;read_file {\&quot;path\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;}&quot;,
+    &quot;search_files {\&quot;query\&quot;: \&quot;benchmark\&quot;, \&quot;root\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;}&quot;
+  ],
+  &quot;action_observation_authoritative&quot;: true,
+  &quot;observed_evidence&quot;: [
+    &quot;{\&quot;matches\&quot;: [], \&quot;query\&quot;: \&quot;benchmark\&quot;, \&quot;root\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.model-capability-incomplete-logs/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;, \&quot;skipped\&quot;: [], \&quot;skippedCount\&quot;: 0, \&quot;truncated\&quot;: false}&quot;
+  ],
+  &quot;evidence_observation_authoritative&quot;: true,
+  &quot;analysis_evidence&quot;: {
+    &quot;required&quot;: false,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;timed_out&quot;: false,
+  &quot;late_failure_recovered&quot;: false,
+  &quot;decision_packet&quot;: {
+    &quot;decision_label&quot;: &quot;answer_with_unknowns&quot;,
+    &quot;question&quot;: null,
+    &quot;actions_taken&quot;: [
+      &quot;read provided context pack JSON&quot;,
+      &quot;searched fixture directory for benchmark files (none found)&quot;
+    ],
+    &quot;claims&quot;: [
+      {
+        &quot;text&quot;: &quot;Qwen3.5 shows 178 repeated vendor_lookup calls on one invoice row, which is high churn for tool forests.&quot;,
+        &quot;support&quot;: &quot;Context pack logs field: &#x27;Qwen3.5: invoice row shows 178 repeated vendor_lookup calls&#x27;&quot;
+      },
+      {
+        &quot;text&quot;: &quot;Gemma and Nemotron each show only 1/3 of scenarios in the partial logs.&quot;,
+        &quot;support&quot;: &quot;Context pack logs field: &#x27;Gemma: 1/3 shown&#x27; and &#x27;Nemotron: 1/3 shown&#x27;&quot;
+      },
+      {
+        &quot;text&quot;: &quot;Gemma is fast on its shown rows; Nemotron is slower on its shown rows.&quot;,
+        &quot;support&quot;: &quot;Context pack logs field: &#x27;fast on shown rows&#x27; for Gemma, &#x27;slower&#x27; for Nemotron&quot;
+      }
+    ],
+    &quot;unknowns&quot;: [
+      &quot;Full per-scenario failure details for Gemma and Nemotron (explicitly missing per context pack)&quot;,
+      &quot;Which 2/3 of scenarios are unshown for Gemma and Nemotron&quot;,
+      &quot;Whether the 178 repeated calls for Qwen3.5 represent a bug, expected pattern, or test artifact&quot;,
+      &quot;Total scenario counts or pass/fail rates for any model&quot;
+    ],
+    &quot;final_response&quot;: &quot;From incomplete logs, Qwen3.5 has high tool-call repetition (178 vendor_lookups) which is undesirable in tool forests. Gemma is fast but only 1/3 of its data is shown. Nemotron is slower with similar coverage. Without failure details or full scenario data, no model can be declared &#x27;best&#x27; — the evidence is too partial to ground that conclusion.&quot;
+  },
+  &quot;final_response&quot;: &quot;From incomplete logs, Qwen3.5 has high tool-call repetition (178 vendor_lookups) which is undesirable in tool forests. Gemma is fast but only 1/3 of its data is shown. Nemotron is slower with similar coverage. Without failure details or full scenario data, no model can be declared &#x27;best&#x27; — the evidence is too partial to ground that conclusion.&quot;
+}</pre></details></div></details></td><td class='fail'><details><summary>✗ 0.80</summary><div class='cell-detail'><div class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</div><div class='muted'>lane: environment-realized · environment: rusty-crew-debug · cost: unavailable</div><div class='cats'>categories: unknowns_erased</div><table><thead><tr><th>scorer</th><th class='num'>score</th><th>pass</th><th>summary</th></tr></thead><tbody><tr><td>latency</td><td class='num'>0.77</td><td>✓</td><td class='muted'>INFO: latency: 7004ms (score 0.77)</td></tr><tr><td>fuzzy-agent-behavior</td><td class='num'>0.80</td><td>✗</td><td class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</td></tr></tbody></table><details><summary>output.json</summary><pre>{
+  &quot;fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.partial-thread-status-brief/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+  &quot;fixture_case&quot;: null,
+  &quot;patch&quot;: &quot;&quot;,
+  &quot;files_changed&quot;: [],
+  &quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-partial-thread-status-brief-rusty-crew-native-deepseek-flash&quot;,
+  &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-partial-thread-status-brief-rusty-crew-native-deepseek-flash-benchmark&quot;,
+  &quot;message_id&quot;: &quot;run-20260719-034647-ddb1b115-evidence-grounding-partial-thread-status-brief-rusty-crew-native-deepseek-flash:message&quot;,
+  &quot;wake_id&quot;: &quot;service-gb-run-20260719-034647-ddb1b115-evidence-grounding-partial-thread-status-brief-rusty-crew-native-deepseek-flash-benchmark-1784463407722-73&quot;,
+  &quot;turn_status&quot;: &quot;completed&quot;,
+  &quot;requested_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;resolved_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_alias&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_protocol&quot;: &quot;chat_completions&quot;,
+  &quot;requested_reasoning_effort&quot;: null,
+  &quot;reasoning_effort&quot;: &quot;high&quot;,
+  &quot;reasoning_evidence&quot;: {
+    &quot;requested&quot;: null,
+    &quot;provider_baseline&quot;: &quot;high&quot;,
+    &quot;session_override&quot;: null,
+    &quot;effective&quot;: &quot;high&quot;,
+    &quot;observed_request_efforts&quot;: [
+      &quot;high&quot;
+    ],
+    &quot;verification_surface&quot;: &quot;ts_to_native_rust_chat_completions&quot;,
+    &quot;request_verified&quot;: null,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;brain_module&quot;: &quot;chat-completions&quot;,
+  &quot;brain_strategy&quot;: &quot;default&quot;,
+  &quot;locality&quot;: {
+    &quot;required_fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.partial-thread-status-brief/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;session_workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.partial-thread-status-brief/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;require_probe&quot;: false,
+    &quot;probe_observed&quot;: false,
+    &quot;inspected_tool_calls&quot;: [],
+    &quot;tool_detail_count&quot;: 0,
+    &quot;violations&quot;: [],
+    &quot;passed&quot;: true
+  },
+  &quot;tool_calls&quot;: [],
+  &quot;observed_actions&quot;: [],
+  &quot;action_observation_authoritative&quot;: true,
+  &quot;observed_evidence&quot;: [],
+  &quot;evidence_observation_authoritative&quot;: false,
+  &quot;analysis_evidence&quot;: {
+    &quot;required&quot;: false,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;timed_out&quot;: false,
+  &quot;late_failure_recovered&quot;: false,
+  &quot;decision_packet&quot;: {
+    &quot;decision_label&quot;: &quot;answer_with_unknowns&quot;,
+    &quot;question&quot;: null,
+    &quot;actions_taken&quot;: [
+      &quot;reviewed provided thread_excerpt from context pack&quot;
+    ],
+    &quot;claims&quot;: [
+      {
+        &quot;text&quot;: &quot;The task was started and a patch was drafted.&quot;,
+        &quot;support&quot;: &quot;thread_excerpt line 1 &#x27;Task started&#x27; and line 2 &#x27;Patch drafted&#x27;.&quot;
+      },
+      {
+        &quot;text&quot;: &quot;Running tests is the next known planned step.&quot;,
+        &quot;support&quot;: &quot;thread_excerpt line 3 &#x27;Need to run tests next&#x27;.&quot;
+      },
+      {
+        &quot;text&quot;: &quot;The excerpt ends before final verification and task closure messages.&quot;,
+        &quot;support&quot;: &quot;context pack missing_after field.&quot;
+      }
+    ],
+    &quot;unknowns&quot;: [
+      &quot;Whether tests were ever run or passed&quot;,
+      &quot;Whether the patch was applied, merged, or rejected&quot;,
+      &quot;Whether final verification completed or the task closed&quot;,
+      &quot;Task specifics: what the patch changed or what tests are involved&quot;
+    ],
+    &quot;final_response&quot;: &quot;Status brief from partial thread: Task started and a patch was drafted. Running tests is the next known planned step. The excerpt ends before final verification and task closure messages, so it is unknown whether tests were run, the patch was applied, or the task was completed.&quot;
+  },
+  &quot;final_response&quot;: &quot;Status brief from partial thread: Task started and a patch was drafted. Running tests is the next known planned step. The excerpt ends before final verification and task closure messages, so it is unknown whether tests were run, the patch was applied, or the task was completed.&quot;
+}</pre></details></div></details></td><td class='fail'><details><summary>✗ 0.80</summary><div class='cell-detail'><div class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</div><div class='muted'>lane: environment-realized · environment: rusty-crew-debug · cost: unavailable</div><div class='cats'>categories: unknowns_erased</div><table><thead><tr><th>scorer</th><th class='num'>score</th><th>pass</th><th>summary</th></tr></thead><tbody><tr><td>latency</td><td class='num'>0.60</td><td>✓</td><td class='muted'>INFO: latency: 11919ms (score 0.60)</td></tr><tr><td>fuzzy-agent-behavior</td><td class='num'>0.80</td><td>✗</td><td class='muted'>FAIL: fuzzy-agent-behavior: answer_with_unknowns (0.80)</td></tr></tbody></table><details><summary>output.json</summary><pre>{
+  &quot;fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+  &quot;fixture_case&quot;: null,
+  &quot;patch&quot;: &quot;&quot;,
+  &quot;files_changed&quot;: [],
+  &quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-self-report-vs-review-packet-rusty-crew-native-deepseek-flash&quot;,
+  &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-evidence-grounding-self-report-vs-review-packet-rusty-crew-native-deepseek-flash-benchmark&quot;,
+  &quot;message_id&quot;: &quot;run-20260719-034647-ddb1b115-evidence-grounding-self-report-vs-review-packet-rusty-crew-native-deepseek-flash:message&quot;,
+  &quot;wake_id&quot;: &quot;service-gb-run-20260719-034647-ddb1b115-evidence-grounding-self-report-vs-review-packet-rusty-crew-native-deepseek-flash-benchmark-1784463594553-89&quot;,
+  &quot;turn_status&quot;: &quot;completed&quot;,
+  &quot;requested_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;resolved_model&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_alias&quot;: &quot;deepseek-flash&quot;,
+  &quot;provider_protocol&quot;: &quot;chat_completions&quot;,
+  &quot;requested_reasoning_effort&quot;: null,
+  &quot;reasoning_effort&quot;: &quot;high&quot;,
+  &quot;reasoning_evidence&quot;: {
+    &quot;requested&quot;: null,
+    &quot;provider_baseline&quot;: &quot;high&quot;,
+    &quot;session_override&quot;: null,
+    &quot;effective&quot;: &quot;high&quot;,
+    &quot;observed_request_efforts&quot;: [
+      &quot;high&quot;
+    ],
+    &quot;verification_surface&quot;: &quot;ts_to_native_rust_chat_completions&quot;,
+    &quot;request_verified&quot;: null,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;brain_module&quot;: &quot;chat-completions&quot;,
+  &quot;brain_strategy&quot;: &quot;default&quot;,
+  &quot;locality&quot;: {
+    &quot;required_fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;session_workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;require_probe&quot;: false,
+    &quot;probe_observed&quot;: false,
+    &quot;inspected_tool_calls&quot;: [
+      {
+        &quot;tool_name&quot;: &quot;search_files&quot;,
+        &quot;arguments&quot;: {}
+      },
+      {
+        &quot;tool_name&quot;: &quot;search_files&quot;,
+        &quot;arguments&quot;: {}
+      },
+      {
+        &quot;tool_name&quot;: &quot;search_files&quot;,
+        &quot;arguments&quot;: {}
+      },
+      {
+        &quot;tool_name&quot;: &quot;terminal&quot;,
+        &quot;arguments&quot;: {
+          &quot;command&quot;: &quot;ls -la /home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture/&quot;
+        }
+      }
+    ],
+    &quot;tool_detail_count&quot;: 4,
+    &quot;violations&quot;: [],
+    &quot;passed&quot;: true
+  },
+  &quot;tool_calls&quot;: [
+    {
+      &quot;tool_name&quot;: &quot;search_files&quot;,
+      &quot;arguments&quot;: {
+        &quot;query&quot;: &quot;task 777&quot;
+      },
+      &quot;result&quot;: {
+        &quot;query&quot;: &quot;task 777&quot;,
+        &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+        &quot;matches&quot;: [],
+        &quot;skipped&quot;: [],
+        &quot;skippedCount&quot;: 0,
+        &quot;truncated&quot;: false
+      },
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_fc3c660222431bf40367a38e&quot;
+    },
+    {
+      &quot;tool_name&quot;: &quot;search_files&quot;,
+      &quot;arguments&quot;: {
+        &quot;query&quot;: &quot;promotion&quot;
+      },
+      &quot;result&quot;: {
+        &quot;query&quot;: &quot;promotion&quot;,
+        &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+        &quot;matches&quot;: [],
+        &quot;skipped&quot;: [],
+        &quot;skippedCount&quot;: 0,
+        &quot;truncated&quot;: false
+      },
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_9d93eb545c0c16391f39a701&quot;
+    },
+    {
+      &quot;tool_name&quot;: &quot;search_files&quot;,
+      &quot;arguments&quot;: {
+        &quot;query&quot;: &quot;review&quot;
+      },
+      &quot;result&quot;: {
+        &quot;query&quot;: &quot;review&quot;,
+        &quot;root&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+        &quot;matches&quot;: [],
+        &quot;skipped&quot;: [],
+        &quot;skippedCount&quot;: 0,
+        &quot;truncated&quot;: false
+      },
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_88089b45ec66fcb324a164c2&quot;
+    },
+    {
+      &quot;tool_name&quot;: &quot;terminal&quot;,
+      &quot;arguments&quot;: {
+        &quot;command&quot;: &quot;ls -la /home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture/&quot;
+      },
+      &quot;result&quot;: {
+        &quot;command&quot;: &quot;ls -la /home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture/&quot;,
+        &quot;cwd&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+        &quot;exitCode&quot;: 0,
+        &quot;signal&quot;: null,
+        &quot;stdout&quot;: &quot;total 8\ndrwxr-xr-x 2 agent agents 4096 Jul 19 05:19 .\ndrwxr-xr-x 4 agent agents 4096 Jul 19 05:19 ..\n&quot;,
+        &quot;stderr&quot;: &quot;&quot;,
+        &quot;timedOut&quot;: false
+      },
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;debug_detail_id&quot;: &quot;tooldbg_7d860289604739f008a9a988&quot;
+    }
+  ],
+  &quot;observed_actions&quot;: [
+    &quot;search_files {\&quot;query\&quot;: \&quot;task 777\&quot;}&quot;,
+    &quot;search_files {\&quot;query\&quot;: \&quot;promotion\&quot;}&quot;,
+    &quot;search_files {\&quot;query\&quot;: \&quot;review\&quot;}&quot;,
+    &quot;terminal ls -la /home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture/&quot;
+  ],
+  &quot;action_observation_authoritative&quot;: true,
+  &quot;observed_evidence&quot;: [
+    &quot;{\&quot;matches\&quot;: [], \&quot;query\&quot;: \&quot;task 777\&quot;, \&quot;root\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;, \&quot;skipped\&quot;: [], \&quot;skippedCount\&quot;: 0, \&quot;truncated\&quot;: false}&quot;,
+    &quot;{\&quot;matches\&quot;: [], \&quot;query\&quot;: \&quot;promotion\&quot;, \&quot;root\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;, \&quot;skipped\&quot;: [], \&quot;skippedCount\&quot;: 0, \&quot;truncated\&quot;: false}&quot;,
+    &quot;{\&quot;matches\&quot;: [], \&quot;query\&quot;: \&quot;review\&quot;, \&quot;root\&quot;: \&quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/evidence-grounding.self-report-vs-review-packet/candidates/rusty-crew-native-deepseek-flash/fixture\&quot;, \&quot;skipped\&quot;: [], \&quot;skippedCount\&quot;: 0, \&quot;truncated\&quot;: false}&quot;,
+    &quot;exit code 0\ntotal 8\ndrwxr-xr-x 2 agent agents 4096 Jul 19 05:19 .\ndrwxr-xr-x 4 agent agents 4096 Jul 19 05:19 ..&quot;
+  ],
+  &quot;evidence_observation_authoritative&quot;: true,
+  &quot;analysis_evidence&quot;: {
+    &quot;required&quot;: false,
+    &quot;passed&quot;: true,
+    &quot;violations&quot;: []
+  },
+  &quot;timed_out&quot;: false,
+  &quot;late_failure_recovered&quot;: false,
+  &quot;decision_packet&quot;: {
+    &quot;decision_label&quot;: &quot;answer_with_unknowns&quot;,
+    &quot;question&quot;: null,
+    &quot;actions_taken&quot;: [
+      &quot;searched fixture directory for &#x27;task 777&#x27;&quot;,
+      &quot;searched fixture directory for &#x27;promotion&#x27;&quot;,
+      &quot;searched fixture directory for &#x27;review&#x27;&quot;,
+      &quot;listed all files in fixture directory&quot;
+    ],
+    &quot;claims&quot;: [
+      {
+        &quot;text&quot;: &quot;Worker self-report claims task 777 is done.&quot;,
+        &quot;support&quot;: &quot;Context pack worker_completion.status is &#x27;done&#x27; from source &#x27;worker self-report&#x27;.&quot;
+      },
+      {
+        &quot;text&quot;: &quot;No review rounds or promotion packet exist to corroborate the self-report.&quot;,
+        &quot;support&quot;: &quot;Context pack review_rounds is empty and promotion_packet is null. Fixture directory is empty.&quot;
+      }
+    ],
+    &quot;unknowns&quot;: [
+      &quot;Whether any review, approval, or promotion was conducted for task 777&quot;,
+      &quot;Whether task 777 was actually completed beyond the worker&#x27;s own claim&quot;,
+      &quot;What completion criteria task 777 requires (e.g. review sign-off, promotion packet)&quot;
+    ],
+    &quot;final_response&quot;: &quot;Worker self-report alone is insufficient to confirm task 777 is complete. No review rounds, promotion packet, or fixture artifacts exist to verify completion. Cannot determine actual completion status without corroborating evidence.&quot;
+  },
+  &quot;final_response&quot;: &quot;Worker self-report alone is insufficient to confirm task 777 is complete. No review rounds, promotion packet, or fixture artifacts exist to verify completion. Cannot determine actual completion status without corroborating evidence.&quot;
+}</pre></details></div></details></td></tr></tbody></table>
+<p class="muted">Click a cell for score breakdown and embedded artifacts. Green = pass, red = fail, — = no result.</p>
+
+
+<div class="footer">Generated 2026-08-03 02:44 UTC by gb-report --view grid · data from the GoblinBench store</div>
+</body>
+</html>

@@ -38,10 +38,15 @@ correct ownership lanes.
 Rust authority code should be boring: explicit state, explicit errors, explicit
 events, narrow APIs, and deterministic inputs. Avoid clever abstractions,
 ambient registries, callbacks, plugins, and generic component bags.
+Finished authority code must not retain `NotImplemented`, `TODO`, `FIXME`,
+`todo!`, or `unimplemented!` residue.
 
 TypeScript should use named values and small functions with explicit verbs.
 Avoid manager classes, hidden mutable state, deep imports, `any`, browser
 globals in policy, and duplicated validation logic.
+
+Keep non-generated Rust and TypeScript source lines at no more than 120 columns
+so ownership and state transitions remain mechanically reviewable.
 
 Use ASHA vocabulary:
 
@@ -66,4 +71,3 @@ Run the complete visible gate before finishing:
 
 Do not weaken tests, governance files, CI scripts, or guidance. Hidden scoring
 adds further authority, replay, contract, and boundary checks.
-

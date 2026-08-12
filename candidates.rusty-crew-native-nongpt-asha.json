@@ -1,0 +1,164 @@
+[
+  {
+    "id": "rusty-crew-native-deepseek-flash",
+    "name": "Rusty Crew native — DeepSeek Flash — provider effort",
+    "kind": "CodingAgent",
+    "model": "deepseek-flash",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "deepseek-flash",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-deepseek-pro",
+    "name": "Rusty Crew native — DeepSeek Pro — provider effort",
+    "kind": "CodingAgent",
+    "model": "deepseek-pro",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "deepseek-pro",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-glm-5-2",
+    "name": "Rusty Crew native — GLM-5.2 — provider effort",
+    "kind": "CodingAgent",
+    "model": "glm-5.2",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "glm-5.2",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-mimo-pro",
+    "name": "Rusty Crew native — MiMo Pro — provider effort",
+    "kind": "CodingAgent",
+    "model": "mimo-pro",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "mimo-pro",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-longcat-2-0",
+    "name": "Rusty Crew native — LongCat 2.0 — provider effort",
+    "kind": "CodingAgent",
+    "model": "longcat-2.0",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "longcat-2.0",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-kimi-k3",
+    "name": "Rusty Crew native — Kimi K3 — provider effort",
+    "kind": "CodingAgent",
+    "model": "kimi-k3",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "kimi-k3",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-grok-4-5",
+    "name": "Rusty Crew native — Grok 4.5 — provider effort",
+    "kind": "CodingAgent",
+    "model": "grok-4.5",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "grok-4.5",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-grok-4-5-responses",
+    "name": "Rusty Crew native — Grok 4.5 — Responses — provider effort",
+    "kind": "CodingAgent",
+    "model": "grok-4.5",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "grok-4.5-responses",
+      "provider_protocol": "responses",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  },
+  {
+    "id": "rusty-crew-native-stepfun",
+    "name": "Rusty Crew native — StepFun — provider effort",
+    "kind": "CodingAgent",
+    "model": "stepfun",
+    "provider": "rusty-crew-native",
+    "config": {
+      "runner": "rusty-crew-native",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "require_debug_service": true,
+      "provider_alias": "stepfun",
+      "provider_protocol": "chat_completions",
+      "local_tool_profile_id": "full_agent",
+      "cleanup_profile": true,
+      "poll_interval_seconds": 0.25
+    }
+  }
+]

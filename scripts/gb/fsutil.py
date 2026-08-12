@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 from dataclasses import dataclass
 
 
@@ -63,9 +64,9 @@ def copy_directory(source: str, destination: str, skip_dirs: set[str]) -> None:
             continue
         dest_file = os.path.join(destination, relative)
         os.makedirs(os.path.dirname(dest_file) or ".", exist_ok=True)
-        # Use copyfile to mirror File.Copy semantics (metadata not required).
-        with open(file, "rb") as src, open(dest_file, "wb") as dst:
-            dst.write(src.read())
+        # Fixture scripts are part of the candidate interface. Preserve their
+        # executable bits (and the rest of the file metadata) in every runner.
+        shutil.copy2(file, dest_file)
 
 
 def snapshot_directory(root: str, skip_dirs: set[str]) -> dict[str, FileSnap]:

@@ -359,6 +359,8 @@ Each base ID below also has an otherwise equivalent hinted ID under
 | `candidates.json` | Default broad catalog used when `--candidates` is omitted. |
 | `candidates.rusty-crew-native-gpt56.json` | Native Rusty Crew matrix for GPT-5.6 Luna, Terra, and Sol via `rusty-crew-debug.service`. |
 | `candidates.rusty-crew-native-gpt56-medium.json` | The same native GPT-5.6 trio with an intentional, verified session-level `medium` reasoning override. |
+| `candidates.rusty-crew-native-deepseek-v4-flash-responses.json` | Native Rusty Crew coding/analysis candidate for DeepSeek V4 Flash 0731 over the configured DeepSeek Responses provider. |
+| `candidates.rusty-crew-native-muse-1-2-responses.json` | Native Rusty Crew coding/analysis candidate for Muse 1.2, preserving backend model ID `muse-spark-1.2-contributor` over the configured Responses provider. |
 | `candidates.rusty-crew-native-smoke.json` | One inexpensive native Rusty Crew smoke candidate. |
 | `candidates.codex-rusty-crew-comparison.json` | Direct Codex app-server versus Rusty Crew comparison pair. |
 | `candidates.codex-rusty-crew-luna-comparison.json` | Luna-specific direct versus Rusty Crew comparison pair. |
@@ -371,6 +373,10 @@ Each base ID below also has an otherwise equivalent hinted ID under
 | `candidates.denrouter-requested-session.json` | Requested Den-router matrix for durable MCP sessions. |
 | `candidates.roleplay-matrix.json` | Combined roleplay comparison matrix. |
 | `candidates.roleplay-denrouter.json` | Den-router roleplay candidates. |
+| `candidates.roleplay-rusty-crew.json` | Rusty Crew `basic_chat` roleplay candidates for Kimi K3 Chat Completions and Grok 4.5 Responses, using provider-owned generation defaults. |
+| `candidates.roleplay-rusty-crew-gpt56-medium.json` | Rusty Crew `basic_chat` roleplay matrix for GPT-5.6 Luna, Terra, and Sol over Responses with an explicit `medium` effort override. |
+| `candidates.roleplay-rusty-crew-deepseek-v4-flash-responses.json` | Rusty Crew `basic_chat` roleplay candidate for DeepSeek V4 Flash 0731 over Responses, kept distinct from the older `deepseek-flash` Chat Completions candidate. |
+| `candidates.roleplay-rusty-crew-muse-1-2-responses.json` | Rusty Crew `basic_chat` roleplay candidate for Muse 1.2 over Responses, preserving backend model ID `muse-spark-1.2-contributor`. |
 | `candidates.roleplay-local.json` / `candidates.roleplay-lemonade.json` | Local roleplay candidates. |
 
 Rusty Crew benchmark candidates must use `rusty-crew-debug.service`; do not
@@ -434,7 +440,7 @@ python3 scripts/gb-run.py \
 ```
 
 The scorer hashes guidance, governance, manifests, CI, and visible tests;
-overlays hidden regressions in a temporary copy; reports eight weighted gates;
+overlays hidden regressions in a temporary copy; reports nine weighted gates;
 and caps the result when any critical authority or boundary gate fails.
 
 The generic runner can also select the hard language subsets without the

@@ -6,6 +6,7 @@ mentions/patterns. Declared by 1 scenario.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from ..context import RunContext
@@ -27,7 +28,12 @@ class HeuristicTextScorer:
         text = candidate_result.raw_response or ""
         params = scenario.scoring.params(self.id) if scenario.scoring else {}
 
-        forbidden = list(_DEFAULT_FORBIDDEN)
+        # Coding placeholders such as ``stub`` and ``workaround`` are useful
+        # defaults for implementation tasks, but ordinary narrative words in
+        # roleplay (for example ``stubborn`` or ``candle stub``) must not lose
+        # prose-quality points. Roleplay scenarios carry their own explicit
+        # style marker lists.
+        forbidden = [] if scenario.suite.startswith("roleplay-") else list(_DEFAULT_FORBIDDEN)
         extra_forbidden = params.get("forbidden")
         if isinstance(extra_forbidden, list):
             forbidden += [str(x) for x in extra_forbidden if isinstance(x, str)]
@@ -37,7 +43,7 @@ class HeuristicTextScorer:
         if isinstance(req, list):
             required = [str(x) for x in req if isinstance(x, str)]
 
-        found_forbidden = [p for p in forbidden if p and p.lower() in text.lower()]
+        found_forbidden = [p for p in forbidden if p and _contains_forbidden(text, p)]
         missing_required = [p for p in required if p and p.lower() not in text.lower()]
 
         total_checks = len(forbidden) + len(required)
@@ -73,3 +79,14 @@ class HeuristicTextScorer:
                 "text_length": len(text),
             },
         )
+
+
+def _contains_forbidden(text: str, pattern: str) -> bool:
+    # Single-word style markers must not fire inside unrelated words (for
+    # example ``ache`` in ``reached`` or ``stub`` in ``stubborn``). Phrases
+    # retain literal substring behavior so punctuation variants stay useful.
+    if re.fullmatch(r"[\w'-]+", pattern, flags=re.UNICODE):
+        return re.search(
+            rf"(?<!\w){re.escape(pattern)}(?!\w)", text, flags=re.IGNORECASE,
+        ) is not None
+    return pattern.casefold() in text.casefold()

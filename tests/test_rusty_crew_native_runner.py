@@ -220,6 +220,76 @@ def test_native_runner_routes_before_generic_coding_agent() -> None:
     assert isinstance(pick_runner(default_runners(), fuzzy_candidate), RustyCrewNativeRunner)
 
 
+def test_native_roleplay_mode_uses_prompt_without_agent_isolation_contract() -> None:
+    scenario = Scenario(
+        id="roleplay-prose.example", version="1.0.0", suite="roleplay-prose",
+        input={"prompt": "Continue the scene in restrained third-person prose."},
+    )
+    candidate = CandidateConfig(
+        id="native-roleplay", kind=CandidateKind.OpenAiModel,
+        config={
+            "runner": "rusty-crew-native",
+            "provider_alias": "kimi-k3",
+            "local_tool_profile_id": "basic_chat",
+        },
+    )
+    cfg = RustyCrewNativeConfig.from_candidate(candidate)
+
+    assert native_module._native_scenario_mode(scenario, cfg) == "text"
+    task = native_module._native_task(scenario, candidate, cfg, "text", "/tmp/unused")
+    assert task == scenario.input["prompt"]
+    assert "execution-isolation contract" not in task
+    assert cfg.local_tool_profile_id == "basic_chat"
+
+
+def test_native_roleplay_matrix_is_debug_only_provider_owned_and_tool_free() -> None:
+    matrix = json.loads(
+        (REPO / "candidates.roleplay-rusty-crew.json").read_text(encoding="utf-8")
+    )
+
+    assert {item["config"]["provider_alias"] for item in matrix} == {
+        "kimi-k3", "grok-4.5-responses",
+    }
+    for raw in matrix:
+        candidate = CandidateConfig.from_dict(raw)
+        assert isinstance(pick_runner(default_runners(), candidate), RustyCrewNativeRunner)
+        assert candidate.config["local_tool_profile_id"] == "basic_chat"
+        assert candidate.config["service_unit"] == "rusty-crew-debug.service"
+        assert candidate.config["require_debug_service"] is True
+        assert "reasoning_effort" not in candidate.config
+        assert "temperature" not in candidate.config
+        assert not {
+            "max_tokens", "maxTokens", "max_output_tokens", "maxOutputTokens",
+        } & candidate.config.keys()
+
+
+def test_native_gpt56_roleplay_matrix_is_medium_debug_only_and_tool_free() -> None:
+    matrix = json.loads(
+        (REPO / "candidates.roleplay-rusty-crew-gpt56-medium.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert {item["model"] for item in matrix} == {
+        "gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol",
+    }
+    assert len(matrix) == 3
+    for raw in matrix:
+        candidate = CandidateConfig.from_dict(raw)
+        assert isinstance(pick_runner(default_runners(), candidate), RustyCrewNativeRunner)
+        assert candidate.kind == CandidateKind.OpenAiModel
+        assert candidate.config["provider_alias"] == candidate.model
+        assert candidate.config["provider_protocol"] == "responses"
+        assert candidate.config["reasoning_effort"] == "medium"
+        assert candidate.config["local_tool_profile_id"] == "basic_chat"
+        assert candidate.config["service_unit"] == "rusty-crew-debug.service"
+        assert candidate.config["require_debug_service"] is True
+        assert "temperature" not in candidate.config
+        assert not {
+            "max_tokens", "maxTokens", "max_output_tokens", "maxOutputTokens",
+        } & candidate.config.keys()
+
+
 def test_native_config_requires_provider_and_refuses_non_debug_endpoint() -> None:
     with pytest.raises(ValueError, match="provider_alias"):
         RustyCrewNativeConfig.from_candidate(CandidateConfig(config={"runner": "rusty-crew-native"}))
@@ -293,6 +363,64 @@ def test_native_gpt56_matrix_is_debug_only_and_routes_through_native_runner() ->
         assert candidate.config["base_url"] == "http://127.0.0.1:9348"
         assert candidate.config["service_unit"] == "rusty-crew-debug.service"
         assert candidate.config["require_debug_service"] is True
+
+
+def test_native_deepseek_v4_flash_responses_matrices_are_distinct_and_provider_owned() -> None:
+    core = json.loads(
+        (REPO / "candidates.rusty-crew-native-deepseek-v4-flash-responses.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    roleplay = json.loads(
+        (REPO / "candidates.roleplay-rusty-crew-deepseek-v4-flash-responses.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert len(core) == len(roleplay) == 1
+    assert core[0]["id"] != "rusty-crew-native-deepseek-flash"
+    assert core[0]["model"] == roleplay[0]["model"] == "deepseek-v4-flash"
+    assert core[0]["config"]["provider_alias"] == roleplay[0]["config"]["provider_alias"] == "deepseek-flash-responses"
+    for raw, kind, tool_profile in ((core[0], CandidateKind.CodingAgent, "full_agent"), (roleplay[0], CandidateKind.OpenAiModel, "basic_chat")):
+        candidate = CandidateConfig.from_dict(raw)
+        assert isinstance(pick_runner(default_runners(), candidate), RustyCrewNativeRunner)
+        assert candidate.kind == kind
+        assert candidate.config["provider_protocol"] == "responses"
+        assert candidate.config["local_tool_profile_id"] == tool_profile
+        assert candidate.config["service_unit"] == "rusty-crew-debug.service"
+        assert candidate.config["require_debug_service"] is True
+        assert "reasoning_effort" not in candidate.config
+        assert "temperature" not in candidate.config
+        assert not {"max_tokens", "maxTokens", "max_output_tokens", "maxOutputTokens"} & candidate.config.keys()
+
+
+def test_native_muse_1_2_responses_matrices_preserve_backend_model_id_and_defaults() -> None:
+    core = json.loads(
+        (REPO / "candidates.rusty-crew-native-muse-1-2-responses.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    roleplay = json.loads(
+        (REPO / "candidates.roleplay-rusty-crew-muse-1-2-responses.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert len(core) == len(roleplay) == 1
+    assert core[0]["id"] != roleplay[0]["id"]
+    assert core[0]["model"] == roleplay[0]["model"] == "muse-spark-1.2-contributor"
+    assert core[0]["config"]["provider_alias"] == roleplay[0]["config"]["provider_alias"] == "muse-1.2"
+    for raw, kind, tool_profile in ((core[0], CandidateKind.CodingAgent, "full_agent"), (roleplay[0], CandidateKind.OpenAiModel, "basic_chat")):
+        candidate = CandidateConfig.from_dict(raw)
+        assert isinstance(pick_runner(default_runners(), candidate), RustyCrewNativeRunner)
+        assert candidate.kind == kind
+        assert candidate.config["provider_protocol"] == "responses"
+        assert candidate.config["local_tool_profile_id"] == tool_profile
+        assert candidate.config["service_unit"] == "rusty-crew-debug.service"
+        assert candidate.config["require_debug_service"] is True
+        assert "reasoning_effort" not in candidate.config
+        assert "temperature" not in candidate.config
+        assert not {"max_tokens", "maxTokens", "max_output_tokens", "maxOutputTokens"} & candidate.config.keys()
 
 
 def test_native_gpt56_medium_matrix_is_explicit_and_verified() -> None:

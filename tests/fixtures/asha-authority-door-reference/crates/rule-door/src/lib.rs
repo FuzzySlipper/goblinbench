@@ -14,7 +14,6 @@ pub enum DoorRuleError {
     InsufficientEnergy { required: u32, available: u32 },
     ArithmeticOverflow,
     ApplyRejected(DoorApplyError),
-    NotImplemented,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,7 +26,6 @@ pub enum DoorApplyError {
     InvalidRevision { expected: u64, received: u64 },
     InvalidCooldown,
     ArithmeticOverflow,
-    NotImplemented,
 }
 
 pub fn evaluate(

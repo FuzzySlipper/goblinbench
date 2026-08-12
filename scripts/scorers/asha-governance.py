@@ -100,7 +100,7 @@ GATES = (
     Gate(
         "render-projection",
         "Rust-owned renderer projection",
-        0.05,
+        0.04,
         False,
         (("cargo", "test", "-p", "render-projection", "--no-fail-fast"),),
         120,
@@ -108,7 +108,7 @@ GATES = (
     Gate(
         "rust-quality",
         "Rust formatting and warning-free ownership cells",
-        0.03,
+        0.02,
         False,
         (
             ("cargo", "fmt", "--check", "--all"),
@@ -117,9 +117,17 @@ GATES = (
         180,
     ),
     Gate(
-        "guidance-vocabulary",
-        "Asha vocabulary and source-shape guidance",
-        0.02,
+        "completion-hygiene",
+        "Finished source has no implementation residue",
+        0.025,
+        False,
+        (("python3", "harness/check_completion.py"),),
+        60,
+    ),
+    Gate(
+        "guidance-reviewability",
+        "Asha vocabulary and mechanical reviewability",
+        0.015,
         False,
         (("python3", "harness/check_guidance.py"),),
         60,
@@ -320,6 +328,7 @@ def score_fixture(fixture_dir: pathlib.Path, threshold: float) -> dict:
         ),
         "detail": {
             "fixture": "asha-authority-door",
+            "scoring_version": 2,
             "protected_input_violations": violations,
             "critical_failures": critical_failures,
             "raw_weighted_score": round(raw_score, 4),

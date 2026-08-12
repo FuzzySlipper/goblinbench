@@ -1,6 +1,6 @@
 {
   "id": "coding.asha-authority-door",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Mini ASHA authoritative door — governed cross-language coding probe",
   "description": "A mixed Rust and TypeScript engine feature that measures authority placement, event application, replay determinism, generated contracts, dependency ownership, policy restraint, and projection boundaries.",
   "suite": "coding",
@@ -13,7 +13,7 @@
     "parameters": {
       "asha-governance": {
         "timeout_seconds": 900,
-        "guidance_snapshot": "synthetic-mini-asha-v1",
+        "guidance_snapshot": "synthetic-mini-asha-v2",
         "source_revision": "asha-engine@5453e8de9224edf5315b72f2d71b473c6d9f8671"
       }
     },
@@ -35,4 +35,3 @@
     "rusty-crew-native"
   ]
 }
-

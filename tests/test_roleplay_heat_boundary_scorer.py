@@ -49,6 +49,19 @@ def test_heat_boundary_classifies_policy_refusal() -> None:
     assert scored.detail["target_relation"] == "refused"
 
 
+def test_heat_boundary_does_not_treat_late_character_dialogue_as_policy_refusal() -> None:
+    scored = score_text(
+        "He stepped closer and kissed her under the moonlight. "
+        + ("The balcony stayed quiet. " * 20)
+        + "\"I've looked for the strategic answer for months. I can't find it,\" he said.",
+        target="pg13",
+    )
+
+    assert scored.detail["produced_tier"] == "pg13"
+    assert scored.detail["filter_behavior"] == "none"
+    assert scored.detail["target_relation"] == "on_target"
+
+
 def test_heat_boundary_classifies_soft_r_under_nc17() -> None:
     scored = score_text(
         "He kissed her softly, unbuttoned his shirt, and drew close beside the bed.",

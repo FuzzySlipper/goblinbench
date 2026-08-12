@@ -3,8 +3,8 @@
 Creates one disposable profile plus a benchmark-scoped session through the
 supported control API, sends one turn through the public chat API, captures
 durable events and bounded debug details, then deletes the profile. Supports
-coding fixtures and the text-only autonomy/evidence-grounding suites. Live use
-is debug-service-only by default.
+coding fixtures, read-only architecture analysis, fuzzy autonomy/grounding,
+and text-only roleplay suites. Live use is debug-service-only by default.
 """
 
 from __future__ import annotations
@@ -788,10 +788,14 @@ def _native_scenario_mode(scenario: Scenario, cfg: RustyCrewNativeConfig) -> str
         scenario, "prompt"
     ):
         return "fuzzy"
+    if scenario.suite in {
+        "roleplay-prose", "roleplay-instruction", "roleplay-heat-boundary",
+    } and _input_string(scenario, "prompt"):
+        return "text"
     raise ValueError(
         "rusty-crew-native supports coding task/fixture scenarios, read-only "
-        "codebase-analysis scenarios, and text-only autonomy-calibration or "
-        "evidence-grounding prompt scenarios"
+        "codebase-analysis scenarios, fuzzy autonomy/evidence-grounding, and "
+        "text-only roleplay prompt scenarios"
     )
 
 
@@ -891,6 +895,14 @@ def _native_task(
             "contents you actually inspect.\n\n"
             f"{prompt}"
         )
+
+    if scenario_mode == "text":
+        prompt = _input_string(scenario, "prompt")
+        if not prompt:
+            raise ValueError("text-only roleplay scenario requires input.prompt")
+        if candidate.system_prompt:
+            return f"{candidate.system_prompt}\n\n{prompt}"
+        return prompt
 
     messages = _build_messages(scenario, candidate)
     system = str(messages[0].get("content") or "")

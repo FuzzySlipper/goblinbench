@@ -35,6 +35,8 @@ from gb.environment import refresh_environment_outcomes
 from gb.models import CandidateConfig, CandidateKind, CandidateResult, Scenario
 from gb.scorers.codebase_analysis_gold import CodebaseAnalysisGoldScorer
 from gb.scorers.fuzzy_agent_behavior import FuzzyAgentBehaviorScorer
+from gb.scorers.heuristic_text import HeuristicTextScorer
+from gb.scorers.roleplay_heat_boundary import RoleplayHeatBoundaryScorer
 
 
 ROOT = SCRIPT_DIR.parent
@@ -236,6 +238,8 @@ def _refresh_in_process_score(
     scorers = {
         "fuzzy-agent-behavior": FuzzyAgentBehaviorScorer(),
         "codebase-analysis-gold": CodebaseAnalysisGoldScorer(),
+        "heuristic-text": HeuristicTextScorer(),
+        "roleplay-heat-boundary": RoleplayHeatBoundaryScorer(),
     }
     scorer = scorers.get(scorer_id)
     if scorer is None:

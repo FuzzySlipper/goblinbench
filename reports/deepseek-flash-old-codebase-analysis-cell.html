@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deepseek-flash @ codebase-analysis.den-core-v1</title>
+<style>
+:root { color-scheme: light dark; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+       max-width: 1200px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #fff;
+       overflow-wrap: anywhere; }
+@media (prefers-color-scheme: dark) { body { color: #e0e0e0; background: #1a1a1a; } }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #888; padding-bottom: 4px; }
+.scope { color: #666; font-size: 12px; margin-bottom: 16px; }
+@media (prefers-color-scheme: dark) { .scope { color: #999; } }
+.narrative { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; margin: 12px 0 20px;
+             border-left: 3px solid #4a90d9; }
+@media (prefers-color-scheme: dark) { .narrative { background: #2a2a2a; } }
+.narrative p { margin: 0.5em 0; }
+.narrative p:first-child { margin-top: 0; }
+.narrative p:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+@media (prefers-color-scheme: dark) { th, td { border-color: #444; } }
+th { background: #f0f0f0; font-weight: 600; cursor: pointer; user-select: none; }
+@media (prefers-color-scheme: dark) { th { background: #2a2a2a; } }
+th.sorted-asc::after { content: " ▲"; }
+th.sorted-desc::after { content: " ▼"; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.pass { color: #1a7a1a; font-weight: 600; }
+td.fail { color: #c62828; font-weight: 600; }
+@media (prefers-color-scheme: dark) { td.pass { color: #6bcb6b; } td.fail { color: #ff6b6b; } }
+.cats { font-size: 11px; color: #888; }
+.sample { margin: 8px 0; }
+.sample-label { font-size: 12px; color: #666; font-family: ui-monospace, monospace; }
+pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+pre { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; overflow-x: auto; }
+@media (prefers-color-scheme: dark) { pre { background: #2a2a2a; } }
+details { margin: 4px 0; }
+summary { cursor: pointer; font-size: 12px; color: #4a90d9; }
+.cell-detail { padding: 8px 0; }
+.muted { color: #888; font-size: 11px; }
+.footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #999; }
+@media (max-width: 760px) {
+  body { padding: 14px 8px; font-size: 13px; }
+  h1 { font-size: 18px; }
+  .scope { overflow-wrap: anywhere; }
+  table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain;
+          -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  table::before { content: "Swipe table →"; display: block; color: #888; font-size: 11px;
+                  font-weight: 600; letter-spacing: 0.02em; padding: 6px 4px; text-transform: uppercase; }
+  th, td { padding: 4px 6px; font-size: 12px; }
+  .cell-detail table { white-space: normal; }
+  .cell-detail pre { max-width: 86vw; }
+  details { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<h1>deepseek-flash @ codebase-analysis.den-core-v1</h1>
+<div class="scope">runs: <code>run-20260719-034647-ddb1b115</code> · suite: <code>codebase-analysis</code> · model: <code>deepseek-flash</code></div>
+<div class="narrative"><p>Older DeepSeek Flash architecture-analysis cell for comparison.</p></div>
+<h2>deepseek-flash <span class='muted'>@</span> codebase-analysis.den-core-v1</h2><div class='scope'><span class='pass'>PASS</span> · score 0.82 · run run-20260719-034647-ddb1b115 · 94441ms</div><h3>Environment provenance</h3><pre>{
+  &quot;schema_version&quot;: &quot;1&quot;,
+  &quot;lane&quot;: &quot;environment-realized&quot;,
+  &quot;name&quot;: &quot;rusty-crew-debug&quot;,
+  &quot;model&quot;: {
+    &quot;requested&quot;: &quot;deepseek-flash&quot;,
+    &quot;resolved&quot;: &quot;deepseek-flash&quot;,
+    &quot;provider_requested&quot;: &quot;deepseek-flash&quot;,
+    &quot;provider_resolved&quot;: &quot;deepseek-flash&quot;,
+    &quot;reasoning_effort&quot;: null,
+    &quot;requested_config&quot;: {
+      &quot;runner&quot;: &quot;rusty-crew-native&quot;,
+      &quot;base_url&quot;: &quot;http://127.0.0.1:9348&quot;,
+      &quot;service_unit&quot;: &quot;rusty-crew-debug.service&quot;,
+      &quot;require_debug_service&quot;: true,
+      &quot;provider_alias&quot;: &quot;deepseek-flash&quot;,
+      &quot;provider_protocol&quot;: &quot;chat_completions&quot;,
+      &quot;local_tool_profile_id&quot;: &quot;full_agent&quot;,
+      &quot;cleanup_profile&quot;: true,
+      &quot;poll_interval_seconds&quot;: 0.25
+    },
+    &quot;requested_config_sha256&quot;: &quot;e5519fb9b3939f5ca4222f4ae712a88dfa808fe96886609c2dd3ea0b6fde81f0&quot;,
+    &quot;provider_kind&quot;: &quot;custom&quot;,
+    &quot;provider_protocol&quot;: &quot;chat_completions&quot;,
+    &quot;provider_revision&quot;: 5,
+    &quot;configured_reasoning_effort&quot;: &quot;high&quot;,
+    &quot;requested_reasoning_effort&quot;: null,
+    &quot;session_reasoning_effort_override&quot;: null,
+    &quot;reasoning_effort_request_verified&quot;: null,
+    &quot;reasoning_evidence&quot;: {
+      &quot;requested&quot;: null,
+      &quot;provider_baseline&quot;: &quot;high&quot;,
+      &quot;session_override&quot;: null,
+      &quot;effective&quot;: &quot;high&quot;,
+      &quot;observed_request_efforts&quot;: [
+        &quot;high&quot;
+      ],
+      &quot;verification_surface&quot;: &quot;ts_to_native_rust_chat_completions&quot;,
+      &quot;request_verified&quot;: null,
+      &quot;passed&quot;: true,
+      &quot;violations&quot;: []
+    }
+  },
+  &quot;substrate&quot;: {
+    &quot;kind&quot;: &quot;rusty-crew-native-brain&quot;,
+    &quot;name&quot;: &quot;rusty-crew-debug.service&quot;,
+    &quot;version&quot;: null,
+    &quot;transport&quot;: &quot;http-chat-events&quot;,
+    &quot;base_url&quot;: &quot;http://127.0.0.1:9348&quot;,
+    &quot;brain_module&quot;: &quot;chat-completions&quot;,
+    &quot;brain_strategy&quot;: &quot;default&quot;,
+    &quot;brain_backend&quot;: &quot;chat-completions&quot;
+  },
+  &quot;profile&quot;: {
+    &quot;id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;,
+    &quot;revision&quot;: 1,
+    &quot;role&quot;: &quot;GoblinBench codebase-analysis.den-core-v1 / rusty-crew-native-deepseek-flash&quot;,
+    &quot;prompt_assembly_id&quot;: &quot;deepseek-flash&quot;,
+    &quot;tool_catalog_sha256&quot;: &quot;a7c3373375d7ccf477f82b2b5dced48eb8e6e2aebb72c60a76feb942c0551d83&quot;,
+    &quot;local_tool_profile_id&quot;: &quot;full_agent&quot;,
+    &quot;tool_count&quot;: 59
+  },
+  &quot;harness&quot;: {
+    &quot;runner&quot;: &quot;rusty-crew-native&quot;,
+    &quot;runner_version&quot;: &quot;python-v1&quot;,
+    &quot;scenario_id&quot;: &quot;codebase-analysis.den-core-v1&quot;,
+    &quot;scenario_version&quot;: &quot;1.0.0&quot;,
+    &quot;scenario_tags&quot;: [
+      &quot;architecture-analysis&quot;,
+      &quot;hard&quot;,
+      &quot;read-only&quot;,
+      &quot;rusty-crew-native&quot;,
+      &quot;frontier-core&quot;
+    ],
+    &quot;fixture_case&quot;: &quot;den-core-v1&quot;,
+    &quot;prompt_variant&quot;: null,
+    &quot;workspace_sha256&quot;: &quot;9149e7900f918a8c7b4f3c2f01d00de44074939ce0f1e9ad2799e6794c70592b&quot;,
+    &quot;family&quot;: &quot;crew-native-chat&quot;,
+    &quot;session_workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/codebase-analysis.den-core-v1/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+    &quot;locality&quot;: {
+      &quot;required_fixture_dir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/codebase-analysis.den-core-v1/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+      &quot;session_workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/codebase-analysis.den-core-v1/candidates/rusty-crew-native-deepseek-flash/fixture&quot;,
+      &quot;require_probe&quot;: true,
+      &quot;probe_observed&quot;: true,
+      &quot;inspected_tool_calls&quot;: [
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;pwd&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;read_file&quot;,
+          &quot;arguments&quot;: {
+            &quot;path&quot;: &quot;repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;read_file&quot;,
+          &quot;arguments&quot;: {
+            &quot;path&quot;: &quot;repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;read_file&quot;,
+          &quot;arguments&quot;: {
+            &quot;path&quot;: &quot;repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;wc -l repo-packet.md &amp;&amp; head -1 repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;search_files&quot;,
+          &quot;arguments&quot;: {
+            &quot;root&quot;: &quot;.&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;grep -n \&quot;^## src/\&quot; repo-packet.md | head -40&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;grep -n \&quot;^## src/\\|^## tests/\\|^## docs/\\|^## \&quot; repo-packet.md | head -60&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;650,732p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;733,842p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;843,957p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;958,1150p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1151,1243p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1244,1345p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1346,1414p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1415,1500p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1501,1545p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1546,1611p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1612,1670p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1671,1736p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1737,1800p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1800,1970p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;1970,2043p&#x27; repo-packet.md&quot;
+          }
+        },
+        {
+          &quot;tool_name&quot;: &quot;terminal&quot;,
+          &quot;arguments&quot;: {
+            &quot;command&quot;: &quot;sed -n &#x27;547,649p&#x27; repo-packet.md&quot;
+          }
+        }
+      ],
+      &quot;tool_detail_count&quot;: 24,
+      &quot;violations&quot;: [],
+      &quot;passed&quot;: true
+    },
+    &quot;event_artifact_truncated&quot;: false,
+    &quot;tool_detail_artifact_truncated&quot;: false,
+    &quot;provider_debug_artifact_truncated&quot;: false,
+    &quot;sandbox&quot;: &quot;crew-native-local-tools&quot;,
+    &quot;scenario_mode&quot;: &quot;analysis&quot;,
+    &quot;late_failure_recovered&quot;: false,
+    &quot;known_limit_task_id&quot;: null
+  },
+  &quot;execution&quot;: {
+    &quot;runner_status&quot;: &quot;completed&quot;,
+    &quot;substrate_status&quot;: &quot;completed&quot;,
+    &quot;terminal_status&quot;: &quot;completed&quot;,
+    &quot;elapsed_ms&quot;: 94441,
+    &quot;retries&quot;: 0,
+    &quot;tool_calls&quot;: 24,
+    &quot;command_cycles&quot;: 20,
+    &quot;configuration_commands&quot;: 0
+  },
+  &quot;usage&quot;: {
+    &quot;input_tokens&quot;: null,
+    &quot;cached_input_tokens&quot;: null,
+    &quot;output_tokens&quot;: null,
+    &quot;reasoning_output_tokens&quot;: null,
+    &quot;total_tokens&quot;: null,
+    &quot;model_context_window&quot;: 1000000,
+    &quot;classification&quot;: &quot;not_exposed_by_native_chat_events&quot;
+  },
+  &quot;cost&quot;: {
+    &quot;classification&quot;: &quot;unavailable&quot;,
+    &quot;amount&quot;: null,
+    &quot;currency&quot;: null,
+    &quot;basis&quot;: &quot;Rusty Crew native chat API does not expose attributable run cost&quot;
+  },
+  &quot;outcome&quot;: {
+    &quot;runner_success&quot;: true,
+    &quot;primary_scorer_id&quot;: &quot;codebase-analysis-gold&quot;,
+    &quot;score&quot;: 0.822125,
+    &quot;passed&quot;: true,
+    &quot;summary&quot;: &quot;PASS: codebase-analysis: matched 8/12 gold issues, 0 decoy hit(s), score 0.82&quot;
+  },
+  &quot;identifiers&quot;: {
+    &quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;,
+    &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-benchmark&quot;,
+    &quot;agent_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;,
+    &quot;message_id&quot;: &quot;run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash:message&quot;,
+    &quot;wake_id&quot;: &quot;service-gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-benchmark-1784458007972-17&quot;
+  },
+  &quot;cleanup&quot;: {
+    &quot;requested&quot;: true,
+    &quot;status&quot;: &quot;completed&quot;,
+    &quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;
+  }
+}</pre><h3>Scores</h3><div class='cell-detail'><b>codebase-analysis-gold</b> ✓ 0.82 <span class='muted'>Codebase Analysis Gold-Ledger Scorer</span><div class='muted'>severity-weighted recall 0.76; precision 1.00; evidence 1.00; fix quality 1.00; severity calibration 0.56</div><details><summary>detail</summary><table><tbody><tr><td>gold_issue_count</td><td>12</td></tr><tr><td>candidate_finding_count</td><td>16</td></tr><tr><td>candidate_finding_count_before_limit</td><td>16</td></tr><tr><td>max_findings</td><td>16</td></tr><tr><td>matched_gold_count</td><td>8</td></tr><tr><td>matched_gold_ids</td><td>[&quot;contract-paging-mismatch&quot;, &quot;exception-in-background-loop&quot;, &quot;hardcoded-lan-ip&quot;, &quot;health-check-ignores-db&quot;, &quot;missing-404-test&quot;, &quot;stale-review-verdict&quot;, &quot;tool-schema-description-mismatch&quot;, &quot;worker-release-before-completion&quot;]</td></tr><tr><td>missed_gold_ids</td><td>[&quot;core-mcp-boundary-leak&quot;, &quot;singleton-cache-no-lock&quot;, &quot;documentation-contradiction&quot;, &quot;assignment-release-null-state&quot;]</td></tr><tr><td>gold_recall</td><td>0.76</td></tr><tr><td>precision</td><td>1.0</td></tr><tr><td>evidence_quality_score</td><td>1.0</td></tr><tr><td>fix_quality_score</td><td>1.0</td></tr><tr><td>severity_calibration_score</td><td>0.5625</td></tr><tr><td>raw_score</td><td>0.8221</td></tr><tr><td>finding_count_penalty</td><td>0.0</td></tr><tr><td>decoy_hit_count</td><td>0</td></tr><tr><td>decoy_hits</td><td>[]</td></tr><tr><td>unclassified_finding_count</td><td>8</td></tr><tr><td>evaluations</td><td>[{&quot;title&quot;: &quot;Dispatch background loop silently terminates on DequeueBatchAsync exception&quot;, &quot;match_gold_id&quot;: &quot;exception-in-background-loop&quot;, &quot;match_quality&quot;: &quot;good_match&quot;, &quot;match_score&quot;: 1.0, &quot;path_hit_count&quot;: 1, &quot;signal_group_hit_count&quot;: 3, &quot;is_decoy_hit&quot;: false}, {&quot;title&quot;: &quot;Worker release-before-com…</td></tr><tr><td>failure_categories</td><td>[]</td></tr></tbody></table></details></div><div class='cell-detail'><b>latency</b> ✓ 0.84 <span class='muted'>Latency / Cost Metadata Scorer</span><div class='muted'>Candidate completed in 94441ms.</div><details><summary>detail</summary><table><tbody><tr><td>duration_ms</td><td>94441</td></tr><tr><td>latency_score</td><td>0.8425983333333333</td></tr><tr><td>max_budget_ms</td><td>600000.0</td></tr><tr><td>estimated_cost_usd</td><td>None</td></tr></tbody></table></details></div><h3>Artifacts</h3><details><summary>scores.json (7,616 bytes)</summary><pre>[
+  {
+    &quot;scorer_id&quot;: &quot;codebase-analysis-gold&quot;,
+    &quot;scorer_name&quot;: &quot;Codebase Analysis Gold-Ledger Scorer&quot;,
+    &quot;scoring_kind&quot;: &quot;deterministic&quot;,
+    &quot;success&quot;: true,
+    &quot;error&quot;: null,
+    &quot;score&quot;: 0.822125,
+    &quot;passed&quot;: true,
+    &quot;explanation&quot;: &quot;severity-weighted recall 0.76; precision 1.00; evidence 1.00; fix quality 1.00; severity calibration 0.56&quot;,
+    &quot;human_summary&quot;: &quot;PASS: codebase-analysis: matched 8/12 gold issues, 0 decoy hit(s), score 0.82&quot;,
+    &quot;judge_model&quot;: null,
+    &quot;judge_prompt_version&quot;: null,
+    &quot;detail&quot;: {
+      &quot;gold_issue_count&quot;: 12,
+      &quot;candidate_finding_count&quot;: 16,
+      &quot;candidate_finding_count_before_limit&quot;: 16,
+      &quot;max_findings&quot;: 16,
+      &quot;matched_gold_count&quot;: 8,
+      &quot;matched_gold_ids&quot;: [
+        &quot;contract-paging-mismatch&quot;,
+        &quot;exception-in-background-loop&quot;,
+        &quot;hardcoded-lan-ip&quot;,
+        &quot;health-check-ignores-db&quot;,
+        &quot;missing-404-test&quot;,
+        &quot;stale-review-verdict&quot;,
+        &quot;tool-schema-description-mismatch&quot;,
+        &quot;worker-release-before-completion&quot;
+      ],
+      &quot;missed_gold_ids&quot;: [
+        &quot;core-mcp-boundary-leak&quot;,
+        &quot;singleton-cache-no-lock&quot;,
+        &quot;documentation-contradiction&quot;,
+        &quot;assignment-release-null-state&quot;
+      ],
+      &quot;gold_recall&quot;: 0.76,
+      &quot;precision&quot;: 1.0,
+      &quot;evidence_quality_score&quot;: 1.0,
+      &quot;fix_quality_score&quot;: 1.0,
+      &quot;severity_calibration_score&quot;: 0.5625,
+      &quot;raw_score&quot;: 0.8221,
+      &quot;finding_count_penalty&quot;: 0.0,
+      &quot;decoy_hit_count&quot;: 0,
+      &quot;decoy_hits&quot;: [],
+      &quot;unclassified_finding_count&quot;: 8,
+      &quot;evaluations&quot;: [
+        {
+          &quot;title&quot;: &quot;Dispatch background loop silently terminates on DequeueBatchAsync exception&quot;,
+          &quot;match_gold_id&quot;: &quot;exception-in-background-loop&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 1,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;Worker release-before-completion race causes duplicate work&quot;,
+          &quot;match_gold_id&quot;: &quot;worker-release-before-completion&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 1,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;Review verdict cache returns stale approvals without head comparison&quot;,
+          &quot;match_gold_id&quot;: &quot;stale-review-verdict&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 2,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;MCP tool parameter naming mismatch between schema and handlers&quot;,
+          &quot;match_gold_id&quot;: &quot;tool-schema-description-mismatch&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 3,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;Cursor-based pagination returns duplicate results on every page&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;Program.cs uses BuildServiceProvider() during registration creating duplicate container&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;Worker identity lookup uses numeric PK instead of unique identity string&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;Document GET by-id returns HTTP 200 with null body instead of 404&quot;,
+          &quot;match_gold_id&quot;: &quot;missing-404-test&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 1,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;Static configuration cache populated but never exposed or consumed&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;LLM endpoint hardcoded to private IP address&quot;,
+          &quot;match_gold_id&quot;: &quot;hardcoded-lan-ip&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 1,
+          &quot;signal_group_hit_count&quot;: 2,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;NoTaskRepository list endpoint returns unfiltered results with unsupported pagination&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;DocumentRepository.UpdateAsync has no optimistic concurrency protection&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;Health endpoint always returns 200 OK without checking database connectivity&quot;,
+          &quot;match_gold_id&quot;: &quot;health-check-ignores-db&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 1,
+          &quot;signal_group_hit_count&quot;: 3,
+          &quot;is_decoy_hit&quot;: false
+        },
+        {
+          &quot;title&quot;: &quot;Database initialization uses synchronous blocking on async startup&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;No authentication enforcement despite documented X-Api-Key requirement&quot;,
+          &quot;match_gold_id&quot;: null,
+          &quot;match_quality&quot;: &quot;no_match&quot;,
+          &quot;match_score&quot;: 0.0,
+          &quot;path_hit_count&quot;: 0,
+          &quot;signal_group_hit_count&quot;: 0,
+          &quot;is_decoy_hit&quot;: false,
+          &quot;decoy_id&quot;: null
+        },
+        {
+          &quot;title&quot;: &quot;Inconsistent pagination patterns across the codebase&quot;,
+          &quot;match_gold_id&quot;: &quot;contract-paging-mismatch&quot;,
+          &quot;match_quality&quot;: &quot;good_match&quot;,
+          &quot;match_score&quot;: 1.0,
+          &quot;path_hit_count&quot;: 2,
+          &quot;signal_group_hit_count&quot;: 2,
+          &quot;is_decoy_hit&quot;: false
+        }
+      ],
+      &quot;failure_categories&quot;: []
+    }
+  },
+  {
+    &quot;scorer_id&quot;: &quot;latency&quot;,
+    &quot;scorer_name&quot;: &quot;Latency / Cost Metadata Scorer&quot;,
+    &quot;scoring_kind&quot;: &quot;metadata&quot;,
+    &quot;success&quot;: true,
+    &quot;error&quot;: null,
+    &quot;score&quot;: 0.8425983333333333,
+    &quot;passed&quot;: true,
+    &quot;explanation&quot;: &quot;Candidate completed in 94441ms.&quot;,
+    &quot;human_summary&quot;: &quot;INFO: latency: 94441ms (score 0.84)&quot;,
+    &quot;judge_model&quot;: null,
+    &quot;judge_prompt_version&quot;: null,
+    &quot;detail&quot;: {
+      &quot;duration_ms&quot;: 94441,
+      &quot;latency_score&quot;: 0.8425983333333333,
+      &quot;max_budget_ms&quot;: 600000.0,
+      &quot;estimated_cost_usd&quot;: null
+    }
+  }
+]</pre></details><details><summary>trace.jsonl (1,927 bytes)</summary><pre>{&quot;timestamp&quot;: &quot;2026-07-19T10:46:47.715000Z&quot;, &quot;event&quot;: &quot;rusty_crew_native.fixture.copied&quot;, &quot;data&quot;: {&quot;source&quot;: &quot;/home/dev/goblinbench/fixtures/codebase-analysis/den-core-v1&quot;, &quot;destination&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/codebase-analysis.den-core-v1/candidates/rusty-crew-native-deepseek-flash/fixture&quot;, &quot;workspace_sha256&quot;: &quot;9149e7900f918a8c7b4f3c2f01d00de44074939ce0f1e9ad2799e6794c70592b&quot;, &quot;scenario_mode&quot;: &quot;analysis&quot;}}
+{&quot;timestamp&quot;: &quot;2026-07-19T10:46:47.805000Z&quot;, &quot;event&quot;: &quot;rusty_crew_native.profile.created&quot;, &quot;data&quot;: {&quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;, &quot;default_session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-session&quot;, &quot;provider_alias&quot;: &quot;deepseek-flash&quot;}}
+{&quot;timestamp&quot;: &quot;2026-07-19T10:46:47.831000Z&quot;, &quot;event&quot;: &quot;rusty_crew_native.session.created&quot;, &quot;data&quot;: {&quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;, &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-benchmark&quot;, &quot;workdir&quot;: &quot;/home/dev/goblinbench/runs/run-20260719-034647-ddb1b115/scenarios/codebase-analysis.den-core-v1/candidates/rusty-crew-native-deepseek-flash/fixture&quot;, &quot;max_delegation_depth&quot;: 0}}
+{&quot;timestamp&quot;: &quot;2026-07-19T10:48:22.150000Z&quot;, &quot;event&quot;: &quot;rusty_crew_native.completed&quot;, &quot;data&quot;: {&quot;profile_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash&quot;, &quot;session_id&quot;: &quot;gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-benchmark&quot;, &quot;wake_id&quot;: &quot;service-gb-run-20260719-034647-ddb1b115-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-flash-benchmark-1784458007972-17&quot;, &quot;status&quot;: &quot;completed&quot;, &quot;files_changed&quot;: 0, &quot;duration_ms&quot;: 94441, &quot;cleanup_status&quot;: &quot;completed&quot;}}
+</pre></details>
+
+<div class="footer">Generated 2026-08-03 02:44 UTC by gb-report --view cell · data from the GoblinBench store</div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vocabulary blocker plus advisory source-shape pressure report."""
+"""Vocabulary blocker plus mechanical source-reviewability checks."""
 
 from __future__ import annotations
 
@@ -19,15 +19,19 @@ BANNED_POLICY_RUNTIME = re.compile(
 BANNED_AUTHORITY_RUNTIME = re.compile(
     r"\b(?:SystemTime|Instant::now|thread_rng|random::<|rand::)"
 )
+MAX_SOURCE_COLUMNS = 120
+
+
+def source_files() -> list[pathlib.Path]:
+    sources = list((ROOT / "crates").glob("*/src/**/*.rs"))
+    sources.extend((ROOT / "ts/packages").glob("*/src/**/*.ts"))
+    return sorted(source for source in sources if "generated" not in source.parts)
 
 
 def main() -> int:
     failures: list[str] = []
     warnings: list[str] = []
-    sources = sorted((ROOT / "crates").glob("*/src/*.rs")) + sorted(
-        (ROOT / "ts/packages").glob("*/src/*.ts")
-    )
-    for source in sources:
+    for source in source_files():
         relative = source.relative_to(ROOT).as_posix()
         text = source.read_text()
         if BANNED_TYPE.search(text):
@@ -36,8 +40,17 @@ def main() -> int:
             failures.append(f"{relative} uses explicit any")
         if "ts/packages/policy-" in relative and BANNED_POLICY_RUNTIME.search(text):
             failures.append(f"{relative} reads nondeterministic runtime state from policy")
-        if relative.startswith(("crates/core-state/", "crates/rule-", "crates/sim-")) and BANNED_AUTHORITY_RUNTIME.search(text):
+        authority_source = relative.startswith(
+            ("crates/core-state/", "crates/rule-", "crates/sim-")
+        )
+        if authority_source and BANNED_AUTHORITY_RUNTIME.search(text):
             failures.append(f"{relative} reads nondeterministic runtime state from authority")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if len(line) > MAX_SOURCE_COLUMNS:
+                failures.append(
+                    f"{relative}:{line_number} has {len(line)} columns; "
+                    f"split source lines at {MAX_SOURCE_COLUMNS} columns for review"
+                )
         lines = len(text.splitlines())
         if lines > 220:
             warnings.append(f"{relative} has {lines} lines; review ownership pressure")

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek V4 Flash 0731 Responses — environment evidence</title>
+<style>
+:root { color-scheme: light dark; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+       max-width: 1200px; margin: 0 auto; padding: 24px; color: #1a1a1a; background: #fff;
+       overflow-wrap: anywhere; }
+@media (prefers-color-scheme: dark) { body { color: #e0e0e0; background: #1a1a1a; } }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 24px 0 8px; border-bottom: 1px solid #888; padding-bottom: 4px; }
+.scope { color: #666; font-size: 12px; margin-bottom: 16px; }
+@media (prefers-color-scheme: dark) { .scope { color: #999; } }
+.narrative { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; margin: 12px 0 20px;
+             border-left: 3px solid #4a90d9; }
+@media (prefers-color-scheme: dark) { .narrative { background: #2a2a2a; } }
+.narrative p { margin: 0.5em 0; }
+.narrative p:first-child { margin-top: 0; }
+.narrative p:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+th, td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+@media (prefers-color-scheme: dark) { th, td { border-color: #444; } }
+th { background: #f0f0f0; font-weight: 600; cursor: pointer; user-select: none; }
+@media (prefers-color-scheme: dark) { th { background: #2a2a2a; } }
+th.sorted-asc::after { content: " ▲"; }
+th.sorted-desc::after { content: " ▼"; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.pass { color: #1a7a1a; font-weight: 600; }
+td.fail { color: #c62828; font-weight: 600; }
+@media (prefers-color-scheme: dark) { td.pass { color: #6bcb6b; } td.fail { color: #ff6b6b; } }
+.cats { font-size: 11px; color: #888; }
+.sample { margin: 8px 0; }
+.sample-label { font-size: 12px; color: #666; font-family: ui-monospace, monospace; }
+pre, code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+pre { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; overflow-x: auto; }
+@media (prefers-color-scheme: dark) { pre { background: #2a2a2a; } }
+details { margin: 4px 0; }
+summary { cursor: pointer; font-size: 12px; color: #4a90d9; }
+.cell-detail { padding: 8px 0; }
+.muted { color: #888; font-size: 11px; }
+.footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #999; }
+@media (max-width: 760px) {
+  body { padding: 14px 8px; font-size: 13px; }
+  h1 { font-size: 18px; }
+  .scope { overflow-wrap: anywhere; }
+  table { display: block; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain;
+          -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  table::before { content: "Swipe table →"; display: block; color: #888; font-size: 11px;
+                  font-weight: 600; letter-spacing: 0.02em; padding: 6px 4px; text-transform: uppercase; }
+  th, td { padding: 4px 6px; font-size: 12px; }
+  .cell-detail table { white-space: normal; }
+  .cell-detail pre { max-width: 86vw; }
+  details { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<h1>DeepSeek V4 Flash 0731 Responses — environment evidence</h1>
+<div class="scope">runs: <code>run-20260802-181856-c891b89d,run-20260802-182526-96a9372f,run-20260802-182615-bbc6939f,run-20260802-182714-ec8dfcbc,run-20260802-183121-125a8052</code></div>
+<div class="narrative"><p>Rusty Crew debug-service environment evidence for DeepSeek V4 Flash 0731 Responses.</p></div>
+
+<h2>Environment comparison</h2>
+<table><thead><tr>
+<th>lane</th><th>environment/profile</th><th>model</th><th>scenario</th>
+<th>outcome</th><th class="num">elapsed</th><th>usage</th><th>cost basis</th>
+</tr></thead><tbody><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-asha-authority-door-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.asha-authority-door</td><td>PASS 1.00</td><td class='num'>223,132ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-batch-ingestion-go-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.batch-ingestion-go</td><td>PASS 1.00</td><td class='num'>132,276ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-batch-ingestion-python-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.batch-ingestion-python</td><td>PASS 1.00</td><td class='num'>165,498ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-batch-ingestion-rust-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.batch-ingestion-rust</td><td>PASS 1.00</td><td class='num'>100,262ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-batch-ingestion-typescript-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.batch-ingestion-typescript</td><td>PASS 1.00</td><td class='num'>139,242ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-durable-workflow-engine-typescript-rusty-crew-native-deepseek-v4-flash-res</td><td>deepseek-v4-flash</td><td>coding.durable-workflow-engine-typescript</td><td>PASS 1.00</td><td class='num'>393,967ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-durable-workflow-engine-typescript-style-guided-rusty-crew-native-deepseek</td><td>deepseek-v4-flash</td><td>coding.durable-workflow-engine-typescript-style-guided</td><td>PASS 1.00</td><td class='num'>275,569ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-durable-workflow-engine-typescript-style-prose-guided-rusty-crew-native-de</td><td>deepseek-v4-flash</td><td>coding.durable-workflow-engine-typescript-style-prose-guided</td><td>PASS 1.00</td><td class='num'>336,949ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-framed-replica-rust-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.framed-replica-rust</td><td>PASS 1.00</td><td class='num'>237,751ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-leased-dag-queue-rust-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>coding.leased-dag-queue-rust</td><td>PASS 1.00</td><td class='num'>350,249ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-go-rusty-crew-native-deepseek-v4-flash-respon</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-go</td><td>PASS 1.00</td><td class='num'>130,638ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-go-style-guided-rusty-crew-native-deepseek-v4</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-go-style-guided</td><td>PASS 1.00</td><td class='num'>117,523ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-go-style-prose-guided-rusty-crew-native-deeps</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-go-style-prose-guided</td><td>PASS 1.00</td><td class='num'>167,800ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-python-rusty-crew-native-deepseek-v4-flash-re</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-python</td><td>PASS 1.00</td><td class='num'>209,005ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-python-style-guided-rusty-crew-native-deepsee</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-python-style-guided</td><td>PASS 1.00</td><td class='num'>197,183ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-python-style-prose-guided-rusty-crew-native-d</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-python-style-prose-guided</td><td>PASS 1.00</td><td class='num'>122,766ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-rust-rusty-crew-native-deepseek-v4-flash-resp</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-rust</td><td>PASS 1.00</td><td class='num'>138,310ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-rust-style-guided-rusty-crew-native-deepseek-</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-rust-style-guided</td><td>PASS 1.00</td><td class='num'>192,173ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-rust-style-prose-guided-rusty-crew-native-dee</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-rust-style-prose-guided</td><td>PASS 1.00</td><td class='num'>225,703ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-typescript-rusty-crew-native-deepseek-v4-flas</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-typescript</td><td>PASS 1.00</td><td class='num'>114,546ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-typescript-style-guided-rusty-crew-native-dee</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-typescript-style-guided</td><td>PASS 1.00</td><td class='num'>121,555ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-183121-125a8052-coding-maintainability-mini-service-typescript-style-prose-guided-rusty-crew-nati</td><td>deepseek-v4-flash</td><td>coding.maintainability-mini-service-typescript-style-prose-guided</td><td>PASS 1.00</td><td class='num'>184,270ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182714-ec8dfcbc-codebase-analysis-den-core-v1-rusty-crew-native-deepseek-v4-flash-responses</td><td>deepseek-v4-flash</td><td>codebase-analysis.den-core-v1</td><td>FAIL 0.00</td><td class='num'>241,635ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182615-bbc6939f-evidence-grounding-model-capability-incomplete-logs-rusty-crew-native-deepseek-v4</td><td>deepseek-v4-flash</td><td>evidence-grounding.model-capability-incomplete-logs</td><td>FAIL 0.80</td><td class='num'>19,874ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182615-bbc6939f-evidence-grounding-partial-thread-status-brief-rusty-crew-native-deepseek-v4-flas</td><td>deepseek-v4-flash</td><td>evidence-grounding.partial-thread-status-brief</td><td>FAIL 0.80</td><td class='num'>13,469ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182615-bbc6939f-evidence-grounding-self-report-vs-review-packet-rusty-crew-native-deepseek-v4-fla</td><td>deepseek-v4-flash</td><td>evidence-grounding.self-report-vs-review-packet</td><td>FAIL 0.80</td><td class='num'>22,462ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182526-96a9372f-autonomy-calibration-clear-smoke-test-after-patch-rusty-crew-native-deepseek-v4-f</td><td>deepseek-v4-flash</td><td>autonomy-calibration.clear-smoke-test-after-patch</td><td>FAIL 0.80</td><td class='num'>5,284ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182526-96a9372f-autonomy-calibration-mcp-tool-limitation-bypass-script-rusty-crew-native-deepseek</td><td>deepseek-v4-flash</td><td>autonomy-calibration.mcp-tool-limitation-bypass-script</td><td>FAIL 0.80</td><td class='num'>25,645ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-182526-96a9372f-autonomy-calibration-two-source-repo-conflict-rusty-crew-native-deepseek-v4-flash</td><td>deepseek-v4-flash</td><td>autonomy-calibration.two-source-repo-conflict</td><td>FAIL 0.80</td><td class='num'>14,210ms</td><td>unavailable</td><td>unavailable</td></tr><tr><td>environment-realized</td><td>rusty-crew-debug / gb-run-20260802-181856-c891b89d-roleplay-prose-rainy-inn-doorway-minimal-v0-rusty-crew-native-deepseek-v4-flash-r</td><td>deepseek-v4-flash</td><td>roleplay-prose.rainy-inn-doorway-minimal-v0</td><td>PASS 1.00</td><td class='num'>22,621ms</td><td>unavailable</td><td>unavailable</td></tr></tbody></table>
+<p class="muted">Rows remain environment-scoped; model-core and environment-realized results are never aggregated together.</p>
+
+
+<div class="footer">Generated 2026-08-03 02:43 UTC by gb-report --view environment · data from the GoblinBench store</div>
+</body>
+</html>
