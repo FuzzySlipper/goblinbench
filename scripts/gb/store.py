@@ -59,6 +59,15 @@ INLINE_ARTIFACT_NAMES = {
     "rusty-crew-native-response.txt": "text/plain",
     "codex-events.jsonl": "application/x-ndjson",
     "codex-response.txt": "text/plain",
+    "playtest-index.json": "application/json",
+    "playtest-evidence.json": "application/json",
+    "mutation-proof.json": "application/json",
+    "mutation-proof.txt": "text/plain",
+    "pairwise.json": "application/json",
+    "rusty-crew-playtest-events.jsonl": "application/x-ndjson",
+    "rusty-crew-playtest-tool-details.jsonl": "application/x-ndjson",
+    "rusty-crew-playtest-provider-requests.jsonl": "application/x-ndjson",
+    "rusty-crew-playtest-response.txt": "text/plain",
 }
 
 SCHEMA_VERSION = "3"

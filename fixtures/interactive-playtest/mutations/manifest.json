@@ -1,0 +1,34 @@
+{
+  "schema_version": "goblinbench.interactive-playtest-mutations/v1",
+  "base_project": "rusty-craftsurvive",
+  "mutations": [
+    {
+      "id": "inverted-mouse-look",
+      "cell_id": "inverted-mouse-look",
+      "defect_family": "mouse-look-handedness",
+      "patch": "inverted-mouse-look.patch",
+      "proof": "Source contract: web/src/session-client.ts must invert the horizontal pointer-lock delta; run the CraftSurvive browser smoke on the generated clean worktree and retain its output."
+    },
+    {
+      "id": "world-axis-movement",
+      "cell_id": "world-axis-movement",
+      "defect_family": "camera-relative-movement",
+      "patch": "world-axis-movement.patch",
+      "proof": "Source contract: src/player.rs must pass a fixed zero heading to the Engine controller; run the CraftSurvive browser smoke on the generated clean worktree and retain its output."
+    },
+    {
+      "id": "voxel-placement-offset",
+      "cell_id": "voxel-placement-offset",
+      "defect_family": "voxel-targeting",
+      "patch": "voxel-placement-offset.patch",
+      "proof": "Source contract: src/world.rs must shift the validated placement address by one voxel on X; run the CraftSurvive browser smoke on the generated clean worktree and retain its output."
+    },
+    {
+      "id": "visible-collision-traversal",
+      "cell_id": "visible-collision-traversal",
+      "defect_family": "collision-traversal",
+      "patch": "visible-collision-traversal.patch",
+      "proof": "Source contract: src/player.rs must set maximum_step_height to zero; run the CraftSurvive browser smoke on the generated clean worktree and retain its output."
+    }
+  ]
+}

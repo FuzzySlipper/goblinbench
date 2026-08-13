@@ -13,6 +13,7 @@ from .noop import NoOpRunner
 from .openai_chat import OpenAiChatRunner
 from .scripted import ScriptedRunner
 from .vision import VisionCandidateRunner
+from .interactive_playtest import InteractivePlaytestRunner
 
 __all__ = [
     "CandidateRunner",
@@ -28,6 +29,7 @@ __all__ = [
     "OpenAiFuzzyAgentRunner",
     "OpenAiMcpSessionRunner",
     "VisionCandidateRunner",
+    "InteractivePlaytestRunner",
     "FakeMcpScriptedRunner",
     "FakeFuzzyScriptedRunner",
 ]

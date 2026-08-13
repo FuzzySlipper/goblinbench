@@ -106,7 +106,7 @@ def register(view_id: str, name: str, description: str, render: Callable[[ViewCo
 
 
 # Import view modules for their side-effects (they call register() at import).
-from . import grid_view, failures_view, cell_view, environment_view  # noqa: E402,F401  (registration side-effect)
+from . import grid_view, failures_view, cell_view, environment_view, playtest_pairwise_view  # noqa: E402,F401  (registration side-effect)
 
 __all__ = [
     "ViewContext", "ViewResult", "VIEW_REGISTRY", "register",

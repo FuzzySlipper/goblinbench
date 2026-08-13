@@ -1,0 +1,37 @@
+{
+  "id": "interactive-playtest.voxel-placement-offset",
+  "version": "1.0.0",
+  "name": "Voxel placement offset",
+  "description": "Detect a visible destroy/place transition that lands at the wrong adjacent voxel.",
+  "suite": "interactive-playtest",
+  "tags": ["interactive-playtest", "vision", "pairwise", "defect", "voxel"],
+  "input": {
+    "project": "rusty-craftsurvive",
+    "repo_root_env": "GOBLINBENCH_PLAYTEST_REPO_ROOT",
+    "expected_revision_env": "GOBLINBENCH_PLAYTEST_REVISION",
+    "manifest_path": "product-playtest.scenario.json",
+    "cell_id": "voxel-placement-offset",
+    "cell_class": "mutation",
+    "defect_family": "voxel-targeting",
+    "mutation_revision_env": "GOBLINBENCH_PLAYTEST_MUTATION_REVISION",
+    "mutation_proof_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF",
+    "mutation_proof_path_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF_PATH",
+    "pair_id": "rusty-craftsurvive-voxel-placement-offset-v1",
+    "campaign_id": "goblinbench-6788-screen-v1",
+    "repetition": 0,
+    "expected_outcome": "fail",
+    "requires_sequence": true,
+    "max_actions": 28,
+    "max_session_minutes": 10,
+    "mission": "From the visible spawn, follow the supplied grounded-controller route using genuine mouse and keyboard input. Observe before acting, compare visible before/after behavior with bounded sequences or frame bursts, and report product behavior separately from harness or provider friction. Do not inspect hidden state or repair anything."
+  },
+  "timeout_seconds": 720,
+  "scoring": {
+    "scorers": ["playtest-evidence"],
+    "parameters": {
+      "playtest-evidence": {
+        "requires_sequence": true
+      }
+    }
+  }
+}

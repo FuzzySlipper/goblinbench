@@ -1,0 +1,10 @@
+diff --git a/web/src/session-client.ts b/web/src/session-client.ts
+--- a/web/src/session-client.ts
++++ b/web/src/session-client.ts
+@@ -114,5 +114,5 @@ export class SessionClient {
+   look(event: MouseEvent): void {
+     if (!this.#context.ui.allowsGameplayInput(event) || document.pointerLockElement === null) return;
+-    this.#look[0] += event.movementX * 0.12;
++    this.#look[0] -= event.movementX * 0.12;
+     this.#look[1] -= event.movementY * 0.12;
+   }

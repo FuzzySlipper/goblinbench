@@ -1,0 +1,83 @@
+{
+  "schema_version": "goblinbench.interactive-playtest-corpus/v1",
+  "purpose": "Small, repeatable behavioral corpus for deciding whether one prequalified vision playtester is stronger than the Luna incumbent.",
+  "baseline": {
+    "project": "rusty-craftsurvive",
+    "revision": "4d03873ac6cc756ae21906a493d457c4b016be3a",
+    "proof": "clean exact HEAD; task 6787/6788 pilot baseline; rerun the narrow CraftSurvive product smoke before campaign admission"
+  },
+  "pairing": {
+    "incumbent_role": "incumbent",
+    "challenger_role": "challenger",
+    "outcomes": ["challenger_win", "luna_win", "tie", "invalid_pair"],
+    "no_scalar_strength": true
+  },
+  "evidence_contract": {
+    "required_profile": "vision_playtester",
+    "required_artifacts": ["playtest-index.json", "screenshot-or-frame"],
+    "requires_sequences_for": ["mouse-look", "movement", "collision", "voxel-placement"],
+    "reject_screenshot_only_transition_claims": true,
+    "exact_revision_binding": true
+  },
+  "neutral_mission": "From the visible spawn, follow the supplied grounded-controller route using genuine mouse and keyboard input. Observe before acting, compare visible before/after behavior with bounded sequences or frame bursts, and report product behavior separately from harness or provider friction. Do not inspect hidden state or repair anything.",
+  "revision_inputs": {
+    "known_good": {
+      "revision_env": "GOBLINBENCH_PLAYTEST_REVISION",
+      "proof": "baseline-clean-revision; verify with git status and the CraftSurvive narrow product smoke"
+    },
+    "mutation": {
+      "revision_env": "GOBLINBENCH_PLAYTEST_MUTATION_REVISION",
+      "proof_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF",
+      "proof_path_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF_PATH",
+      "fixture_manifest": "fixtures/interactive-playtest/mutations/manifest.json",
+      "preparation_command": "python3 scripts/gb/prepare_playtest_mutations.py"
+    }
+  },
+  "cases": [
+    {
+      "id": "known-good-visible-loop",
+      "cell_class": "known_good",
+      "pair_id": "rusty-craftsurvive-grounded-loop-known-good-v1",
+      "expected_outcome": "pass",
+      "requires_sequence": true,
+      "mission": "neutral_mission",
+      "defect": null
+    },
+    {
+      "id": "inverted-mouse-look",
+      "cell_class": "mutation",
+      "pair_id": "rusty-craftsurvive-inverted-mouse-look-v1",
+      "expected_outcome": "fail",
+      "requires_sequence": true,
+      "mission": "neutral_mission",
+      "defect": "horizontal mouse-look handedness is inverted"
+    },
+    {
+      "id": "world-axis-movement",
+      "cell_class": "mutation",
+      "pair_id": "rusty-craftsurvive-world-axis-movement-v1",
+      "expected_outcome": "fail",
+      "requires_sequence": true,
+      "mission": "neutral_mission",
+      "defect": "movement follows world axes instead of the current view"
+    },
+    {
+      "id": "voxel-placement-offset",
+      "cell_class": "mutation",
+      "pair_id": "rusty-craftsurvive-voxel-placement-offset-v1",
+      "expected_outcome": "fail",
+      "requires_sequence": true,
+      "mission": "neutral_mission",
+      "defect": "voxel placement is offset from the visible target"
+    },
+    {
+      "id": "visible-collision-traversal",
+      "cell_class": "mutation",
+      "pair_id": "rusty-craftsurvive-visible-collision-traversal-v1",
+      "expected_outcome": "fail",
+      "requires_sequence": true,
+      "mission": "neutral_mission",
+      "defect": "visible collision or traversal behavior is incorrect"
+    }
+  ]
+}

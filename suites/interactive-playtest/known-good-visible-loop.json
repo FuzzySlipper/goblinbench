@@ -1,0 +1,35 @@
+{
+  "id": "interactive-playtest.known-good-visible-loop",
+  "version": "1.0.0",
+  "name": "Known-good visible loop",
+  "description": "Pairwise control cell for a known-good interactive mission.",
+  "suite": "interactive-playtest",
+  "tags": ["interactive-playtest", "vision", "pairwise", "luna-incumbent", "known-good"],
+  "input": {
+    "project": "rusty-craftsurvive",
+    "repo_root_env": "GOBLINBENCH_PLAYTEST_REPO_ROOT",
+    "expected_revision_env": "GOBLINBENCH_PLAYTEST_REVISION",
+    "manifest_path": "product-playtest.scenario.json",
+    "cell_id": "known-good-visible-loop",
+    "cell_class": "known_good",
+    "defect_family": "known-good",
+    "mutation_proof": "baseline-clean-revision; verify with git status and the CraftSurvive narrow product smoke",
+    "pair_id": "rusty-craftsurvive-grounded-loop-known-good-v1",
+    "campaign_id": "goblinbench-6788-screen-v1",
+    "repetition": 0,
+    "expected_outcome": "pass",
+    "requires_sequence": true,
+    "max_actions": 40,
+    "max_session_minutes": 12,
+    "mission": "From the visible spawn, follow the supplied grounded-controller route using genuine mouse and keyboard input. Observe before acting, compare visible before/after behavior with bounded sequences or frame bursts, and report product behavior separately from harness or provider friction. Do not inspect hidden state or repair anything."
+  },
+  "timeout_seconds": 900,
+  "scoring": {
+    "scorers": ["playtest-evidence"],
+    "parameters": {
+      "playtest-evidence": {
+        "requires_sequence": true
+      }
+    }
+  }
+}

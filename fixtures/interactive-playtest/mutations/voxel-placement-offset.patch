@@ -1,0 +1,15 @@
+diff --git a/src/world.rs b/src/world.rs
+--- a/src/world.rs
++++ b/src/world.rs
+@@ -193,4 +193,10 @@ impl GameWorld {
+         let edit = match kind {
+             EditKind::Destroy => anchor.remove_edit(),
+-            EditKind::Place { material_slot } => anchor.place_edit(material_slot),
++            EditKind::Place { material_slot } => {
++                let mut edit = anchor.place_edit(material_slot);
++                if let VoxelEdit::Set { ref mut address, .. } = edit {
++                    address[0] += 1;
++                }
++                edit
++            }
+         };

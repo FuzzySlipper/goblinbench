@@ -33,6 +33,7 @@ import time
 import traceback
 import uuid
 from pathlib import Path
+from typing import Any
 
 # Make the sibling ``gb`` package importable regardless of CWD.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -46,9 +47,11 @@ from gb.models import (  # noqa: E402
     CandidateResult,
     PerScenarioResult,
     RunResult,
+    Scenario,
     ScoreResult,
     TraceEvent,
 )
+from gb.playtest_evidence import apply_pairwise_outcomes  # noqa: E402
 from gb.registry import (  # noqa: E402
     active_scorers,
     default_runners,
@@ -118,6 +121,28 @@ def order_candidates(candidates: list[CandidateConfig], order: str) -> list[Cand
     if order == "reverse":
         return list(reversed(candidates))
     raise ValueError(f"unsupported candidate order: {order}")
+
+
+def _interactive_playtest_run_metadata(scenarios: list[Scenario]) -> dict[str, Any]:
+    """Make campaign/pair identity explicit in the durable run envelope."""
+
+    interactive = [scenario for scenario in scenarios if scenario.suite == "interactive-playtest"]
+    if not interactive:
+        return {}
+    campaign_ids = sorted({
+        str(scenario.input.get("campaign_id") or "goblinbench-6788-screen-v1")
+        for scenario in interactive
+    })
+    pairs = sorted({
+        str(scenario.input.get("pair_id") or "")
+        for scenario in interactive
+        if scenario.input.get("pair_id")
+    })
+    return {
+        "interactive_playtest_campaign_ids": campaign_ids,
+        "interactive_playtest_pair_ids": pairs,
+        "interactive_playtest_no_scalar_strength": True,
+    }
 
 
 def _scenario_context(base: RunContext, scenario_id: str) -> RunContext:
@@ -290,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             "candidate_order": args.candidate_order,
             "candidate_ids": [candidate.id for candidate in candidates],
             "selected_scenario_ids": scenario_filters,
+            **_interactive_playtest_run_metadata(scenarios),
         },
     )
     os.makedirs(run_dir, exist_ok=True)
@@ -343,6 +369,10 @@ def main(argv: list[str] | None = None) -> int:
                     success=False,
                     error=str(ex),
                 ))
+
+        pairwise = apply_pairwise_outcomes(scenario_result)
+        if pairwise:
+            print(f"  Pairwise decisions: {len(pairwise)}")
 
         run_result.results.append(scenario_result)
 

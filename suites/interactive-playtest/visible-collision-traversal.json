@@ -1,0 +1,37 @@
+{
+  "id": "interactive-playtest.visible-collision-traversal",
+  "version": "1.0.0",
+  "name": "Visible collision and traversal",
+  "description": "Detect visible clipping, snagging, or incorrect traversal across the bounded collision course.",
+  "suite": "interactive-playtest",
+  "tags": ["interactive-playtest", "vision", "pairwise", "defect", "collision"],
+  "input": {
+    "project": "rusty-craftsurvive",
+    "repo_root_env": "GOBLINBENCH_PLAYTEST_REPO_ROOT",
+    "expected_revision_env": "GOBLINBENCH_PLAYTEST_REVISION",
+    "manifest_path": "product-playtest.scenario.json",
+    "cell_id": "visible-collision-traversal",
+    "cell_class": "mutation",
+    "defect_family": "collision-traversal",
+    "mutation_revision_env": "GOBLINBENCH_PLAYTEST_MUTATION_REVISION",
+    "mutation_proof_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF",
+    "mutation_proof_path_env": "GOBLINBENCH_PLAYTEST_MUTATION_PROOF_PATH",
+    "pair_id": "rusty-craftsurvive-visible-collision-traversal-v1",
+    "campaign_id": "goblinbench-6788-screen-v1",
+    "repetition": 0,
+    "expected_outcome": "fail",
+    "requires_sequence": true,
+    "max_actions": 36,
+    "max_session_minutes": 12,
+    "mission": "From the visible spawn, follow the supplied grounded-controller route using genuine mouse and keyboard input. Observe before acting, compare visible before/after behavior with bounded sequences or frame bursts, and report product behavior separately from harness or provider friction. Do not inspect hidden state or repair anything."
+  },
+  "timeout_seconds": 900,
+  "scoring": {
+    "scorers": ["playtest-evidence"],
+    "parameters": {
+      "playtest-evidence": {
+        "requires_sequence": true
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "goblinbench-luna-vision-playtester",
+    "name": "Luna/max interactive playtester incumbent",
+    "kind": "CodingAgent",
+    "model": "gpt-5.6-luna",
+    "provider": "rusty-crew",
+    "config": {
+      "runner": "interactive-playtest",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "provider_alias": "gpt-5.6-luna",
+      "provider_protocol": "responses",
+      "reasoning_effort": "max",
+      "local_tool_profile_id": "vision_playtester",
+      "prequalified": true,
+      "prequalification": {
+        "evidence_ref": "rusty-craftsurvive task 6787 Luna/max principal packets",
+        "image_input": true,
+        "multi_turn_tools": true,
+        "restricted_profile": true,
+        "lifecycle_cleanup": true,
+        "identity_readback": true
+      },
+      "pair_role": "incumbent"
+    }
+  },
+  {
+    "id": "goblinbench-challenger-vision-playtester",
+    "name": "Prequalified challenger (set provider/model before use)",
+    "kind": "CodingAgent",
+    "model": "deepseek-v4-flash",
+    "provider": "rusty-crew",
+    "config": {
+      "runner": "interactive-playtest",
+      "base_url": "http://127.0.0.1:9348",
+      "service_unit": "rusty-crew-debug.service",
+      "provider_alias": "deepseek-flash-responses",
+      "provider_protocol": "responses",
+      "reasoning_effort": "high",
+      "local_tool_profile_id": "vision_playtester",
+      "prequalified": true,
+      "prequalification": {
+        "evidence_ref": "rusty-crew task 6785 live vision-playtester evidence",
+        "image_input": true,
+        "multi_turn_tools": true,
+        "restricted_profile": true,
+        "lifecycle_cleanup": true,
+        "identity_readback": true
+      },
+      "pair_role": "challenger"
+    }
+  }
+]

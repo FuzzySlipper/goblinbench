@@ -925,10 +925,14 @@ def _native_observed_tool_calls(details: list[dict[str, Any]]) -> list[dict[str,
         arguments = _dict(debug_value.get("preparedArguments")) or _dict(
             debug_value.get("rawArguments")
         ) or debug_value
+        final_value = _dict(_dict(detail.get("final_result")).get("value"))
+        result = final_value.get("details")
+        if not isinstance(result, dict):
+            result = final_value
         observed.append({
             "tool_name": tool_name,
             "arguments": arguments,
-            "result": _dict(_dict(detail.get("final_result")).get("value")).get("details"),
+            "result": result,
             "status": detail.get("status"),
             "debug_detail_id": detail.get("debug_detail_id"),
         })

@@ -29,6 +29,7 @@ from .runners import (
     OpenAiMcpToolUseRunner,
     ScriptedRunner,
     VisionCandidateRunner,
+    InteractivePlaytestRunner,
 )
 from .runners.base import CandidateRunner
 from .scorers import (
@@ -45,6 +46,7 @@ from .scorers import (
     SchemaComplianceScorer,
     VisionDescriptionQualityScorer,
     VisionCorrectnessScorer,
+    PlaytestEvidenceScorer,
 )
 from .scorers.base import Scorer
 
@@ -68,6 +70,7 @@ def default_runners() -> list[CandidateRunner]:
         OpenAiFuzzyAgentRunner(),
         OpenAiMcpSessionRunner(),
         VisionCandidateRunner(),
+        InteractivePlaytestRunner(),
         CodexAppServerRunner(),
         RustyCrewRunner(),
         RustyCrewNativeRunner(),
@@ -88,6 +91,7 @@ def default_scorers() -> list[Scorer]:
         McpToolUseScorer(),
         VisionCorrectnessScorer(),
         VisionDescriptionQualityScorer(),
+        PlaytestEvidenceScorer(),
         FuzzyAgentBehaviorScorer(),
         McpSessionTrajectoryScorer(),
         NoOpScorer(),

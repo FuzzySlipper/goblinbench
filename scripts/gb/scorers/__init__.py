@@ -12,6 +12,7 @@ from .schema_compliance import SchemaComplianceScorer
 from .roleplay_heat_boundary import RoleplayHeatBoundaryScorer
 from .vision_description_quality import VisionDescriptionQualityScorer
 from .vision_correctness import VisionCorrectnessScorer
+from .playtest_evidence import PlaytestEvidenceScorer
 
 __all__ = [
     "Scorer",
@@ -23,6 +24,7 @@ __all__ = [
     "McpToolUseScorer",
     "VisionCorrectnessScorer",
     "VisionDescriptionQualityScorer",
+    "PlaytestEvidenceScorer",
     "FuzzyAgentBehaviorScorer",
     "McpSessionTrajectoryScorer",
     "NoOpScorer",

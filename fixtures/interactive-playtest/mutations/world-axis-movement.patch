@@ -1,0 +1,12 @@
+diff --git a/src/player.rs b/src/player.rs
+--- a/src/player.rs
++++ b/src/player.rs
+@@ -299,7 +299,7 @@ impl PlayerController {
+                             finite_f32(input.right)?,
+                             finite_f32(input.forward)?,
+                         ),
+-                        heading_yaw_radians: self.look.yaw_radians,
++                        heading_yaw_radians: 0.0,
+                         jump_pressed: first_step && jump_pressed,
+                         jump_held: input.jump,
+                         crouch_requested: input.crouch,
