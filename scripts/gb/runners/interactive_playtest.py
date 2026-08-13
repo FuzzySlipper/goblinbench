@@ -476,9 +476,6 @@ class InteractivePlaytestRunner:
                         evidence["mutation_proof_artifact"] = proof_name
                 except OSError as proof_error:
                     evidence["mutation_proof_artifact_error"] = str(proof_error)
-            (artifact_dir / "playtest-evidence.json").write_text(
-                dumps(evidence), encoding="utf-8"
-            )
             if broker_session_id and evidence.get("finish_outcome") not in PLAYTEST_OUTCOMES:
                 cleanup["broker"] = _cancel_broker_session(candidate, broker_session_id)
             profile_cleanup = _cleanup_native_profile(client, cfg, created_profile_id, time.monotonic() + 30)
@@ -486,6 +483,13 @@ class InteractivePlaytestRunner:
                 profile_cleanup["broker"] = cleanup["broker"]
             cleanup = profile_cleanup
             created_profile_id = None
+            # Persist the runner-owned cleanup result alongside the broker
+            # evidence.  The scorer treats this as infrastructure provenance,
+            # not as the product's browser cleanup field.
+            evidence["runner_cleanup"] = cleanup
+            (artifact_dir / "playtest-evidence.json").write_text(
+                dumps(evidence), encoding="utf-8"
+            )
             usage = _usage(events)
             activity_tool_count, command_count = _activity_counts(events)
             completed = terminal == "completed"

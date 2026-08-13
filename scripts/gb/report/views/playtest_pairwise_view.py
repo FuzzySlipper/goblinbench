@@ -16,7 +16,9 @@ from ..envelope import esc
 
 
 def render(ctx: ViewContext) -> ViewResult:
-    groups: dict[str, dict[str, Any]] = defaultdict(lambda: {"members": [], "outcome": "invalid_pair"})
+    groups: dict[tuple[str, str, int, str], dict[str, Any]] = defaultdict(
+        lambda: {"members": [], "outcome": "invalid_pair"}
+    )
     for cell in ctx.cells:
         score_rows = ctx.conn.execute(
             "SELECT detail_json FROM scores WHERE candidate_result_id=? AND scorer_id=? ORDER BY id DESC LIMIT 1",
@@ -31,11 +33,20 @@ def render(ctx: ViewContext) -> ViewResult:
         pair_id = str(detail.get("pair_id") or "").strip()
         if not pair_id:
             continue
-        group = groups[pair_id]
+        campaign_id = str(detail.get("campaign_id") or "").strip()
+        repetition = detail.get("repetition")
+        try:
+            repetition = int(repetition)
+        except (TypeError, ValueError):
+            repetition = -1
+        cell_id = str(detail.get("cell_id") or "").strip()
+        group = groups[(campaign_id, pair_id, repetition, cell_id)]
+        group["pair_id"] = pair_id
         group["scenario_id"] = cell.get("scenario_id")
         group["defect_family"] = detail.get("defect_family") or group.get("defect_family") or "unclassified"
-        group["campaign_id"] = detail.get("campaign_id") or group.get("campaign_id") or "unlabeled"
-        group["repetition"] = detail.get("repetition") if detail.get("repetition") is not None else group.get("repetition", 0)
+        group["campaign_id"] = campaign_id or group.get("campaign_id") or "unlabeled"
+        group["repetition"] = repetition if repetition >= 0 else group.get("repetition", -1)
+        group["cell_id"] = cell_id or group.get("cell_id") or "unlabeled"
         group["outcome"] = detail.get("pair_outcome") or group.get("outcome") or "invalid_pair"
         decision = detail.get("pair_decision") if isinstance(detail.get("pair_decision"), dict) else {}
         group["reason"] = decision.get("reason") or group.get("reason") or ""
@@ -67,7 +78,8 @@ def render(ctx: ViewContext) -> ViewResult:
         )
 
     rows: list[str] = []
-    for pair_id, group in sorted(groups.items()):
+    for _identity, group in sorted(groups.items()):
+        pair_id = str(group.get("pair_id") or "unlabeled")
         members = sorted(group["members"], key=lambda member: (member["role"], member["candidate_id"]))
         member_html = "<br>".join(
             f"<b>{esc(member['role'])}</b> {esc(member['candidate_name'])} — "
@@ -87,7 +99,7 @@ def render(ctx: ViewContext) -> ViewResult:
         outcome = str(group.get("outcome") or "invalid_pair")
         css = "pass" if outcome in {"challenger_win", "luna_win", "tie"} else "fail"
         rows.append(
-            f"<tr><td><code>{esc(pair_id)}</code><br><span class='muted'>{esc(group.get('scenario_id') or '')}</span><br><span class='muted'>campaign: {esc(group.get('campaign_id') or 'unlabeled')} · repetition: {esc(str(group.get('repetition', 0)))}</span><br><span class='muted'>family: {esc(group.get('defect_family') or 'unclassified')}</span><br><span class='muted'>reason: {esc(group.get('reason') or 'not recorded')}</span></td>"
+            f"<tr><td><code>{esc(pair_id)}</code><br><span class='muted'>{esc(group.get('scenario_id') or '')}</span><br><span class='muted'>campaign: {esc(group.get('campaign_id') or 'unlabeled')} · cell: {esc(group.get('cell_id') or 'unlabeled')} · repetition: {esc(str(group.get('repetition', -1)))}</span><br><span class='muted'>family: {esc(group.get('defect_family') or 'unclassified')}</span><br><span class='muted'>reason: {esc(group.get('reason') or 'not recorded')}</span></td>"
             f"<td class='{css}'><b>{esc(outcome)}</b></td><td>{member_html}</td></tr>"
         )
     outcome_counts: dict[str, int] = defaultdict(int)
@@ -151,11 +163,18 @@ def _environment_cleanup(cell: dict[str, Any]) -> str:
 
 def _cleanup_summary(detail: dict[str, Any], cell: dict[str, Any]) -> str:
     cleanup = detail.get("cleanup")
+    runner_cleanup = detail.get("runner_cleanup")
+    runner_status = "missing"
+    if isinstance(runner_cleanup, dict) and runner_cleanup:
+        runner_status = str(runner_cleanup.get("status") or "missing")
     if isinstance(cleanup, dict) and cleanup:
         browser = cleanup.get("browser_closed") is True
         driver = cleanup.get("driver_stopped") is True
-        return f"browser={'closed' if browser else 'open'}, driver={'stopped' if driver else 'running'}"
-    return _environment_cleanup(cell)
+        return (
+            f"runner={runner_status}, browser={'closed' if browser else 'open'}, "
+            f"driver={'stopped' if driver else 'running'}"
+        )
+    return f"runner={runner_status}, {_environment_cleanup(cell)}"
 
 
 register(

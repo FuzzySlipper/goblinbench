@@ -80,6 +80,19 @@ def _first_string(mapping: dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def _repetition_value(mapping: dict[str, Any]) -> int | None:
+    """Read a non-negative repetition without treating booleans as integers."""
+
+    raw = mapping.get("repetition")
+    if raw is None or isinstance(raw, bool):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value >= 0 else None
+
+
 def _forbidden_argument_keys(value: Any, path: str = "") -> list[str]:
     found: list[str] = []
     if isinstance(value, dict):
@@ -194,6 +207,69 @@ def _read_index(evidence: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
     return (_dict(value), str(path))
 
 
+def _durable_archive_errors(
+    evidence: dict[str, Any],
+    index_path: str | None,
+    observed_index_hash: str,
+) -> list[str]:
+    """Require the selected evidence archive to be present and inspectable."""
+
+    archive = _dict(evidence.get("evidence_archive"))
+    if not archive:
+        return ["durable selected-evidence archive is missing"]
+    archive_dir_raw = archive.get("archive_dir")
+    if not isinstance(archive_dir_raw, str) or not archive_dir_raw.strip():
+        return ["durable selected-evidence archive directory is missing"]
+    archive_dir = Path(archive_dir_raw).expanduser()
+    if not archive_dir.is_absolute():
+        return ["durable selected-evidence archive directory is not absolute"]
+    if any(part.startswith("run-") for part in archive_dir.parts):
+        return ["durable selected-evidence archive points into a ring-buffered run directory"]
+    if not archive_dir.is_dir():
+        return ["durable selected-evidence archive directory is unreadable"]
+
+    errors: list[str] = []
+    index_copy = archive_dir / "playtest-index.json"
+    manifest_path = archive_dir / "archive-manifest.json"
+    if not index_copy.is_file():
+        errors.append("durable archive is missing playtest-index.json")
+    if not manifest_path.is_file():
+        errors.append("durable archive is missing archive-manifest.json")
+
+    manifest = _dict(archive.get("archive_manifest"))
+    if not manifest and manifest_path.is_file():
+        try:
+            manifest = _dict(load_json(manifest_path))
+        except (OSError, json.JSONDecodeError):
+            errors.append("durable archive manifest is unreadable")
+    manifest_hash = _first_string(manifest, "index_sha256")
+    expected_hash = observed_index_hash or _first_string(evidence, "evidence_index_sha256")
+    if expected_hash and manifest_hash and manifest_hash.lower() != expected_hash.lower():
+        errors.append("durable archive index SHA-256 does not match the evidence index")
+
+    selected_refs = [
+        str(ref).strip()
+        for ref in _list(evidence.get("selected_artifacts"))
+        if isinstance(ref, str) and str(ref).strip()
+    ]
+    if selected_refs and index_path:
+        source_root = Path(index_path).expanduser().resolve().parent
+        for ref in selected_refs:
+            ref_path = Path(ref).expanduser()
+            if ref_path.is_absolute():
+                try:
+                    relative = ref_path.resolve().relative_to(source_root)
+                except ValueError:
+                    errors.append(f"selected artifact is outside the evidence index root: {ref}")
+                    continue
+            else:
+                relative = Path(ref)
+            archived_ref = archive_dir / "artifacts" / relative
+            if not archived_ref.is_file():
+                errors.append(f"durable archive is missing selected artifact: {ref}")
+    return errors
+
+
 def evaluate_playtest_evidence(
     scenario: Scenario,
     result: CandidateResult,
@@ -214,6 +290,26 @@ def evaluate_playtest_evidence(
     ) or _first_string(scenario.input, "expected_outcome")
     pair_id = _first_string(evidence, "pair_id") or _first_string(output, "pair_id") or _first_string(scenario.input, "pair_id")
     pair_role = _first_string(evidence, "pair_role") or _first_string(output, "pair_role")
+    expected_campaign_id = (
+        _first_string(params, "campaign_id")
+        or _first_string(scenario.input, "campaign_id")
+    )
+    target = _dict(output.get("target"))
+    campaign_id = (
+        _first_string(evidence, "campaign_id")
+        or _first_string(output, "campaign_id")
+        or _first_string(target, "campaign_id")
+    )
+    expected_repetition = (
+        _repetition_value(params)
+        if "repetition" in params
+        else _repetition_value(scenario.input)
+    )
+    repetition = (
+        _repetition_value(evidence)
+        if "repetition" in evidence
+        else _repetition_value(output)
+    )
     expected_cell_id = _first_string(params, "cell_id") or _first_string(scenario.input, "cell_id")
     cell_id = _first_string(evidence, "cell_id") or _first_string(output, "cell_id")
     cell_class = _first_string(params, "cell_class") or _first_string(scenario.input, "cell_class")
@@ -233,6 +329,40 @@ def evaluate_playtest_evidence(
     )
     errors: list[str] = []
     warnings: list[str] = []
+
+    if not expected_campaign_id:
+        errors.append("scorer-side campaign_id is missing from the scenario contract")
+    elif not campaign_id:
+        errors.append("worker campaign_id is missing from the evidence envelope")
+    elif campaign_id != expected_campaign_id:
+        errors.append(
+            f"worker campaign_id {campaign_id!r} does not match scorer campaign {expected_campaign_id!r}"
+        )
+    if expected_repetition is None:
+        errors.append("scorer-side repetition is missing or invalid in the scenario contract")
+    elif repetition is None:
+        errors.append("worker repetition is missing or invalid in the evidence envelope")
+    elif repetition != expected_repetition:
+        errors.append(
+            f"worker repetition {repetition!r} does not match scorer repetition {expected_repetition!r}"
+        )
+
+    runner_cleanup = _dict(_dict(result.environment).get("cleanup"))
+    if not runner_cleanup:
+        runner_cleanup = _dict(output.get("cleanup"))
+    if not result.success:
+        errors.append(
+            "runner marked the cell unsuccessful"
+            + (f": {result.error}" if result.error else "")
+        )
+    if runner_cleanup.get("status") != "completed":
+        errors.append(
+            "runner/profile cleanup did not complete: "
+            f"{runner_cleanup.get('status') or 'missing'}"
+        )
+    broker_cleanup = _dict(runner_cleanup.get("broker"))
+    if broker_cleanup.get("cancel_status") == "failed":
+        errors.append("broker cleanup failed")
 
     finish_outcome = _first_string(evidence, "finish_outcome", "outcome")
     if finish_outcome not in PLAYTEST_OUTCOMES:
@@ -274,7 +404,10 @@ def evaluate_playtest_evidence(
             if observed_index_hash != expected_index_hash.lower():
                 errors.append("evidence index SHA-256 does not match the retained index")
         else:
-            observed_index_hash = ""
+            try:
+                observed_index_hash = hashlib.sha256(Path(index_path).read_bytes()).hexdigest()
+            except OSError:
+                observed_index_hash = ""
     else:
         observed_index_hash = ""
     index_revision = _revision_from_index(index)
@@ -372,6 +505,9 @@ def evaluate_playtest_evidence(
     if finish_outcome == "infrastructure_error":
         warnings.append("infrastructure_error is retained but cannot enter pairwise adjudication")
 
+    archive_errors = _durable_archive_errors(evidence, index_path, observed_index_hash)
+    errors.extend(archive_errors)
+
     evidence_valid = not errors and finish_outcome != "infrastructure_error"
     if expected_outcome in PLAYTEST_OUTCOMES and evidence_valid:
         if expected_outcome == "pass":
@@ -391,6 +527,10 @@ def evaluate_playtest_evidence(
         "contract_version": "goblinbench.interactive-playtest/v1",
         "pair_id": pair_id,
         "pair_role": pair_role,
+        "campaign_id": campaign_id,
+        "expected_campaign_id": expected_campaign_id,
+        "repetition": repetition,
+        "expected_repetition": expected_repetition,
         "cell_id": cell_id,
         "expected_cell_id": expected_cell_id,
         "cell_class": cell_class,
@@ -416,6 +556,8 @@ def evaluate_playtest_evidence(
         "evidence_index": index_path or _first_string(evidence, "evidence_index", "index_path", "indexPath"),
         "evidence_index_sha256": _first_string(evidence, "evidence_index_sha256") or observed_index_hash,
         "evidence_archive": evidence.get("evidence_archive"),
+        "runner_cleanup": runner_cleanup,
+        "archive_errors": archive_errors,
         "artifact_refs": refs,
         "observation_count": observation_count,
         "frame_count": frame_count,
@@ -487,24 +629,47 @@ def apply_pairwise_outcomes(scenario_result: PerScenarioResult) -> list[dict[str
 
     decisions: list[dict[str, Any]] = []
     for pair_id, members in sorted(grouped.items()):
-        indexed: dict[str, CandidateResult] = {}
-        for member in members:
-            score = _playtest_score(member)
-            role = str((score.detail if score else {}).get("pair_role") or "").strip().lower()
-            if role in {"incumbent", "luna"} and "incumbent" not in indexed:
-                indexed["incumbent"] = member
-            elif role == "challenger" and "challenger" not in indexed:
-                indexed["challenger"] = member
-
-        incumbent = indexed.get("incumbent")
-        challenger = indexed.get("challenger")
+        scored_members = [(_playtest_score(member), member) for member in members]
+        incumbents = [
+            member
+            for score, member in scored_members
+            if score and str(score.detail.get("pair_role") or "").strip().lower() in {"incumbent", "luna"}
+        ]
+        challengers = [
+            member
+            for score, member in scored_members
+            if score and str(score.detail.get("pair_role") or "").strip().lower() == "challenger"
+        ]
+        incumbent = incumbents[0] if len(incumbents) == 1 else None
+        challenger = challengers[0] if len(challengers) == 1 else None
         inc_score = _playtest_score(incumbent) if incumbent else None
         chal_score = _playtest_score(challenger) if challenger else None
         inc_detail = inc_score.detail if inc_score else {}
         chal_detail = chal_score.detail if chal_score else {}
-        if not incumbent or not challenger or not inc_score or not chal_score:
+        if len(members) != 2 or len(incumbents) != 1 or len(challengers) != 1:
             outcome = "invalid_pair"
-            reason = "pair requires exactly one incumbent/Luna and one challenger cell"
+            reason = (
+                "pair requires exactly two members with exactly one incumbent/Luna "
+                f"and one challenger; members={len(members)}, "
+                f"incumbents={len(incumbents)}, challengers={len(challengers)}"
+            )
+        elif not inc_score or not chal_score:
+            outcome = "invalid_pair"
+            reason = "pair is missing an evidence-contract score"
+        elif any(
+            not detail.get("campaign_id")
+            or detail.get("repetition") is None
+            or not detail.get("cell_id")
+            for detail in (inc_detail, chal_detail)
+        ):
+            outcome = "invalid_pair"
+            reason = "pair is missing authoritative campaign, cell, or repetition identity"
+        elif any(
+            inc_detail.get(key) != chal_detail.get(key)
+            for key in ("campaign_id", "repetition", "cell_id")
+        ):
+            outcome = "invalid_pair"
+            reason = "pair members disagree on campaign, cell, or repetition identity"
         elif not inc_detail.get("comparison_eligible") or not chal_detail.get("comparison_eligible"):
             outcome = "invalid_pair"
             reason = "one or both cells lack contract-valid adjudicable evidence"
@@ -521,6 +686,9 @@ def apply_pairwise_outcomes(scenario_result: PerScenarioResult) -> list[dict[str
         decision = {
             "pair_id": pair_id,
             "scenario_id": scenario_result.scenario_id,
+            "campaign_id": inc_detail.get("campaign_id") or chal_detail.get("campaign_id"),
+            "repetition": inc_detail.get("repetition") if inc_detail.get("repetition") is not None else chal_detail.get("repetition"),
+            "cell_id": inc_detail.get("cell_id") or chal_detail.get("cell_id"),
             "outcome": outcome,
             "reason": reason,
             "incumbent_candidate_id": incumbent.candidate_id if incumbent else None,

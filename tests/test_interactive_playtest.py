@@ -43,9 +43,11 @@ def _scenario(**input_values: object) -> Scenario:
             "expected_revision": "a" * 40,
             "cell_id": "example-cell",
             "cell_class": "known_good",
-            "expected_outcome": "pass",
-            "pair_id": "pair-1",
-            "requires_sequence": True,
+        "expected_outcome": "pass",
+        "pair_id": "pair-1",
+        "campaign_id": "campaign-1",
+        "repetition": 0,
+        "requires_sequence": True,
             **input_values,
         },
         scoring=ScoringConfig(
@@ -56,6 +58,7 @@ def _scenario(**input_values: object) -> Scenario:
 
 
 def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass") -> CandidateResult:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     (tmp_path / "screenshots").mkdir(exist_ok=True)
     (tmp_path / "screenshots" / f"{candidate_id}.png").write_bytes(b"png")
     index = tmp_path / f"{candidate_id}-playtest-index.json"
@@ -71,6 +74,20 @@ def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass")
         ),
         encoding="utf-8",
     )
+    archive_dir = tmp_path / "evidence-archive" / candidate_id
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    (archive_dir / "playtest-index.json").write_bytes(index.read_bytes())
+    (archive_dir / "artifacts").mkdir(exist_ok=True)
+    (archive_dir / "artifacts" / "screenshots").mkdir(exist_ok=True)
+    (archive_dir / "artifacts" / "screenshots" / f"{candidate_id}.png").write_bytes(b"png")
+    (archive_dir / "archive-manifest.json").write_text(
+        json.dumps({
+            "schema_version": "goblinbench.playtest-evidence-archive/v1",
+            "index_sha256": hashlib.sha256(index.read_bytes()).hexdigest(),
+            "files": ["playtest-index.json", f"artifacts/screenshots/{candidate_id}.png"],
+        }),
+        encoding="utf-8",
+    )
     evidence = {
         "session_id": f"session-{candidate_id}",
         "evidence_index": str(index),
@@ -81,6 +98,16 @@ def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass")
         "local_tool_profile_id": "vision_playtester",
         "pair_id": "pair-1",
         "pair_role": role,
+        "campaign_id": "campaign-1",
+        "repetition": 0,
+        "selected_artifacts": [f"screenshots/{candidate_id}.png"],
+        "evidence_archive": {
+            "archive_dir": str(archive_dir),
+            "archive_manifest": {
+                "index_sha256": hashlib.sha256(index.read_bytes()).hexdigest(),
+                "files": ["playtest-index.json", f"artifacts/screenshots/{candidate_id}.png"],
+            },
+        },
         "assertions": [{"name": "visible result", "pass": outcome == "pass", "artifact": f"screenshots/{candidate_id}.png"}],
         "tool_calls": [
             {"tool_name": "playtest_start"},
@@ -94,7 +121,10 @@ def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass")
         candidate_kind=CandidateKind.CodingAgent,
         success=True,
         output={"playtest_evidence": evidence},
-        environment={"profile": {"local_tool_profile_id": "vision_playtester"}},
+        environment={
+            "profile": {"local_tool_profile_id": "vision_playtester"},
+            "cleanup": {"requested": True, "status": "completed"},
+        },
         artifact_directory=str(tmp_path / candidate_id),
     )
 
@@ -339,6 +369,83 @@ def test_pairwise_outcome_is_relational_not_scalar(tmp_path: Path) -> None:
     assert luna.scores[0].score is None
     assert luna.scores[0].detail["pair_outcome"] == "challenger_win"
     assert challenger.output["pairwise"]["outcome"] == "challenger_win"
+
+
+def test_pairwise_duplicate_roles_are_invalid(tmp_path: Path) -> None:
+    luna_a = _result(tmp_path, "luna-a", "incumbent", "fail")
+    luna_b = _result(tmp_path, "luna-b", "incumbent", "pass")
+    challenger = _result(tmp_path, "challenger", "challenger", "pass")
+    scenario = _scenario(expected_outcome="pass")
+    for result in (luna_a, luna_b, challenger):
+        result.scores.append(PlaytestEvidenceScorer().score(scenario, None, result, RunContext()))
+    decisions = apply_pairwise_outcomes(
+        PerScenarioResult(
+            scenario_id=scenario.id,
+            scenario_version=scenario.version,
+            candidate_results=[luna_a, luna_b, challenger],
+        )
+    )
+    assert decisions[0]["outcome"] == "invalid_pair"
+    assert "exactly two members" in decisions[0]["reason"]
+
+
+def test_pairwise_campaign_and_repetition_mismatch_are_invalid(tmp_path: Path) -> None:
+    luna = _result(tmp_path, "luna", "incumbent", "fail")
+    challenger = _result(tmp_path, "challenger", "challenger", "pass")
+    challenger.output["playtest_evidence"]["campaign_id"] = "other-campaign"
+    challenger.output["playtest_evidence"]["repetition"] = 1
+    scenario = _scenario(expected_outcome="pass")
+    for result in (luna, challenger):
+        result.scores.append(PlaytestEvidenceScorer().score(scenario, None, result, RunContext()))
+    decisions = apply_pairwise_outcomes(
+        PerScenarioResult(
+            scenario_id=scenario.id,
+            scenario_version=scenario.version,
+            candidate_results=[luna, challenger],
+        )
+    )
+    assert decisions[0]["outcome"] == "invalid_pair"
+    assert "lack" in decisions[0]["reason"] or "disagree" in decisions[0]["reason"]
+
+
+def test_runner_cleanup_failure_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    result.success = False
+    result.error = "interactive playtest profile cleanup failed"
+    result.environment["cleanup"] = {"requested": True, "status": "failed"}
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("cleanup" in error for error in score.detail["errors"])
+
+
+def test_missing_durable_archive_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    result.output["playtest_evidence"].pop("evidence_archive")
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("archive" in error for error in score.detail["errors"])
+
+
+def test_archive_missing_selected_artifact_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    archive_dir = Path(result.output["playtest_evidence"]["evidence_archive"]["archive_dir"])
+    (archive_dir / "artifacts" / "screenshots" / "luna.png").unlink()
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("selected artifact" in error for error in score.detail["errors"])
+
+
+def test_valid_product_outcomes_remain_comparable_with_cleanup_and_archive(tmp_path: Path) -> None:
+    for outcome, expected in (("pass", "pass"), ("fail", "fail"), ("uncertain", "uncertain")):
+        result = _result(tmp_path / outcome, "candidate", "challenger", outcome)
+        score = PlaytestEvidenceScorer().score(
+            _scenario(expected_outcome=expected), None, result, RunContext()
+        )
+        assert score.passed is True
+        assert score.detail["comparison_eligible"] is True
 
 
 def test_archive_survives_run_ring_buffer_prune(tmp_path: Path) -> None:
