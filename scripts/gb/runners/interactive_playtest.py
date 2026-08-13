@@ -26,6 +26,7 @@ from ..models import CandidateConfig, CandidateResult, ModelIdentity, Scenario, 
 from ..playtest_evidence import (
     PLAYTEST_OUTCOMES,
     REQUIRED_LOCAL_TOOL_PROFILE,
+    _repetition_value,
     archive_selected_evidence,
 )
 from ..serialize import dumps, now_iso
@@ -700,12 +701,9 @@ def _resolve_target(scenario: Scenario, cfg: InteractivePlaytestConfig) -> dict[
     pair_id = str(values.get("pair_id") or cfg.pair_id or "").strip() or None
     pair_role = str(values.get("pair_role") or cfg.pair_role or "").strip().lower() or None
     campaign_id = str(values.get("campaign_id") or "goblinbench-6788-screen-v1").strip()
-    try:
-        repetition = int(values.get("repetition", 0))
-    except (TypeError, ValueError):
-        raise ValueError("interactive-playtest repetition must be an integer") from None
-    if repetition < 0:
-        raise ValueError("interactive-playtest repetition must be non-negative")
+    repetition = _repetition_value({"repetition": values.get("repetition", 0)})
+    if repetition is None:
+        raise ValueError("interactive-playtest repetition must be a canonical non-negative integer") from None
     if pair_id and pair_role not in {"incumbent", "challenger", "luna"}:
         raise ValueError("interactive-playtest pair_role must be incumbent, luna, or challenger")
     return {

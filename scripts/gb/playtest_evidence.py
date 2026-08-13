@@ -81,14 +81,24 @@ def _first_string(mapping: dict[str, Any], *keys: str) -> str:
 
 
 def _repetition_value(mapping: dict[str, Any]) -> int | None:
-    """Read a non-negative repetition without treating booleans as integers."""
+    """Read a canonical non-negative repetition without lossy coercion.
+
+    JSON numbers arrive as Python ``int`` or ``float`` values.  Only integer
+    JSON numbers are part of the identity contract; ``int(0.75)`` must never
+    silently turn a distinct repetition into repetition zero.  String values
+    are accepted only in canonical decimal form for replayed/store records.
+    """
 
     raw = mapping.get("repetition")
     if raw is None or isinstance(raw, bool):
         return None
-    try:
+    if isinstance(raw, int):
+        value = raw
+    elif isinstance(raw, str):
+        if not re.fullmatch(r"(?:0|[1-9][0-9]*)", raw):
+            return None
         value = int(raw)
-    except (TypeError, ValueError):
+    else:
         return None
     return value if value >= 0 else None
 
@@ -236,16 +246,85 @@ def _durable_archive_errors(
     if not manifest_path.is_file():
         errors.append("durable archive is missing archive-manifest.json")
 
-    manifest = _dict(archive.get("archive_manifest"))
-    if not manifest and manifest_path.is_file():
+    manifest: dict[str, Any] = {}
+    if manifest_path.is_file():
         try:
-            manifest = _dict(load_json(manifest_path))
+            manifest_value = load_json(manifest_path)
         except (OSError, json.JSONDecodeError):
             errors.append("durable archive manifest is unreadable")
-    manifest_hash = _first_string(manifest, "index_sha256")
+        else:
+            if isinstance(manifest_value, dict):
+                manifest = manifest_value
+            else:
+                errors.append("durable archive manifest must be a JSON object")
+    if archive.get("archive_manifest") and _dict(archive.get("archive_manifest")) != manifest:
+        errors.append("inline durable archive manifest disagrees with the on-disk manifest")
+
     expected_hash = observed_index_hash or _first_string(evidence, "evidence_index_sha256")
-    if expected_hash and manifest_hash and manifest_hash.lower() != expected_hash.lower():
+    manifest_hash = _first_string(manifest, "index_sha256")
+    if manifest.get("schema_version") != "goblinbench.playtest-evidence-archive/v1":
+        errors.append("durable archive manifest has an unsupported schema_version")
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", manifest_hash):
+        errors.append("durable archive manifest index_sha256 is missing or invalid")
+    elif expected_hash and manifest_hash.lower() != expected_hash.lower():
         errors.append("durable archive index SHA-256 does not match the evidence index")
+    if index_copy.is_file():
+        try:
+            archived_index_hash = hashlib.sha256(index_copy.read_bytes()).hexdigest()
+        except OSError:
+            archived_index_hash = ""
+        if not archived_index_hash or archived_index_hash != manifest_hash.lower():
+            errors.append("durable archive playtest-index.json hash does not match its manifest")
+
+    ledger = manifest.get("files")
+    if not isinstance(ledger, list) or not ledger or any(not isinstance(item, str) for item in ledger):
+        errors.append("durable archive manifest files ledger is missing or invalid")
+        ledger = []
+    normalized_ledger: list[str] = []
+    for item in ledger:
+        item_path = Path(item)
+        if item_path.is_absolute() or _safe_relative_path(archive_dir, item) is None:
+            errors.append(f"durable archive manifest contains unsafe file path: {item}")
+            continue
+        normalized_ledger.append(item_path.as_posix())
+    if "playtest-index.json" not in normalized_ledger:
+        errors.append("durable archive manifest files ledger omits playtest-index.json")
+    file_hashes = manifest.get("file_sha256")
+    if not isinstance(file_hashes, dict):
+        errors.append("durable archive manifest file_sha256 ledger is missing or invalid")
+        file_hashes = {}
+    for relative in normalized_ledger:
+        archived_file = archive_dir / relative
+        if not archived_file.is_file():
+            errors.append(f"durable archive manifest references missing file: {relative}")
+            continue
+        if relative == "archive-manifest.json":
+            continue
+        try:
+            file_hash = hashlib.sha256(archived_file.read_bytes()).hexdigest()
+        except OSError:
+            errors.append(f"durable archive manifest references unreadable file: {relative}")
+            continue
+        declared_hash = file_hashes.get(relative)
+        if not isinstance(declared_hash, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", declared_hash):
+            errors.append(f"durable archive manifest has no valid hash for file: {relative}")
+        elif declared_hash.lower() != file_hash:
+            errors.append(f"durable archive file hash does not match manifest: {relative}")
+    if set(file_hashes) != set(normalized_ledger):
+        errors.append("durable archive manifest file_sha256 keys do not match files ledger")
+
+    actual_files = {
+        path.relative_to(archive_dir).as_posix()
+        for path in archive_dir.rglob("*")
+        if path.is_file() and path.name != "archive-manifest.json"
+    }
+    if set(normalized_ledger) != actual_files:
+        missing = sorted(actual_files - set(normalized_ledger))
+        extra = sorted(set(normalized_ledger) - actual_files)
+        if missing:
+            errors.append(f"durable archive manifest omits files: {missing}")
+        if extra:
+            errors.append(f"durable archive manifest has unmaterialized files: {extra}")
 
     selected_refs = [
         str(ref).strip()
@@ -254,6 +333,7 @@ def _durable_archive_errors(
     ]
     if selected_refs and index_path:
         source_root = Path(index_path).expanduser().resolve().parent
+        ledger_set = set(normalized_ledger)
         for ref in selected_refs:
             ref_path = Path(ref).expanduser()
             if ref_path.is_absolute():
@@ -264,7 +344,11 @@ def _durable_archive_errors(
                     continue
             else:
                 relative = Path(ref)
-            archived_ref = archive_dir / "artifacts" / relative
+            archived_relative = (Path("artifacts") / relative).as_posix()
+            if archived_relative not in ledger_set:
+                errors.append(f"durable archive manifest omits selected artifact: {ref}")
+                continue
+            archived_ref = archive_dir / archived_relative
             if not archived_ref.is_file():
                 errors.append(f"durable archive is missing selected artifact: {ref}")
     return errors
@@ -792,6 +876,10 @@ def archive_selected_evidence(
         "index_sha256": digest,
         "source_index": str(source),
         "files": copied,
+        "file_sha256": {
+            relative: hashlib.sha256((destination / relative).read_bytes()).hexdigest()
+            for relative in copied
+        },
         "revision": _revision_from_index(index),
     }
     (destination / "archive-manifest.json").write_text(

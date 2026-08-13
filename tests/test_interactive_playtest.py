@@ -80,12 +80,20 @@ def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass")
     (archive_dir / "artifacts").mkdir(exist_ok=True)
     (archive_dir / "artifacts" / "screenshots").mkdir(exist_ok=True)
     (archive_dir / "artifacts" / "screenshots" / f"{candidate_id}.png").write_bytes(b"png")
+    index_digest = hashlib.sha256(index.read_bytes()).hexdigest()
+    files = ["playtest-index.json", f"artifacts/screenshots/{candidate_id}.png"]
+    file_sha256 = {
+        relative: hashlib.sha256((archive_dir / relative).read_bytes()).hexdigest()
+        for relative in files
+    }
+    manifest = {
+        "schema_version": "goblinbench.playtest-evidence-archive/v1",
+        "index_sha256": index_digest,
+        "files": files,
+        "file_sha256": file_sha256,
+    }
     (archive_dir / "archive-manifest.json").write_text(
-        json.dumps({
-            "schema_version": "goblinbench.playtest-evidence-archive/v1",
-            "index_sha256": hashlib.sha256(index.read_bytes()).hexdigest(),
-            "files": ["playtest-index.json", f"artifacts/screenshots/{candidate_id}.png"],
-        }),
+        json.dumps(manifest),
         encoding="utf-8",
     )
     evidence = {
@@ -103,10 +111,7 @@ def _result(tmp_path: Path, candidate_id: str, role: str, outcome: str = "pass")
         "selected_artifacts": [f"screenshots/{candidate_id}.png"],
         "evidence_archive": {
             "archive_dir": str(archive_dir),
-            "archive_manifest": {
-                "index_sha256": hashlib.sha256(index.read_bytes()).hexdigest(),
-                "files": ["playtest-index.json", f"artifacts/screenshots/{candidate_id}.png"],
-            },
+            "archive_manifest": manifest,
         },
         "assertions": [{"name": "visible result", "pass": outcome == "pass", "artifact": f"screenshots/{candidate_id}.png"}],
         "tool_calls": [
@@ -408,6 +413,26 @@ def test_pairwise_campaign_and_repetition_mismatch_are_invalid(tmp_path: Path) -
     assert "lack" in decisions[0]["reason"] or "disagree" in decisions[0]["reason"]
 
 
+@pytest.mark.parametrize("bad_repetition", [0.75, True, -1, "00", "0.0"])
+def test_repetition_identity_rejects_lossy_or_noncanonical_values(
+    tmp_path: Path, bad_repetition: object
+) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    result.output["playtest_evidence"]["repetition"] = bad_repetition
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("repetition" in error for error in score.detail["errors"])
+
+
+def test_canonical_string_repetition_is_retained(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    result.output["playtest_evidence"]["repetition"] = "0"
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is True
+    assert score.detail["repetition"] == 0
+
+
 def test_runner_cleanup_failure_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
     result = _result(tmp_path, "luna", "incumbent", "pass")
     result.success = False
@@ -436,6 +461,55 @@ def test_archive_missing_selected_artifact_cannot_enter_pairwise_adjudication(tm
     assert score.passed is False
     assert score.detail["comparison_eligible"] is False
     assert any("selected artifact" in error for error in score.detail["errors"])
+
+
+def test_tampered_archived_index_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    archive_dir = Path(result.output["playtest_evidence"]["evidence_archive"]["archive_dir"])
+    (archive_dir / "playtest-index.json").write_text("{}", encoding="utf-8")
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("hash" in error for error in score.detail["errors"])
+
+
+def test_empty_on_disk_manifest_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    evidence = result.output["playtest_evidence"]
+    archive = evidence["evidence_archive"]
+    archive["archive_manifest"] = None
+    archive_dir = Path(archive["archive_dir"])
+    (archive_dir / "archive-manifest.json").write_text("{}", encoding="utf-8")
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("manifest" in error for error in score.detail["errors"])
+
+
+def test_tampered_selected_artifact_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    archive_dir = Path(result.output["playtest_evidence"]["evidence_archive"]["archive_dir"])
+    (archive_dir / "artifacts" / "screenshots" / "luna.png").write_bytes(b"tampered")
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("file hash" in error for error in score.detail["errors"])
+
+
+def test_archive_manifest_traversal_cannot_enter_pairwise_adjudication(tmp_path: Path) -> None:
+    result = _result(tmp_path, "luna", "incumbent", "pass")
+    evidence = result.output["playtest_evidence"]
+    archive = evidence["evidence_archive"]
+    archive["archive_manifest"] = None
+    archive_dir = Path(archive["archive_dir"])
+    manifest = json.loads((archive_dir / "archive-manifest.json").read_text(encoding="utf-8"))
+    manifest["files"].append("../outside.txt")
+    manifest["file_sha256"]["../outside.txt"] = "0" * 64
+    (archive_dir / "archive-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    score = PlaytestEvidenceScorer().score(_scenario(), None, result, RunContext())
+    assert score.passed is False
+    assert score.detail["comparison_eligible"] is False
+    assert any("unsafe file path" in error for error in score.detail["errors"])
 
 
 def test_valid_product_outcomes_remain_comparable_with_cleanup_and_archive(tmp_path: Path) -> None:

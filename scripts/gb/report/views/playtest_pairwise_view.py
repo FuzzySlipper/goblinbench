@@ -7,6 +7,7 @@ the retained evidence pointers so a human can inspect a disputed result.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from collections import defaultdict
 from typing import Any
@@ -34,18 +35,14 @@ def render(ctx: ViewContext) -> ViewResult:
         if not pair_id:
             continue
         campaign_id = str(detail.get("campaign_id") or "").strip()
-        repetition = detail.get("repetition")
-        try:
-            repetition = int(repetition)
-        except (TypeError, ValueError):
-            repetition = -1
+        repetition = _canonical_repetition(detail.get("repetition"))
         cell_id = str(detail.get("cell_id") or "").strip()
         group = groups[(campaign_id, pair_id, repetition, cell_id)]
         group["pair_id"] = pair_id
         group["scenario_id"] = cell.get("scenario_id")
         group["defect_family"] = detail.get("defect_family") or group.get("defect_family") or "unclassified"
         group["campaign_id"] = campaign_id or group.get("campaign_id") or "unlabeled"
-        group["repetition"] = repetition if repetition >= 0 else group.get("repetition", -1)
+        group["repetition"] = repetition if repetition is not None else group.get("repetition", "invalid")
         group["cell_id"] = cell_id or group.get("cell_id") or "unlabeled"
         group["outcome"] = detail.get("pair_outcome") or group.get("outcome") or "invalid_pair"
         decision = detail.get("pair_decision") if isinstance(detail.get("pair_decision"), dict) else {}
@@ -128,6 +125,16 @@ def _archive_path(detail: dict[str, Any]) -> str:
     if isinstance(archive, dict):
         return str(archive.get("archive_dir") or "")
     return ""
+
+
+def _canonical_repetition(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, str) and re.fullmatch(r"(?:0|[1-9][0-9]*)", value):
+        return int(value)
+    return None
 
 
 def _evidence_link(archive: str, index: str) -> str:
