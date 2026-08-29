@@ -1,0 +1,22 @@
+{
+  "base_revision": "4d03873ac6cc756ae21906a493d457c4b016be3a",
+  "cell_id": "voxel-placement-offset",
+  "defect_family": "voxel-targeting",
+  "mutation_id": "voxel-placement-offset",
+  "mutation_revision": "5c9974a12f560ec56b14a317f8663929e954fb99",
+  "patch": "/home/dev/goblinbench/fixtures/interactive-playtest/mutations/voxel-placement-offset.patch",
+  "patch_sha256": "2081db15493f24ed213ad0083c8b056a0284e8a681b37a267dcb966c5c1fbdd7",
+  "product_smoke": "pending: run the CraftSurvive browser smoke on this exact worktree and append its retained artifact path",
+  "proof_text": "Source contract: src/world.rs must shift the validated placement address by one voxel on X; run the CraftSurvive browser smoke on the generated clean worktree and retain its output.",
+  "schema_version": "goblinbench.interactive-playtest-mutation-proof/v1",
+  "source_checks": [
+    {
+      "label": "placement address is shifted on X",
+      "needle": "address[0] += 1;",
+      "passed": true,
+      "path": "/home/dev/rusty-craftsurvive-goblinbench-6896/voxel-placement-offset/src/world.rs"
+    }
+  ],
+  "worktree": "/home/dev/rusty-craftsurvive-goblinbench-6896/voxel-placement-offset",
+  "worktree_clean": true
+}

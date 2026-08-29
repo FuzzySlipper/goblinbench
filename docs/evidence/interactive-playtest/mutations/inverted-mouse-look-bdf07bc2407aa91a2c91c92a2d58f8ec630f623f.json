@@ -1,0 +1,22 @@
+{
+  "base_revision": "4d03873ac6cc756ae21906a493d457c4b016be3a",
+  "cell_id": "inverted-mouse-look",
+  "defect_family": "mouse-look-handedness",
+  "mutation_id": "inverted-mouse-look",
+  "mutation_revision": "bdf07bc2407aa91a2c91c92a2d58f8ec630f623f",
+  "patch": "/home/dev/goblinbench/fixtures/interactive-playtest/mutations/inverted-mouse-look.patch",
+  "patch_sha256": "fa36b92283b8fe0570a616604069e4a890a85da0ef852ce9ece7317cf0d3f826",
+  "product_smoke": "pending: run the CraftSurvive browser smoke on this exact worktree and append its retained artifact path",
+  "proof_text": "Source contract: web/src/session-client.ts must invert the horizontal pointer-lock delta; run the CraftSurvive browser smoke on the generated clean worktree and retain its output.",
+  "schema_version": "goblinbench.interactive-playtest-mutation-proof/v1",
+  "source_checks": [
+    {
+      "label": "horizontal pointer delta is inverted",
+      "needle": "this.#look[0] -= event.movementX * 0.12;",
+      "passed": true,
+      "path": "/home/dev/rusty-craftsurvive-goblinbench-6896/inverted-mouse-look/web/src/session-client.ts"
+    }
+  ],
+  "worktree": "/home/dev/rusty-craftsurvive-goblinbench-6896/inverted-mouse-look",
+  "worktree_clean": true
+}
